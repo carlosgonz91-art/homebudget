@@ -333,6 +333,8 @@ td.ds{max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tx.pa,.mr.pa{animation:posin .34s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i)*30ms)}
 @media (prefers-reduced-motion:reduce){.tx.pa,.mr.pa{animation:none}}
 .lnbk{margin:0 0 14px;padding:12px 13px;border-radius:14px;background:var(--soft);border:1px solid var(--line)}.lnbkh{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:9px}.lnbkh span{font-size:12.5px;color:var(--mute);font-weight:650}.lnbkh b{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums}.lnbar{display:flex;gap:2px;height:10px;border-radius:99px;overflow:hidden;margin-bottom:8px}.lnbar i{display:block;min-width:3px}.lnbkr{display:grid;grid-template-columns:minmax(0,1fr) auto 38px;gap:8px;align-items:baseline;padding:5px 0;font-size:14px;border-top:1px solid var(--line)}.lnbkr:first-of-type{border-top:0}.lnbkr span{min-width:0}.lnbkr span em{font-style:normal;color:var(--mute);font-size:12px;margin-left:4px}.lnbkr b{font-variant-numeric:tabular-nums}.lnbkr>em{font-style:normal;color:var(--mute);font-size:12px;text-align:right}
+.rls{margin-top:6px}.rl{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}.rl:first-child{border-top:0}.rlm{flex:0 1 46%;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:650}.rlc{flex:none;max-width:48%;color:var(--mute);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.rl .btn{flex:none}
+.fnd .fa{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 4px}.fnd li{margin-bottom:10px}
 .nwbig{font-size:32px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums}.nwbig.neg{color:var(--bad)}
 .pace{width:100%;height:auto;display:block}.pgl{stroke:var(--line);stroke-width:1}.pgt{fill:var(--mute);font-size:10px}.pgp{fill:none;stroke:var(--mute);stroke-width:1.8;stroke-dasharray:3 4;opacity:.8}.pgc{fill:none;stroke:var(--brand);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}.pgj{stroke:var(--brand);stroke-width:2;stroke-dasharray:1 5;stroke-linecap:round;opacity:.7}.pgd{fill:var(--brand);stroke:var(--card);stroke-width:2}
 .pgk{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--mute);margin-top:6px}.pgk i{display:inline-block;width:16px;height:0;border-top:3px solid var(--brand);vertical-align:middle;margin-right:6px}.pgk .k2{border-top:2px dashed var(--mute)}.pgk .k3{border-top:3px dotted var(--brand);opacity:.7}
@@ -1014,15 +1016,17 @@ function auditCore(S0,today){
   const S=Object.assign({},S0,{accounts:S0.accounts||[],txns:(S0.txns||[]).map(t=>typeof t.date==='string'?t:Object.assign({},t,{date:''}))});
   const F=[],files=S.files||[],A=id=>{const a=S.accounts.find(x=>x.id===id);return a?a.name:'(deleted)';};
   const usd=n=>(n<0?'-':'')+'$'+Math.abs(n).toFixed(2);
-  const add=(lvl,title,items)=>F.push({lvl,title,items:items||[]});
+  const D=new Set(Object.keys(S0.auditOk||{})),dk=(k)=>D.has(k);
+  // add(level, title, items, refs, tag): refs[i] = {k,id,sf} lets the page act on item i; tag lets the user mark a whole finding as reviewed
+  const add=(lvl,title,items,refs,tag)=>{if(tag&&dk('f:'+tag+':'+title)) return;F.push({lvl,title,items:items||[],refs:refs||null,tag:tag||null});};
   const stm=files.filter(f=>f.kind==='pdf'&&f.start&&f.end),per=f=>f.start+' → '+f.end;
   // 1. every saved file vs the totals printed on it
   if(!files.length) add('info','No original files saved yet. Re-add your statements in Settings → Import to attach them (nothing gets imported twice).');
   else{
     const chk=files.filter(f=>f.reconcile),bad=chk.filter(f=>!f.reconcile.ok),none=files.filter(f=>!f.reconcile);
-    if(bad.length) add('bad',bad.length+' statement'+(bad.length>1?'s don\'t':' doesn\'t')+' match the totals printed on '+(bad.length>1?'them':'it'),bad.map(f=>A(f.acct)+' '+per(f)+': statement says '+usd(f.reconcile.expected)+', read '+usd(f.reconcile.got)));
+    if(bad.length) add('bad',bad.length+' statement'+(bad.length>1?'s don\'t':' doesn\'t')+' match the totals printed on '+(bad.length>1?'them':'it'),bad.map(f=>A(f.acct)+' '+per(f)+': statement says '+usd(f.reconcile.expected)+', read '+usd(f.reconcile.got)),null,'stmt');
     if(chk.length>bad.length) add('ok',(chk.length-bad.length)+' of '+files.length+' saved files match the totals printed on them');
-    if(none.length) add('info',none.length+' file'+(none.length>1?'s have':' has')+' no printed totals to check against (CSV/OFX or an unrecognized layout)',none.map(f=>A(f.acct)+' · '+f.name));
+    if(none.length) add('info',none.length+' file'+(none.length>1?'s have':' has')+' no printed totals to check against (CSV/OFX or an unrecognized layout)',none.map(f=>A(f.acct)+' · '+f.name),null,'noprint');
   }
   // 2. missing months, overlaps, balance hand-off between consecutive statements
   const gaps=[],ovl=[],jumps=[];let hand=0;
@@ -1041,10 +1045,10 @@ function auditCore(S0,today){
       if(dayNum(n.end)>dayNum(ref.end)) ref=n;
     }
   }
-  if(jumps.length) add('bad','Balance doesn\'t carry over between statements',jumps);
+  if(jumps.length) add('bad','Balance doesn\'t carry over between statements',jumps,null,'jump');
   else if(hand) add('ok',hand+' statement-to-statement balance hand-offs line up');
-  if(gaps.length) add('warn',gaps.length+' gap'+(gaps.length>1?'s':'')+' between statements (a month may be missing)',gaps);
-  if(ovl.length) add('info',ovl.length+' overlapping/repeated statement period'+(ovl.length>1?'s':'')+' (duplicate rows were skipped)',ovl);
+  if(gaps.length) add('warn',gaps.length+' gap'+(gaps.length>1?'s':'')+' between statements (a month may be missing)',gaps,null,'gap');
+  if(ovl.length) add('info',ovl.length+' overlapping/repeated statement period'+(ovl.length>1?'s':'')+' (duplicate rows were skipped)',ovl,null,'ovl');
   // 3. does the ledger still add up to each statement?
   const mism=[];let nm=0;
   for(const f of stm){
@@ -1052,14 +1056,14 @@ function auditCore(S0,today){
     const net=S.txns.filter(t=>t.acct===f.acct&&t.date>=f.start&&t.date<=f.end).reduce((x,t)=>x+t.amount,0),want=f.endBal-f.beginBal;
     if(Math.abs(net-want)>0.025) mism.push(A(f.acct)+' '+per(f)+': statement net '+usd(want)+', your ledger '+usd(net));
   }
-  if(mism.length) add('bad','Ledger no longer adds up to '+mism.length+' statement'+(mism.length>1?'s':''),mism);
+  if(mism.length) add('bad','Ledger no longer adds up to '+mism.length+' statement'+(mism.length>1?'s':''),mism,null,'ledger');
   else if(nm) add('ok','Ledger adds up to the balances printed on all '+nm+' statements');
   // 4. rows with no original behind them. Bank-synced rows outside every saved statement have nothing to link to, so they are not counted.
   if(files.length){
     const dated=files.filter(f=>f.start&&f.end),inStmt=t=>dated.some(f=>f.acct===t.acct&&f.start<=t.date&&t.date<=f.end);
     const rel=S.txns.filter(t=>!t.sf||inStmt(t)),n=rel.filter(t=>!t.src).length,skipped=S.txns.length-rel.length;
     const note=skipped?[skipped+' bank-synced transaction'+(skipped>1?'s fall':' falls')+' outside your saved statements, so there is nothing to link '+(skipped>1?'them':'it')+' to.']:[];
-    if(n) add('warn',n+' of '+rel.length+' transactions have no saved original',['Re-add the matching statements in Settings → Import to link them.'].concat(note));
+    if(n) add('warn',n+' of '+rel.length+' transactions have no saved original',['Re-add the matching statements in Settings → Import to link them.'].concat(note),null,'noorig');
     else if(rel.length) add('ok','All '+rel.length+' transactions link to a saved original',note);
   }
   // 5. transfers should appear on both sides
@@ -1085,40 +1089,42 @@ function auditCore(S0,today){
   const l4of=a=>(a.ref||'').split(':')[1]||((a.name||'').match(/••(\d{4})/)||[])[1]||'',span={};
   for(const a of S.accounts){const d=S.txns.filter(t=>t.acct===a.id).map(t=>t.date).sort();span[a.id]=d.length?[d[0],d[d.length-1]]:null;}
   const covers=(a,d)=>(S.files||[]).some(f=>f.acct===a.id&&f.start&&f.start<=d&&d<=f.end)||(span[a.id]&&span[a.id][0]<=d&&d<=span[a.id][1]);
-  const miss=[],outside=[];
+  const miss=[],outside=[],missR=[],outR=[];
   for(const t of tr){
-    if(used.has(t.id)) continue;
+    if(used.has(t.id)||dk('xfer:'+t.id)) continue;
     const m=String(t.desc).match(/(?:\.{2,3}|\bending(?:\s+in)?|\bx{2,}|\*{2,}|••|#)\s*(\d{4})\b/i),other=m&&S.accounts.find(a=>a.id!==t.acct&&l4of(a)===m[1]);
     const line=t.date+' · '+A(t.acct)+' · '+usd(t.amount)+' · '+t.desc;
-    if(other&&covers(other,t.date)) miss.push(line+'  (expected in '+other.name+')');
-    else outside.push(line+(other?'  (before '+other.name+' history starts)':''));
+    if(other&&covers(other,t.date)){miss.push(line+'  (expected in '+other.name+')');missR.push({k:'xfer:'+t.id,id:t.id});}
+    else{outside.push(line+(other?'  (before '+other.name+' history starts)':''));outR.push({k:'xfer:'+t.id,id:t.id});}
   }
-  if(odd.length) add('warn',odd.length+' payment'+(odd.length>1?'s':'')+(odd.length>1?' look':' looks')+' like the other half of a transfer but '+(odd.length>1?'are':'is')+' categorized as spending',odd.map(t=>t.date+' · '+A(t.acct)+' · '+usd(t.amount)+' · '+t.desc+'  (now: '+t.cat+')').concat(['Set these to Transfer so they are not counted twice in your spending.']));
-  if(miss.length) add('warn',miss.length+' transfer'+(miss.length>1?'s':'')+' should show up in another account you imported, but don\'t',miss);
-  if(outside.length) add('info',outside.length+' transfer'+(outside.length>1?'s':'')+' go to or from an account or date that is not in your imported data',outside.concat(['Nothing is wrong with these. Import the older statements, or the other account, to see both sides.']));
+  const oddR=odd.filter(t=>!dk('odd:'+t.id));odd.length=0;oddR.forEach(t=>odd.push(t));
+  if(odd.length) add('warn',odd.length+' payment'+(odd.length>1?'s':'')+(odd.length>1?' look':' looks')+' like the other half of a transfer but '+(odd.length>1?'are':'is')+' categorized as spending',odd.map(t=>t.date+' · '+A(t.acct)+' · '+usd(t.amount)+' · '+t.desc+'  (now: '+t.cat+')').concat(['Set these to Transfer so they are not counted twice in your spending.']),odd.map(t=>({k:'odd:'+t.id,id:t.id})).concat([null]));
+  if(miss.length) add('warn',miss.length+' transfer'+(miss.length>1?'s':'')+' should show up in another account you imported, but don\'t',miss,missR);
+  if(outside.length) add('info',outside.length+' transfer'+(outside.length>1?'s':'')+' go to or from an account or date that is not in your imported data',outside.concat(['Nothing is wrong with these. Import the older statements, or the other account, to see both sides.']),outR.concat([null]));
   if(used.size) add('ok',used.size/2+' transfer'+(used.size>2?'s':'')+' matched between your accounts');
   // 6. housekeeping
   const un=S.txns.filter(t=>t.cat==='Uncategorized').length;
   if(un) add('warn',un+' uncategorized transaction'+(un>1?'s':''));
-  const rep=S.txns.filter(t=>/\|([2-9]|\d\d+)$/.test(t.key||''));
-  if(rep.length) add('info',rep.length+' repeat row'+(rep.length>1?'s':'')+' — identical date, amount and description in the same account',rep.slice(0,12).map(t=>t.date+' · '+A(t.acct)+' · '+usd(t.amount)+' · '+t.desc));
-  const badDate=S.txns.filter(t=>isNaN(dayNum(t.date))),fut=today?S.txns.filter(t=>t.date>today):[],incNeg=S.txns.filter(t=>isInc(t.cat)&&t.amount<0);
+  const rk=t=>'rep:'+t.acct+':'+(t.key||t.id),rep=S.txns.filter(t=>/\|([2-9]|\d\d+)$/.test(t.key||'')&&!dk(rk(t)));
+  if(rep.length) add('info',rep.length+' repeat row'+(rep.length>1?'s':'')+' — identical date, amount and description in the same account',rep.slice(0,12).map(t=>t.date+' · '+A(t.acct)+' · '+usd(t.amount)+' · '+t.desc),rep.slice(0,12).map(t=>({k:rk(t),id:t.id,sf:!!t.sf})));
+  const badDate=S.txns.filter(t=>isNaN(dayNum(t.date))),fut=today?S.txns.filter(t=>t.date>today&&!dk('fut:'+t.id)):[],incNeg=S.txns.filter(t=>isInc(t.cat)&&t.amount<0&&!dk('incneg:'+t.id));
   if(badDate.length) add('bad',badDate.length+' transactions have an unreadable date');
-  if(fut.length) add('warn',fut.length+' transaction'+(fut.length>1?'s are':' is')+' dated in the future',fut.slice(0,8).map(t=>t.date+' · '+t.desc));
-  if(incNeg.length) add('warn',incNeg.length+' "Income" transaction'+(incNeg.length>1?'s are':' is')+' negative',incNeg.slice(0,8).map(t=>t.date+' · '+usd(t.amount)+' · '+t.desc));
+  if(fut.length) add('warn',fut.length+' transaction'+(fut.length>1?'s are':' is')+' dated in the future',fut.slice(0,8).map(t=>t.date+' · '+t.desc),fut.slice(0,8).map(t=>({k:'fut:'+t.id,id:t.id})));
+  if(incNeg.length) add('warn',incNeg.length+' "Income" transaction'+(incNeg.length>1?'s are':' is')+' negative',incNeg.slice(0,8).map(t=>t.date+' · '+usd(t.amount)+' · '+t.desc),incNeg.slice(0,8).map(t=>({k:'incneg:'+t.id,id:t.id})));
   if(!badDate.length&&!fut.length&&!incNeg.length&&S.txns.length) add('ok','Dates and signs look sane');
   return F;
 }
 // ==CORE END==
 
 // ---------- state & storage ----------
-const blank=()=>({balHist:{},watch:[],accounts:[],txns:[],rules:[],budgets:{},rollover:{},mappings:{},customCats:[],pendingTx:[],pendingAt:null,balSf:{},subs:{},catGroup:{},holdings:{},widgets:null,lastBackup:null,files:[],catV:0});
+const blank=()=>({balHist:{},watch:[],accounts:[],txns:[],rules:[],budgets:{},rollover:{},mappings:{},customCats:[],pendingTx:[],pendingAt:null,auditOk:{},balSf:{},subs:{},catGroup:{},holdings:{},widgets:null,lastBackup:null,files:[],catV:0});
 // budgets are stored per category as {firstMonth: amount}; a month uses the latest entry at or before it
 function migrateBudgets(st){const b=st.budgets||{};for(const k of Object.keys(b)) if(typeof b[k]==='number') b[k]={'0000-00':b[k]};st.budgets=b;if(!st.rollover) st.rollover={};}
 // make an untrusted profile safe to use: right types, no half-made rows. Returns how many transactions were dropped.
 function sanitizeState(st){
   const isO=x=>x&&typeof x==='object'&&!Array.isArray(x);
   let dropped=0;
+  if(!isO(st.auditOk)) st.auditOk={};
   st.accounts=(Array.isArray(st.accounts)?st.accounts:[]).filter(isO).map(a=>{a.id=String(a.id==null?uid():a.id);a.name=String(a.name==null||a.name===''?'Account':a.name);if(!TYPES[a.type])a.type='other';return a;});
   st.txns=(Array.isArray(st.txns)?st.txns:[]).filter(t=>{
     const ok=isO(t)&&/^\d{4}-\d{2}-\d{2}/.test(String(t.date))&&isFinite(+t.amount)&&t.amount!==null&&t.amount!=='';
@@ -1191,6 +1197,7 @@ async function loadState(){
   migrateBudgets(S);
   if(addCdWidget()) save();
   try{if(seedRules()) save();}catch(e){}
+  try{if(!S.rv2){S.rv2=1;const n=applyRulesAll();save();if(n) setTimeout(()=>toast('Your saved rules were applied to '+n+' existing transaction'+(n>1?'s':'')),900);}}catch(e){}
   // the household's mortgage terms, from the statement (applied once; edit them any time on the Loans page)
   try{if(!S.lt1){const L=S.accounts.find(x=>x.type==='loan'&&x.rate==null&&/sunrise trail|300,?000/i.test(x.name));if(L){L.rate=2.875;L.rateSrc='statement';L.rateAt=todayISO();L.pay=1244.68;L.extra=300;L.escrow=941.93;S.lt1=1;save();}}}catch(e){}
   if((S.catV||0)<4){let n=0;if((S.catV||0)<3&&S.txns.length) n+=recatDefaults()+recatMoves();if(S.txns.length) n+=recatInterest();S.catV=4;if(n){dlog('app','Categories refreshed',{changed:n});setTimeout(()=>{try{save();render();toast('Smarter categories: '+n+' transaction'+(n>1?'s':'')+' updated');}catch(e){}},400);}else save();}
@@ -2464,7 +2471,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · last synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="row"><button class="btn" data-act="sfsync">Sync now</button><a class="btn ghost" href="https://bridge.simplefin.org" target="_blank" rel="noopener">Manage on SimpleFIN</a><button class="btn danger" data-act="sfdisconnect">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.35.4';
+const APP_VERSION='1.36.0';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -2555,9 +2562,9 @@ function settingsTop(){
 }
 function rulesCardHTML(){
   const un=S.txns.filter(t=>t.cat==='Uncategorized').length;
-  return '<section class="card" id="s-rules"><h2>Categories &amp; rules</h2><p class="mute" style="margin-top:0">A rule is made when you recategorize a transaction for all similar ones. Rules run first on every import.</p>'
-   +(S.rules.length?'<table><tbody>'+S.rules.map((r,i)=>'<tr><td>“'+esc(r.match)+'”</td><td>→ '+esc(r.cat)+(r.sub?' › '+esc(r.sub):'')+(r.inc?' · '+esc(r.inc):'')+'</td><td class="amt"><button class="btn danger small" data-act="delrule" data-i="'+i+'">Remove</button></td></tr>').join('')+'</tbody></table>':'<p class="mute">No custom rules yet.</p>')
-   +'<div class="row" style="margin-top:12px">'+(un?'<button class="btn" data-act="gouncat">Review '+un+' uncategorized</button>':'')+'<button class="btn ghost" data-act="reapply">Re-run on uncategorized</button></div></section>';
+  return '<section class="card" id="s-rules"><h2>Categories &amp; rules</h2><p class="mute" style="margin-top:0">A rule is made when you recategorize a transaction for all similar ones. Rules run first on every import and apply to your existing transactions too.</p>'
+   +(S.rules.length?'<div class="rls">'+S.rules.map((r,i)=>'<div class="rl"><span class="rlm" title="'+esc(r.match)+'">“'+esc(r.match)+'”</span><span class="rlc">→ '+esc(r.cat)+(r.sub?' › '+esc(r.sub):'')+(r.inc?' · '+esc(r.inc):'')+'</span><button class="btn danger small" data-act="delrule" data-i="'+i+'">Remove</button></div>').join('')+'</div>':'<p class="mute">No custom rules yet.</p>')
+   +'<div class="row" style="margin-top:12px">'+(un?'<button class="btn" data-act="gouncat">Review '+un+' uncategorized</button>':'')+'<button class="btn ghost" data-act="reapply">Apply rules to everything</button></div></section>';
 }
 const profileName=()=>'homebudget-profile-'+todayISO()+'.json';
 async function profileText(){
@@ -2580,10 +2587,18 @@ function viewSettings(){
 // ---------- audit view ----------
 const todayISO=()=>{const d=new Date();return iso(d.getFullYear(),d.getMonth()+1,d.getDate());};
 const kb=n=>n>=1048576?(n/1048576).toFixed(1)+' MB':Math.max(1,Math.round(n/1024))+' KB';
+const AUDLAB={rep:['Not a duplicate'],odd:['Not a transfer'],xfer:['Not an issue'],fut:['Not an issue'],incneg:['Not an issue']};
 function findingHTML(f){
-  const ic={bad:'✕',warn:'!',ok:'✓',info:'i'}[f.lvl];
-  const it=f.items&&f.items.length?'<details><summary>Details</summary><ul>'+f.items.slice(0,14).map(x=>'<li>'+esc(x)+'</li>').join('')+(f.items.length>14?'<li>…and '+(f.items.length-14)+' more</li>':'')+'</ul></details>':'';
-  return '<div class="fnd '+f.lvl+'"><span class="ic">'+ic+'</span><div><div>'+esc(f.title)+'</div>'+it+'</div></div>';
+  const ic={bad:'✕',warn:'!',ok:'✓',info:'i'}[f.lvl],refs=f.refs||[];
+  const acts=(r,x)=>{if(!r) return '';const kind=r.k.split(':')[0],lab=(AUDLAB[kind]||['Not an issue'])[0];
+    return '<span class="fa">'+(kind==='odd'?'<button class="btn small" data-act="audxfer" data-id="'+r.id+'">Set to Transfer</button>':'')+'<button class="btn ghost small" data-act="audok" data-k="'+esc(r.k)+'" data-l="'+esc(x.slice(0,140))+'">'+lab+'</button>'+(kind==='rep'&&!r.sf?'<button class="btn danger small" data-act="audrm" data-id="'+r.id+'">Remove this copy</button>':'')+'</span>';};
+  const it=f.items&&f.items.length?'<details'+(refs.length&&f.items.length<=4?' open':'')+'><summary>Details</summary><ul>'+f.items.slice(0,14).map((x,i)=>'<li>'+esc(x)+acts(refs[i],x)+'</li>').join('')+(f.items.length>14?'<li>…and '+(f.items.length-14)+' more</li>':'')+'</ul></details>':'';
+  const fin=f.tag&&f.lvl!=='ok'?'<div class="fa"><button class="btn ghost small" data-act="audok" data-k="'+esc('f:'+f.tag+':'+f.title)+'" data-l="'+esc(f.title.slice(0,140))+'">Mark as reviewed</button></div>':'';
+  return '<div class="fnd '+f.lvl+'"><span class="ic">'+ic+'</span><div><div>'+esc(f.title)+'</div>'+it+fin+'</div></div>';
+}
+function auditOkHTML(){
+  const K=Object.keys(S.auditOk||{});if(!K.length) return '';
+  return '<section class="card"><h2>Marked as OK <span class="sub">'+K.length+'</span></h2><details><summary>See them</summary>'+K.map(k=>'<div class="stp"><span>'+esc(S.auditOk[k]||k)+'</span><button class="btn ghost small" data-act="audoff" data-k="'+esc(k)+'">Undo</button></div>').join('')+'</details></section>';
 }
 function dupCardHTML(P){
   const nm=id=>acctName(id);
@@ -2601,7 +2616,7 @@ function viewAudit(){
   const bytes=[...new Map(S.files.map(f=>[f.blob||f.id,f.size||0])).values()].reduce((a,x)=>a+x,0),nBlobs=new Set(S.files.map(f=>f.blob||f.id)).size;
   h+='<section class="card"><h2>Originals</h2><p class="mute" style="margin-top:0">'+(S.files.length?nBlobs+' file'+(nBlobs>1?'s':'')+' kept in this browser ('+kb(bytes)+'). Re-check re-reads each one and compares it with your ledger.':'No originals saved yet. Drop your statements into Import again — duplicates are skipped and the files get attached.')+'</p>'
     +'<div class="row"><button class="btn" data-act="recheck" '+(S.files.length&&!(R&&R.busy)?'':'disabled style="opacity:.5"')+'>'+(R&&R.busy?esc(R.progress):'Re-check originals')+'</button>'+(R&&!R.busy&&R.at?'<span class="sub">Checked '+new Date(R.at).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})+'</span>':'')+'</div></section>';
-  h+='<section class="card"><h2>Findings</h2>'+F.map(findingHTML).join('')+'</section>';
+  h+='<section class="card"><h2>Findings</h2>'+F.map(findingHTML).join('')+'</section>'+auditOkHTML();
   if(S.files.length){
     h+='<section class="card"><h2>Statements on file</h2>'+S.accounts.filter(a=>S.files.some(f=>f.acct===a.id)).map(a=>'<details><summary>'+esc(a.name)+'</summary>'
       +S.files.filter(f=>f.acct===a.id).sort((x,y)=>(x.start||'').localeCompare(y.start||'')).map(f=>'<div class="stp"><span>'+esc(f.start?f.start+' → '+f.end:f.name)+(f.reconcile?(f.reconcile.ok?' <span class="pos">✓</span>':' <span class="neg">✕</span>'):'')+'</span><button class="btn ghost small" data-act="getfile" data-id="'+f.id+'">Download</button></div>').join('')+'</details>').join('')+'</section>';
@@ -2719,6 +2734,11 @@ function learnedCat(desc,amount){
   }
   const mk=merchantKey(desc);return mk.length<3?null:(_LC.m[mk+(amount>0?'+':'-')]||null);
 }
+// the first user rule that matches (an Income rule never claims money going out)
+const ruleFor=(desc,amount)=>{const nm=normMatch(desc);return (S.rules||[]).find(r=>nm.includes(r.match)&&!(isInc(r.cat)&&amount<0));};
+// apply every saved rule to the transactions already in the ledger (rows you edited by hand on their own are left alone)
+function applyRulesAll(){let n=0;for(const t of S.txns){if(t.man) continue;const r=ruleFor(t.desc,t.amount);if(!r) continue;
+  if(t.cat!==r.cat||(r.sub||'')!==(t.sub||'')){t.cat=r.cat;if(r.sub) t.sub=r.sub;else delete t.sub;if(r.inc&&t.amount>0) t.inc=r.inc;n++;}}return n;}
 function learnUncat(){let n=0;for(const t of S.txns) if(t.cat==='Uncategorized'){const c=autoCat(t.desc,t.amount,t.acct);if(c!=='Uncategorized'){t.cat=c;n++;}}return n;}
 function autoCat(desc,amount,acctId){
   const A=S.accounts.find(a=>a.id===acctId);let c=categorize(desc,amount,S.rules);
@@ -3231,7 +3251,11 @@ const ACT={
   pgprev(){UI.page=Math.max(0,(UI.page||0)-1);renderTxnList();window.scrollTo(0,0);},
   pgnext(){UI.page=(UI.page||0)+1;renderTxnList();window.scrollTo(0,0);},
   delrule(el){S.rules.splice(+el.dataset.i,1);save();render();},
-  reapply(){const n=learnUncat();save();render();toast(n+' updated');},
+  reapply(){const un=learnUncat(),prev=S.txns.map(t=>[t,t.cat,t.sub,t.inc]),n=applyRulesAll();save();render();toast((n+un)+' transaction'+(n+un===1?'':'s')+' updated',n?{label:'Undo',fn:()=>{prev.forEach(([t,c,sb,ic])=>{t.cat=c;if(sb) t.sub=sb;else delete t.sub;if(ic) t.inc=ic;else delete t.inc;});save();render();toast('Undone');}}:undefined);},
+  audok(el){const k=el.dataset.k;if(!k) return;S.auditOk=S.auditOk||{};S.auditOk[k]=el.dataset.l||k;save();render();toast('Marked as OK',{label:'Undo',fn:()=>{delete S.auditOk[k];save();render();}});},
+  audoff(el){delete (S.auditOk||{})[el.dataset.k];save();render();},
+  audxfer(el){const t=S.txns.find(x=>x.id===el.dataset.id);if(!t) return;const old=[t.cat,t.sub,t.inc];t.cat='Transfer';delete t.sub;delete t.inc;t.man=1;save();render();toast('Set to Transfer',{label:'Undo',fn:()=>{t.cat=old[0];if(old[1]) t.sub=old[1];if(old[2]) t.inc=old[2];save();render();}});},
+  audrm(el){const i=S.txns.findIndex(x=>x.id===el.dataset.id);if(i<0) return;const [t]=S.txns.splice(i,1);save();render();toast('Removed one copy',{label:'Undo',fn:()=>{S.txns.push(t);save();render();}});},
   rfhome(){UI.tab='dash';render();},
   async backup(){
     const ok=await saveFile(profileName(),await profileText(),'application/json');
@@ -3311,6 +3335,7 @@ const ACT={
     const targets=[t];
     if(all&&mk.length>=3) S.txns.forEach(x=>{if(x.id!==t.id&&merchantKey(x.desc)===mk&&(x.amount>0)===(t.amount>0)) targets.push(x);});
     const nick=($('#txNick')?$('#txNick').value:'').trim().replace(/\s+/g,' ');if(nick) t.nick=nick;else delete t.nick;
+    if(!all) t.man=1; // edited on its own: rules will not overwrite it
     for(const x of targets){x.cat=cat;if(sub) x.sub=sub;else delete x.sub;if(t.amount>0){if(inc) x.inc=inc;else delete x.inc;}}
     if(sub){const l=S.subs[cat]=S.subs[cat]||[];if(!l.includes(sub)) l.push(sub);}
     const g=$('#txGrp');if(g&&!$('#txGrpBox').hidden&&g.value!=='Other') S.catGroup[cat]=g.value;
