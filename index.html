@@ -2319,7 +2319,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · last synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="row"><button class="btn" data-act="sfsync">Sync now</button><a class="btn ghost" href="https://bridge.simplefin.org" target="_blank" rel="noopener">Manage on SimpleFIN</a><button class="btn danger" data-act="sfdisconnect">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.32.0';
+const APP_VERSION='1.32.1';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -2865,7 +2865,10 @@ async function sfSync(){
   try{
     const start=SF.last?SF.last-7*86400:Math.floor(Date.now()/1000)-44*86400;
     dlog('simplefin','Sync started',{firstSync:!SF.last,sinceDays:Math.round((Date.now()/1000-start)/86400)});
-    const j=await sfFetch(SF.access,start);
+    let j=await sfFetch(SF.access,start);
+    // a brand-new bank/account only gets the short window above: fetch its history properly
+    {const isNew=a=>{const l4=(String(a.name||'').match(/(\d{4})(?!.*\d)/)||[])[1]||'';return !S.accounts.find(x=>x.sf===a.id)&&!(l4&&S.accounts.find(x=>((x.ref||'').split(':')[1]===l4)||(x.name.match(/••(\d{4})/)||[])[1]===l4));};
+     if(SF.last&&(j.accounts||[]).some(isNew)){try{const w=await sfFetch(SF.access,Math.floor(Date.now()/1000)-90*86400);if(w&&Array.isArray(w.accounts)){dlog('simplefin','New account found, fetched 90 days',{count:(j.accounts||[]).filter(isNew).length});j=w;}}catch(e){}}}
     dlog('simplefin','Accounts received',(j.accounts||[]).map(a=>{const tx=a.transactions||[],ds=tx.filter(t=>!t.pending).map(t=>+(t.posted||t.transacted_at||0)).filter(Boolean).sort();return {id:a.id,name:a.name,org:a.org&&(a.org.name||a.org.domain),balance:a.balance,available:a['available-balance'],balanceDate:a['balance-date']?new Date((+a['balance-date'])*1000).toISOString().slice(0,10):null,currency:a.currency,tx:tx.length,pending:tx.filter(t=>t.pending).length,first:ds[0]?new Date(ds[0]*1000).toISOString().slice(0,10):null,last:ds.length?new Date(ds[ds.length-1]*1000).toISOString().slice(0,10):null,holdings:(a.holdings||[]).length||undefined,holdingFields:Array.isArray(a.holdings)&&a.holdings[0]?Object.keys(a.holdings[0]):undefined,txFields:tx[0]?Object.keys(tx[0]):undefined};}));
     SF.last=Math.floor(Date.now()/1000);await kvSet('simplefin-last',SF.last);UI._okAt=Date.now();
     S.sfRaw=(j.accounts||[]).map(a=>{const o=Object.assign({},a);delete o.transactions;o.txCount=(a.transactions||[]).length;if(o.holdings){o.holdings=o.holdings.length;}return o;});
@@ -2878,6 +2881,9 @@ async function sfSync(){
     S.pendingTx=sfPending(j);S.pendingAt=Date.now();save();
     const items=sfItems(j),warn=[...(j.errlist||[]).map(e=>e.msg||e.code),...(j.errors||[]).map(e=>typeof e==='string'?e:(e.msg||e.code||''))].filter(Boolean);
     if(SF.skip&&SF.skip.n){warn.push('Skipped '+SF.skip.n+' row'+(SF.skip.n>1?'s':'')+' from your bank with an unreadable date or amount.');dlog('simplefin','Skipped unreadable rows',{count:SF.skip.n},'warn');}
+    // an account with no transactions yet (a new loan, say) still belongs in the app: create it now
+    {let made=0;for(const it of items){if(it.choice==='new'&&it.sfId&&!(it.res.txns||[]).length){const a={id:uid(),name:it.res.name+(it.res.last4?' ••'+it.res.last4:''),type:it.res.type,ref:it.res.ref||undefined,sf:it.sfId};S.accounts.push(a);it.choice=a.id;made++;}}
+     if(made){save();dlog('simplefin','Created accounts without transactions',{count:made});}}
     UI.pdf={busy:false,items,sync:true,warn};recomputePdf();
     const nNew=items.reduce((n,it)=>n+(it.fresh||[]).length,0);
     dlog('simplefin','Matched to accounts',items.map(it=>({sf:it.sfId,item:it.fileName,account:it.choice==='new'?'NEW ACCOUNT':((S.accounts.find(x=>x.id===it.choice)||{}).name||it.choice),rows:it.res.txns.length,new:(it.fresh||[]).length,duplicates:it.dup})));
