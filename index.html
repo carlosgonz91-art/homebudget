@@ -325,6 +325,10 @@ td.ds{max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ip.rcr{gap:12px}.ip.rcr .r span.rdue{font-size:12.5px;color:var(--mute)}.ip.rcr .r span.rdue.soon{display:inline-block;justify-self:end;margin-left:auto;font-weight:700;color:var(--warn);background:color-mix(in srgb,var(--warn) 14%,var(--card));border-radius:999px;padding:1px 8px}
 .ip .l b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.crh.pr>span:last-child{flex:none;white-space:nowrap;text-align:right}.atags{display:flex;flex-wrap:wrap;gap:2px 14px;margin-top:3px;font-size:11.5px;color:var(--mute);font-weight:500;font-variant-numeric:tabular-nums}.at{white-space:nowrap}.at b{margin-left:6px;font-weight:600;color:color-mix(in srgb,var(--ink) 62%,var(--mute))}
 .mixbar{display:flex;height:14px;border-radius:99px;overflow:hidden;background:var(--track);margin:2px 0 12px;gap:2px}.mixbar i{display:block;height:100%;min-width:3px}.mixr{display:flex;justify-content:space-between;gap:10px;padding:6px 0;font-size:14px}.mixr>span:first-child{display:flex;align-items:center;gap:8px}
+.bkw .bkh{font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}.bkw .bks{padding:4px 12px}.bkc{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.bkp{display:inline-flex;align-items:center;gap:7px;font:inherit;font-size:12.5px;font-weight:650;color:var(--ink);background:var(--soft);border:1px solid var(--line);border-radius:99px;padding:5px 11px 5px 9px;max-width:100%}.bkp .bkd{margin:0;width:8px;height:8px}.bkp em{font-style:normal;font-weight:700;color:var(--warn);font-size:11.5px}.bkp.bad{background:color-mix(in srgb,var(--warn) 13%,var(--card));border-color:color-mix(in srgb,var(--warn) 45%,var(--line));cursor:pointer}.bkp.bad:focus-visible{outline:2px solid var(--brand)}
+.lnw{cursor:pointer}.lnw:hover{background:color-mix(in srgb,var(--soft) 40%,var(--card))}.lnw:focus-visible{outline:2px solid var(--brand);outline-offset:-2px}.lnwt{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums}.lnwr{margin:10px 0 0}.lnwn{display:flex;justify-content:space-between;gap:10px;font-size:14px;font-weight:650;margin-bottom:5px}.lnwn span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lnwn em{font-style:normal;color:#059669;font-weight:700;font-size:12.5px;white-space:nowrap}.lnwp{font-size:12px;color:var(--mute);margin-top:4px}.ivsw{margin:0 0 14px}
+.tx.pa,.mr.pa{animation:posin .34s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i)*30ms)}
+@media (prefers-reduced-motion:reduce){.tx.pa,.mr.pa{animation:none}}
 .nwbig{font-size:32px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums}.nwbig.neg{color:var(--bad)}
 .pace{width:100%;height:auto;display:block}.pgl{stroke:var(--line);stroke-width:1}.pgt{fill:var(--mute);font-size:10px}.pgp{fill:none;stroke:var(--mute);stroke-width:1.8;stroke-dasharray:3 4;opacity:.8}.pgc{fill:none;stroke:var(--brand);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}.pgj{stroke:var(--brand);stroke-width:2;stroke-dasharray:1 5;stroke-linecap:round;opacity:.7}.pgd{fill:var(--brand);stroke:var(--card);stroke-width:2}
 .pgk{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--mute);margin-top:6px}.pgk i{display:inline-block;width:16px;height:0;border-top:3px solid var(--brand);vertical-align:middle;margin-right:6px}.pgk .k2{border-top:2px dashed var(--mute)}.pgk .k3{border-top:3px dotted var(--brand);opacity:.7}
@@ -1293,7 +1297,7 @@ function render(){
   UI.mdc={};
   if(UI.tab==='import')UI.tab='settings';
   document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('on',b.dataset.tab===UI.tab));
-  {const nb=document.getElementById('navInv');if(nb)nb.hidden=!(hasInv()||S.accounts.some(a=>a.type==='brokerage'&&a.sf));}
+  {const nb=document.getElementById('navInv');if(nb)nb.hidden=!(hasInv()||hasLoans()||S.accounts.some(a=>a.type==='brokerage'&&a.sf));}
   const v={dash:viewDash,txns:viewTxns,budgets:viewBudgets,invest:viewInvest,audit:viewAudit,settings:viewSettings}[UI.tab]||viewDash;
   try{$('#app').innerHTML=v();}
   catch(e){
@@ -1375,7 +1379,8 @@ function accountsHTML(){
         +(r.b?money(r.tv):'<span class="mute">–</span>')+'</div>'
         +(r.G?'<details class="agv2"><summary><span>'+(r.G.g.length-1)+' vault'+(r.G.g.length===2?'':'s')+' · '+fmt0(r.vt)+'</span></summary><div class="agr2 main"><span>Main savings</span><span class="agv">'+fmt(r.av)+'</span></div>'+r.G.g.filter(x=>x.id!==r.G.me.id).sort((x,y)=>String(x.name).localeCompare(String(y.name))).map(x=>'<div class="agr2"><span>'+esc(String(x.name).replace(/\s*\(\d{4}\)\s*$/,''))+'</span><span class="agv">'+fmt(parseFloat(x.balance)||0)+'</span></div>').join('')+'</details></div>':'');}).join('')+'</details>';
   }
-  const head='<div class="agtop"><h2 style="margin:0">Accounts</h2>'+(has?'<div class="agnet"><span class="sub">Net total</span>'+money(tot,'agbig')+'</div>':'')+'</div>';
+  const asset=rows.filter(r=>r.tv>0).reduce((t,r)=>t+r.tv,0),owe=-rows.filter(r=>r.tv<0).reduce((t,r)=>t+r.tv,0);
+  const head='<div class="agtop"><h2 style="margin:0">Accounts</h2>'+(has?'<div class="agnet"><span class="sub">Net worth</span>'+money(tot,'agbig')+'<span class="sub">Assets '+fmt0(asset)+(owe>0.5?' · Owed '+fmt0(owe):'')+'</span></div>':'')+'</div>';
   return '<section class="card">'+head+(has?'':'<p class="mute" style="margin:8px 0 0">Balances load after your next bank sync.</p>')+body+'</section>';
 }
 // ---------- charts ----------
@@ -1606,9 +1611,9 @@ function merchHTML(ym){
   }
   const L=Object.values(m).filter(x=>x.v>0.005).sort((a,b)=>b.v-a.v).slice(0,6);
   if(!L.length) return '<p class="mute">No spending this month.</p>';
-  const mx=L[0].v,tc=s=>s.replace(/\b[a-z]/g,c=>c.toUpperCase());
+  const mx=L[0].v,tc=s=>s.replace(/\b[a-z]/g,c=>c.toUpperCase()),pa=UI._mpAnim?' pa':'';
   return '<div class="mer">'+L.map((x,i)=>{const cat=Object.entries(x.c).sort((a,b)=>b[1]-a[1])[0][0],col=catColor(cat);
-    return '<div class="mr"><span class="mrk" style="background:color-mix(in srgb,'+col+' 18%,var(--card));color:color-mix(in srgb,'+col+' 55%,var(--ink))">'+(i+1)+'</span><div class="mrb"><div class="mrt"><span class="n">'+esc(tc(x.k))+'</span><b>'+fmt0(x.v)+'</b></div><div class="track"><div class="mfill" style="width:'+(x.v/mx*100).toFixed(1)+'%;background:linear-gradient(90deg,'+col+',color-mix(in srgb,'+col+' 55%,#fff));animation-delay:'+(i*70)+'ms"></div></div><div class="sub">'+esc(cat)+' · '+x.n+' purchase'+(x.n>1?'s':'')+'</div></div></div>';}).join('')+'</div>';
+    return '<div class="mr'+pa+'" style="--i:'+i+'"><span class="mrk" style="background:color-mix(in srgb,'+col+' 18%,var(--card));color:color-mix(in srgb,'+col+' 55%,var(--ink))">'+(i+1)+'</span><div class="mrb"><div class="mrt"><span class="n">'+esc(tc(x.k))+'</span><b>'+fmt0(x.v)+'</b></div><div class="track"><div class="mfill" style="width:'+(x.v/mx*100).toFixed(1)+'%;background:linear-gradient(90deg,'+col+',color-mix(in srgb,'+col+' 55%,#fff));animation-delay:'+(i*70)+'ms"></div></div><div class="sub">'+esc(cat)+' · '+x.n+' purchase'+(x.n>1?'s':'')+'</div></div></div>';}).join('')+'</div>';
 }
 // hover / tap behaviour for the charts (one set of listeners; the charts are redrawn freely)
 (function(){
@@ -1666,12 +1671,13 @@ function merchHTML(ym){
 // ---------- overview widgets ----------
 const WID=[
   {id:'cat',t:'Spending by category',w:'half'},{id:'trend',t:'Last 6 months',w:'half'},{id:'flow',t:'Where the money went',w:'full'},
-  {id:'cal',t:'Day by day',w:'half'},{id:'merch',t:'Biggest merchants',w:'half'},{id:'accts',t:'Accounts',w:'full'},{id:'inv',t:'Investments',w:'half'},
-  {id:'pace',t:'Spending pace',w:'half'},{id:'usual',t:'Compared with usual',w:'half'},{id:'big',t:'Biggest purchases',w:'half'},{id:'recur',t:'Recurring charges',w:'half'},{id:'nw',t:'Net worth',w:'half'},{id:'bank',t:'Bank connections',w:'half'},{id:'mix',t:'Investment mix',w:'half'},{id:'loans',t:'Loans',w:'full'},{id:'tick',t:'Market watch',w:'half'},{id:'bubble',t:'AI bubble meter',w:'half'},{id:'cds',t:'CD maturities',w:'half'}
+  {id:'cal',t:'Day by day',w:'half'},{id:'merch',t:'Top spending',w:'half'},{id:'accts',t:'Accounts',w:'full'},{id:'inv',t:'Investments',w:'half'},
+  {id:'usual',t:'Compared with usual',w:'half'},{id:'recur',t:'Recurring charges',w:'half'},{id:'bank',t:'Bank connections',w:'half'},{id:'mix',t:'Investment mix',w:'half'},{id:'loans',t:'Loans',w:'full'},{id:'tick',t:'Market watch',w:'half'},{id:'bubble',t:'AI bubble meter',w:'half'},{id:'cds',t:'CD maturities',w:'half'}
 ];
 function wState(){
   const all=WID.map(x=>x.id),W=S.widgets;
   if(!W||!Array.isArray(W.order)) {const d=['cat','trend','flow','cal','merch','accts','loans','cds'];return {order:d,hidden:all.filter(i=>!d.includes(i))};}
+  const mg={big:'merch',nw:'accts',pace:null};W.order=W.order.map(i=>i in mg?mg[i]:i).filter((i,k,a)=>i&&a.indexOf(i)===k);W.hidden=(W.hidden||[]).filter(i=>!(i in mg));
   const order=W.order.filter(i=>all.includes(i)),hidden=(W.hidden||[]).filter(i=>all.includes(i)&&!order.includes(i));
   all.forEach(i=>{if(!order.includes(i)&&!hidden.includes(i)){if(i==='cds'||i==='loans') order.push(i);else hidden.push(i);}});
   return {order,hidden};
@@ -1871,9 +1877,9 @@ function loanChart(L,X){
 }
 function loanRing(pct){const R=38,C=2*Math.PI*R,f=Math.max(0,Math.min(1,pct/100));return '<svg viewBox="0 0 100 100" width="112" height="112" role="img" aria-label="'+Math.round(pct)+' percent paid off"><circle cx="50" cy="50" r="'+R+'" fill="none" stroke="var(--track)" stroke-width="11"/><circle cx="50" cy="50" r="'+R+'" fill="none" stroke="url(#lng)" stroke-width="11" stroke-linecap="round" stroke-dasharray="'+(C*f).toFixed(1)+' '+C.toFixed(1)+'" transform="rotate(-90 50 50)"/><defs><linearGradient id="lng" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#10b981"/><stop offset="1" stop-color="#0ea5e9"/></linearGradient></defs><text x="50" y="52" text-anchor="middle" font-size="22" font-weight="800" style="fill:var(--ink)">'+Math.round(pct)+'%</text><text x="50" y="67" text-anchor="middle" font-size="9" style="fill:var(--mute)">paid off</text></svg>';}
 const LNX=[0,100,250,500,1000];
-function loansHTML(){
-  const A=S.accounts.filter(a=>a.type==='loan'&&a.sf&&S.balSf&&S.balSf[a.sf]);if(!A.length) return '';
-  const body=A.map(a=>{
+const loanAccts=()=>S.accounts.filter(a=>a.type==='loan'&&a.sf&&S.balSf&&S.balSf[a.sf]);
+const loanName=a=>titleCase(String(a.name).replace(/\s*\(\s*orig[^)]*\)/i,'').replace(/\s*••\d{4}$/,'').trim().toLowerCase());
+function loanBlock(a){
     const L=loanInfo(a);if(!L) return '';
     const nm=esc(titleCase(String(a.name).replace(/\s*\(\s*orig[^)]*\)/i,'').replace(/\s*••\d{4}$/,'').trim().toLowerCase()));
     const pct=L.orig?Math.max(0,Math.min(100,(L.orig-L.owed)/L.orig*100)):null;
@@ -1890,10 +1896,26 @@ function loansHTML(){
      +hero+tiles+wi
      +((L.hist.length>1||L.proj.length>1)?'<div style="margin-top:10px">'+loanChart(L,XA?projOf(XA.path):null)+'</div><div class="legend"><span><i class="dot" style="background:#f97316"></i>Balance</span>'+(L.proj.length>1?'<span><i class="dot" style="background:#6366f1"></i>On your current payment</span>':'')+(XA?'<span><i class="dot" style="background:#10b981"></i>With +$'+ex+'</span>':'')+'</div>':'')
      +(facts.length?'<div class="sub lnx">'+facts.join(' · ')+'</div>':'')+'</div>';
-  }).join('');
-  return wCard('Loans','',body);
 }
-function loansRefresh(){const old=document.querySelector('[data-w="loans"] .wbody > .card');if(!old) return;const t=document.createElement('div');t.innerHTML=loansHTML();if(t.firstElementChild) old.replaceWith(t.firstElementChild);}
+// small overview widget: one line per loan, tap to open the Loans page
+function loansHTML(){
+  const A=loanAccts().map(a=>({a,L:loanInfo(a)})).filter(x=>x.L);if(!A.length) return '';
+  const owed=A.reduce((t,x)=>t+x.L.owed,0);
+  return '<section class="card lnw go" role="button" tabindex="0" data-act="goloans" aria-label="Open loans"><div class="row" style="align-items:baseline;margin-bottom:8px"><h2 style="margin:0">Loans</h2><span class="spacer"></span><b class="lnwt">'+fmt0(owed)+'</b><i class="bkgo" aria-hidden="true">›</i></div>'
+   +A.map(({a,L})=>{const pct=L.orig?Math.max(0,Math.min(100,(L.orig-L.owed)/L.orig*100)):null;
+    return '<div class="lnwr"><div class="lnwn"><span>'+esc(loanName(a))+'</span><em>'+(L.months!=null?inMonths(L.months):(pct!=null?'':'add rate'))+'</em></div>'+(pct!=null?'<div class="track"><div class="fill" style="width:'+pct.toFixed(1)+'%;background:linear-gradient(90deg,#10b981,#0ea5e9)"></div></div><div class="lnwp">'+Math.round(pct)+'% paid · '+fmt0(L.owed)+' left</div>':'<div class="lnwp">'+fmt0(L.owed)+' left</div>')+'</div>';}).join('')+'</section>';
+}
+// full page (Invest tab → Loans)
+function loansPageHTML(){
+  const A=loanAccts().map(a=>({a,L:loanInfo(a)})).filter(x=>x.L);
+  if(!A.length) return '<section class="card"><p class="mute" style="margin:0">No loans linked yet. Add your loan in SimpleFIN and press Sync now.</p></section>';
+  const owed=A.reduce((t,x)=>t+x.L.owed,0),pay=A.reduce((t,x)=>t+(x.L.pay||0),0),orig=A.reduce((t,x)=>t+(x.L.orig||0),0);
+  const last=Math.max(0,...A.map(x=>x.L.months||0)),hasM=A.every(x=>x.L.months!=null);
+  let h='';
+  if(A.length>1) h+='<section class="card"><div class="sub" style="margin:0">Total owed</div><div class="invtot">'+fmt0(owed)+'</div><div class="row" style="gap:18px;flex-wrap:wrap">'+(orig?'<span class="sub">Paid off <b>'+fmt0(orig-owed)+'</b></span>':'')+(pay?'<span class="sub">Monthly <b>'+fmt0(pay)+'</b></span>':'')+(hasM?'<span class="sub">All debt-free <b>'+inMonths(last)+'</b></span>':'')+'</div></section>';
+  return h+A.map(({a})=>'<section class="card">'+loanBlock(a)+'</section>').join('');
+}
+function loansRefresh(){if(UI.tab==='invest'&&ivMode()==='loans'){render();return;}const old=document.querySelector('[data-w="loans"] .wbody > .card');if(!old) return;const t=document.createElement('div');t.innerHTML=loansHTML();if(t.firstElementChild) old.replaceWith(t.firstElementChild);}
 // ---- CD maturities ----
 function cdList(){
   const H=S.holdings||{},m={};
@@ -1942,15 +1964,6 @@ function acctTv(a){
   const G=sfGroup(a);if(G) return G.g.reduce((x,y)=>x+(parseFloat(y.balance)||0),0);
   return b.v+vaultTotal(a);
 }
-function netWorthHTML(){
-  const rows=S.accounts.map(a=>({a,v:acctTv(a)})).filter(r=>r.v!=null);if(!rows.length) return '';
-  const g=[['Cash',['checking','savings'],'#10b981'],['Investments',['brokerage'],'#6366f1'],['Other assets',null,'#0ea5e9'],['Credit cards',['credit'],'#e11d48'],['Loans',['loan'],'#f97316']];
-  const known=['checking','savings','brokerage','credit','loan'],o=g.map(([n,ty,c])=>({n,c,v:rows.filter(r=>ty?ty.includes(r.a.type):!known.includes(r.a.type)).reduce((t,r)=>t+r.v,0),k:rows.filter(r=>ty?ty.includes(r.a.type):!known.includes(r.a.type)).length})).filter(x=>x.k);
-  const net=o.reduce((t,x)=>t+x.v,0),assets=o.filter(x=>x.v>0).reduce((t,x)=>t+x.v,0),debt=o.filter(x=>x.v<0).reduce((t,x)=>t+x.v,0),mx=Math.max(1,...o.map(x=>Math.abs(x.v)));
-  return wCard('Net worth','',
-    '<div class="nwbig'+(net<0?' neg':'')+'">'+(net<0?'−':'')+fmt0(Math.abs(net)).replace('-','')+'</div><div class="sub" style="margin:0 0 12px">Assets <b>'+fmt0(assets)+'</b>'+(debt<0?' · Owed <b>'+fmt0(-debt)+'</b>':'')+'</div>'
-    +o.map(x=>'<div class="cr"><div class="crh"><span><i class="cdot" style="background:'+x.c+'"></i>'+esc(x.n)+'</span><span class="'+(x.v<0?'neg':'')+'">'+(x.v<0?'−':'')+fmt0(Math.abs(x.v)).replace('-','')+'</span></div><div class="track"><div class="fill" style="width:'+(Math.abs(x.v)/mx*100).toFixed(1)+'%;background:'+x.c+'"></div></div></div>').join(''));
-}
 // 3. recurring charges
 function recurring(){
   const today=Date.now(),by={};
@@ -1987,27 +2000,6 @@ function recurHTML(){
     +(R.length>7?'<p class="sub" style="margin:8px 0 0">+ '+(R.length-7)+' more</p>':''));
 }
 // 4. spending pace
-function paceHTML(ym){
-  const cur=dailyData(ym),prev=dailyData(addMonths(ym,-1)),n=cur.length,now=new Date(),isNow=ym===now.toISOString().slice(0,7);
-  let last=n;if(isNow) last=Math.min(n,now.getDate());else{while(last>1&&!cur[last-1].n) last--;}
-  const cum=a=>{let s=0;return a.map(x=>s+=x.v);},C=cum(cur).slice(0,last),P=cum(prev),pTot=P[P.length-1]||0,spent=C[last-1]||0;
-  if(!(spent>0)&&!(pTot>0)) return '';
-  const proj=isNow&&last>=3&&last<n?spent/last*n:null,pAt=P[Math.min(last,P.length)-1]||0;
-  const W=320,Hh=140,pl=36,pr=6,pt=8,pb=20,N=Math.max(n,P.length),mx=Math.max(1,spent,pTot,proj||0)*1.05;
-  const X=i=>pl+i/(N-1||1)*(W-pl-pr),Y=v=>pt+(1-v/mx)*(Hh-pt-pb);
-  const pp=P.map((v,i)=>[X(i),Y(v)]),pts=C.map((v,i)=>[X(i),Y(v)]),e=pts[pts.length-1];
-  const ln=a=>a.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+','+p[1].toFixed(1)).join('');
-  const grid=[0,.5,1].map(f=>{const v=mx/1.05*f,y=Y(v);return '<line x1="'+pl+'" x2="'+(W-pr)+'" y1="'+y.toFixed(1)+'" y2="'+y.toFixed(1)+'" class="pgl"/><text x="'+(pl-5)+'" y="'+(y+3.5).toFixed(1)+'" text-anchor="end" class="pgt">'+(f?'$'+(v>=1000?(v/1000).toFixed(v>=10000?0:1).replace(/\.0$/,'')+'k':Math.round(v)):'$0')+'</text>';}).join('');
-  const diff=spent-pAt,head=proj!=null?'On pace for <b>'+fmt0(proj)+'</b>':'<b>'+fmt0(spent)+'</b> spent';
-  const sub=(proj!=null?fmt0(spent)+' so far · ':'')+(pTot>0?(Math.abs(diff)<1?'Same as':'<span class="'+(diff>0?'neg':'pos')+'">'+fmt0(Math.abs(diff))+(diff>0?' more':' less')+'</span> than')+' this point last month':'No data last month');
-  return wCard('Spending pace',head+'<br>'+sub,
-    '<svg class="pace" viewBox="0 0 '+W+' '+Hh+'" role="img" aria-label="Running total of spending this month compared with last month">'+grid
-    +'<text x="'+pl+'" y="'+(Hh-5)+'" class="pgt">1</text><text x="'+(W-pr)+'" y="'+(Hh-5)+'" text-anchor="end" class="pgt">'+N+'</text>'
-    +(pTot>0?'<path d="'+ln(pp)+'" class="pgp"/>':'')
-    +(proj!=null?'<path d="M'+e[0].toFixed(1)+','+e[1].toFixed(1)+'L'+X(n-1).toFixed(1)+','+Y(proj).toFixed(1)+'" class="pgj"/>':'')
-    +'<path d="'+ln(pts)+'" class="pgc"/><circle cx="'+e[0].toFixed(1)+'" cy="'+e[1].toFixed(1)+'" r="3.6" class="pgd"/></svg>'
-    +'<div class="pgk"><span><i class="k1"></i>This month</span><span><i class="k2"></i>Last month</span>'+(proj!=null?'<span><i class="k3"></i>Projected</span>':'')+'</div>');
-}
 // 5. compared with usual
 function catUpTo(ym,n){
   const o={};for(const t of S.txns){if(t.date.slice(0,7)!==ym||EXCLUDED.includes(t.cat)||isInc(t.cat)||+t.date.slice(8)>n)continue;o[t.cat]=(o[t.cat]||0)-t.amount;}return o;
@@ -2027,10 +2019,15 @@ function usualHTML(ym){
 }
 // 6. biggest purchases
 function bigHTML(ym){
-  const L=S.txns.filter(t=>t.date.slice(0,7)===ym&&t.amount<0&&!EXCLUDED.includes(t.cat)&&!isInc(t.cat)).sort((a,b)=>a.amount-b.amount).slice(0,5);
-  if(!L.length) return wCard('Biggest purchases','',wEmpty('No spending this month.'));
-  return wCard('Biggest purchases','',
-    L.map(t=>'<div class="tx ta">'+avHTML(t.cat)+'<div class="txb"><div class="t1" role="button" tabindex="0" data-act="txedit" data-id="'+t.id+'"><span class="ds" title="'+esc(t.desc)+'">'+esc(t.nick||t.desc)+'</span><span class="amt neg">'+fmt(t.amount)+'</span></div><div class="t2"><span class="sub">'+shortDate(t.date)+' · '+esc(t.cat)+'</span></div></div></div>').join(''));
+  const L=S.txns.filter(t=>t.date.slice(0,7)===ym&&t.amount<0&&!EXCLUDED.includes(t.cat)&&!isInc(t.cat)).sort((a,b)=>a.amount-b.amount).slice(0,5),pa=UI._mpAnim?' pa':'';
+  if(!L.length) return '<p class="mute">No spending this month.</p>';
+  return L.map((t,i)=>'<div class="tx ta'+pa+'" style="--i:'+i+'">'+avHTML(t.cat)+'<div class="txb"><div class="t1" role="button" tabindex="0" data-act="txedit" data-id="'+t.id+'"><span class="ds" title="'+esc(t.desc)+'">'+esc(t.nick||t.desc)+'</span><span class="amt neg">'+fmt(t.amount)+'</span></div><div class="t2"><span class="sub">'+shortDate(t.date)+' · '+esc(t.cat)+'</span></div></div></div>').join('');
+}
+// merchants / purchases in one widget
+const mpMode=()=>UI.mpm==='p'?'p':'m';
+function topSpendHTML(ym){
+  const m=mpMode(),b=m==='m'?merchHTML(ym):bigHTML(ym);UI._mpAnim=false;
+  return '<section class="card"><div class="row" style="align-items:center;margin-bottom:6px"><h2 style="margin:0">Top spending</h2><span class="spacer"></span><div class="seg2" role="group" aria-label="Merchants or purchases"><button type="button" data-act="mpmode" data-m="m" class="'+(m==='m'?'on':'')+'" aria-pressed="'+(m==='m')+'">Merchants</button><button type="button" data-act="mpmode" data-m="p" class="'+(m==='p'?'on':'')+'" aria-pressed="'+(m==='p')+'">Purchases</button></div></div>'+b+'</section>';
 }
 // 7. bank connection status (one row per bank)
 function bankConnHTML(){
@@ -2049,11 +2046,10 @@ function bankConnHTML(){
   const L=Object.values(by).sort((a,b)=>(b.bad?1:0)-(a.bad?1:0)||a.nm.localeCompare(b.nm));
   if(!L.length) return wCard('Bank connections','',wEmpty('No linked accounts yet. Press Sync now.')+'<p style="margin:10px 0 0"><button class="btn small" data-act="sfsync">Sync now</button></p>');
   const nBad=L.filter(x=>x.bad).length,gen=H.general;
-  const head=nBad?'<span class="neg"><i class="wi"></i>'+nBad+' of '+L.length+' bank'+(L.length===1?'':'s')+' need'+(nBad===1?'s':'')+' attention</span>':gen.length?'<span class="neg"><i class="wi"></i>Check your connection</span>':'<span class="pos">● All '+L.length+' bank'+(L.length===1?'':'s')+' connected</span>';
-  return wCard('Bank connections',head+(H.last?' · synced '+agoTxt(H.last):''),
-    L.map(x=>'<div class="bk'+(x.bad?' go':'')+'"'+(x.bad?' role="button" tabindex="0" data-act="goaccts" aria-label="'+esc(x.nm+': '+(x.bad.short||x.bad.label)+' Open Settings to fix it')+'"':'')+'><i class="bkd '+(x.bad?'warn':'ok')+'"></i><div class="bkt"><b>'+esc(x.nm)+'</b><span>'+x.n+' account'+(x.n===1?'':'s')+(x.at?' · updated '+agoTxt(x.at):'')+'</span>'+(x.bad?'<span class="bkm" title="'+esc(x.bad.msg||'')+'">'+esc(x.bad.short||x.bad.label)+'</span>':'')+'</div><span class="hchipx '+(x.bad?'warn':'ok')+'">'+(x.bad?esc(x.bad.label):'Connected')+'</span>'+(x.bad?'<i class="bkgo" aria-hidden="true">›</i>':'')+'</div>').join('')
-    +gen.map(m=>'<div class="hnote" title="'+esc(m)+'">'+esc(shortNote(m))+'</div>').join('')
-    +'<p class="row" style="margin:12px 0 0;gap:8px"><button class="btn small" data-act="sfsync">Sync now</button>'+(nBad?'<button class="btn ghost small" data-act="goaccts">Details</button>':'')+'<a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener">SimpleFIN ↗</a></p>');
+  const head=nBad?'<span class="neg"><i class="wi"></i>'+nBad+' of '+L.length+' need'+(nBad===1?'s':'')+' attention</span>':gen.length?'<span class="neg"><i class="wi"></i>Check your connection</span>':'<span class="pos">● All '+L.length+' connected</span>';
+  return '<section class="card bkw"><div class="row" style="align-items:center;gap:8px"><h2 style="margin:0">Banks</h2><span class="sub bkh">'+head+(H.last?' · '+agoTxt(H.last):'')+'</span><span class="spacer"></span><button class="btn ghost small bks" data-act="sfsync" aria-label="Sync now">Sync</button></div>'
+   +'<div class="bkc">'+L.map(x=>x.bad?'<button type="button" class="bkp bad" data-act="goaccts" title="'+esc(x.bad.msg||x.bad.short||x.bad.label)+'" aria-label="'+esc(x.nm+': '+(x.bad.short||x.bad.label)+'. Open Settings to fix it')+'"><i class="bkd warn"></i>'+esc(x.nm)+'<em>'+esc(x.bad.why||x.bad.label)+'</em></button>':'<span class="bkp ok" title="'+esc(x.nm+' · '+x.n+' account'+(x.n===1?'':'s')+(x.at?' · updated '+agoTxt(x.at):''))+'"><i class="bkd ok"></i>'+esc(x.nm)+'</span>').join('')+'</div>'
+   +gen.map(m=>'<div class="hnote" title="'+esc(m)+'">'+esc(shortNote(m))+'</div>').join('')+'</section>';
 }
 function widgetsHTML(H,anim){
   const st=wState(),ed=!!UI.wedit,meta=Object.fromEntries(WID.map(x=>[x.id,x]));
@@ -2151,8 +2147,8 @@ function viewDash(){
   const HW={cat:catCard,trend:trendCard,
     flow:d.spend>0?'<section class="card"><h2>Where the money went</h2><p class="sub" style="margin:-4px 0 8px">'+fmt0(d.spend)+' spent'+(d.income>0?' of '+fmt0(d.income)+' earned':'')+'</p>'+flowHTML(UI.month)+'</section>':'',
     cal:'<section class="card"><h2>Day by day</h2>'+calHTML(UI.month)+'</section>',
-    merch:'<section class="card"><h2>Biggest merchants</h2>'+merchHTML(UI.month)+'</section>',
-    accts:accountsHTML(),inv:invWidgetHTML(),pace:paceHTML(UI.month),usual:usualHTML(UI.month),big:bigHTML(UI.month),recur:recurHTML(),nw:netWorthHTML(),bank:bankConnHTML(),mix:invMixHTML(),cds:cdWidgetHTML(),loans:loansHTML(),tick:tickHTML(),bubble:bubbleHTML()};
+    merch:topSpendHTML(UI.month),
+    accts:accountsHTML(),inv:invWidgetHTML(),usual:usualHTML(UI.month),recur:recurHTML(),bank:bankConnHTML(),mix:invMixHTML(),cds:cdWidgetHTML(),loans:loansHTML(),tick:tickHTML(),bubble:bubbleHTML()};
   h+=widgetsHTML(HW,anim);
   return h;
 }
@@ -2438,7 +2434,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · last synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="row"><button class="btn" data-act="sfsync">Sync now</button><a class="btn ghost" href="https://bridge.simplefin.org" target="_blank" rel="noopener">Manage on SimpleFIN</a><button class="btn danger" data-act="sfdisconnect">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.34.3';
+const APP_VERSION='1.35.0';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -2486,7 +2482,17 @@ const matShort=mat=>{const d=daysTo(mat);if(d<0)return 'matured';if(d<=60)return
 const matText=mat=>{const d=daysTo(mat);return d<0?'matured':d<=60?'matures in '+d+' day'+(d===1?'':'s'):'matures '+new Date(mat+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});};
 const fxTitle=t=>'<b>'+esc(String(t))+'</b>';
 const pf=n=>(n<0?'-':'+')+Math.abs(n).toFixed(1)+'%';
+const hasLoans=()=>loanAccts().length>0;
+const ivMode=()=>{const hv=Object.values(S.holdings||{}).some(x=>x&&x.length);return hasLoans()&&(UI.iv==='loans'||!hv&&!S.accounts.some(a=>a.type==='brokerage'&&a.sf))?'loans':'inv';};
+function ivSwitch(m){return '<div class="seg2 ivsw" role="group" aria-label="Investments or loans"><button type="button" data-act="ivmode" data-m="inv" class="'+(m==='inv'?'on':'')+'" aria-pressed="'+(m==='inv')+'">Investments</button><button type="button" data-act="ivmode" data-m="loans" class="'+(m==='loans'?'on':'')+'" aria-pressed="'+(m==='loans')+'">Loans</button></div>';}
 function viewInvest(){
+  if(!hasLoans()) return viewInvest0();
+  const m=ivMode();
+  return m==='loans'?'<h1>Loans</h1>'+ivSwitch(m)+loansPageHTML():ivSwitchWrap(viewInvest0(),ivSwitch(m));
+}
+// put the switch right under the page title
+const ivSwitchWrap=(html,sw)=>html.replace(/(<h1>[^<]*<\/h1>)/,'$1'+sw);
+function viewInvest0(){
   const H=S.holdings||{},ids=Object.keys(H).filter(i=>H[i]&&H[i].length);
   if(!ids.length)return '<h1>Investments</h1><section class="card"><p class="mute" style="margin:0">No positions loaded yet. Your investment accounts are linked, so press Sync now and the positions will appear here.</p>'+(SF.access?'<p style="margin:12px 0 0"><button class="btn" data-act="sfsync">Sync now</button></p>':'')+'</section>';
   const info=id=>{const a=S.accounts.find(x=>x.sf===id),r=(S.sfRaw||[]).find(x=>x.id===id),b=S.balSf&&S.balSf[id];return {name:a?a.name:(r?String(r.name||'').replace(/\s*\(\d{4}\)\s*$/,''):id),org:(r&&r.org&&(r.org.name||r.org.domain))||'',bal:b?b.v:(r&&hnum(r.balance))};};
@@ -3183,6 +3189,9 @@ const ACT={
   gocat(el){UI.filters={q:'',acct:'',cat:el.dataset.cat,month:''};UI.limit=200;UI.tab='txns';render();window.scrollTo(0,0);},
   gouncat(){UI.filters={q:'',acct:'',cat:'Uncategorized',month:''};UI.limit=200;UI.tab='txns';render();},
   invtoggle(el){const id=el.dataset.id,open=el.getAttribute('aria-expanded')!=='true';let o=invOpen().filter(x=>x!==id);if(open)o.push(id);try{localStorage.setItem('hb-invopen2',JSON.stringify(o));}catch(e){}el.setAttribute('aria-expanded',open);const b=el.closest('section').querySelector('.ipl');if(b)b.hidden=!open;},
+  goloans(){UI.tab='invest';UI.iv='loans';render();window.scrollTo(0,0);},
+  ivmode(el){UI.iv=el.dataset.m;UI._lnAnim=1;render();},
+  mpmode(el){UI._mpAnim=true;UI.mpm=el.dataset.m;render();},
   posmode(el){UI._posAnim=true;try{localStorage.setItem('hb-posmode',el.dataset.m);}catch(e){}UI.posAll=false;UI._pm=el.dataset.m;render();},
   bndis(el){UI._dis=Object.assign({},dismissed(),{[el.dataset.id]:el.dataset.sig});render();},
   calday(el){UI.calDay=UI.calDay===el.dataset.d?null:el.dataset.d;render();},
