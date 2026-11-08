@@ -1812,10 +1812,11 @@ function loanInfo(a){
   const l4=(String(a.name).match(/••(\d{4})/)||[])[1]||String(a.ref||'').split(':')[1]||'';
   const out=l4?S.txns.filter(t=>t.acct!==a.id&&t.amount<0&&String(t.desc).includes(l4)&&/loan|mortgage|pmt|payment/i.test(t.desc||'')).map(t=>({date:t.date,amount:-t.amount,desc:t.desc})):[];
   const pays=ts.filter(t=>t.amount>0&&!/interest|escrow/i.test(t.desc||'')).concat(out).sort((x,y)=>y.date<x.date?-1:y.date>x.date?1:0);
-  let pay=a.pay>0?a.pay:null,paySrc=pay?'you':'';
-  if(!pay&&pays.length){const L=pays.slice(0,6).map(t=>t.amount).sort((x,y)=>x-y);pay=L[Math.floor(L.length/2)];paySrc=out.length&&!ts.some(t=>t.amount>0)?'checking':'detected';}
+  const extra=a.extra>0?a.extra:0,escrow=a.escrow>0?a.escrow:0;
+  let pay=a.pay>0?a.pay+extra:null,paySrc=pay?'you':'';
+  if(!pay&&pays.length){const L=pays.slice(0,6).map(t=>t.amount).sort((x,y)=>x-y);pay=Math.max(0,L[Math.floor(L.length/2)]-escrow);paySrc=out.length&&!ts.some(t=>t.amount>0)?'checking':'detected';}
   const rate=a.rate>0?a.rate:0;
-  const A=pay>0&&owed>0?amort(owed,a.rate===0?0:rate,pay):null;
+  const A=pay>0&&owed>0&&a.rate!=null?amort(owed,rate,pay):null; // no rate, no honest payoff date
   const months=A?A.months:null,interest=A?A.interest:null;
   // history (owed over time): walk the ledger backwards from today's balance
   let hist=[];{let o=owed;hist.push([todayISO(),o]);ts.forEach(t=>{hist.push([t.date,o]);o=o+t.amount;});hist.push([ts.length?ts[ts.length-1].date:todayISO(),o]);}
@@ -1824,7 +1825,7 @@ function loanInfo(a){
   const last=pays[0]?pays[0].date:null;
   const om=String(a.name||'').match(/orig(?:inal|\.)?\s*\$?\s*([\d,]+(?:\.\d+)?)/i),orig=a.orig>0?a.orig:(om?parseFloat(om[1].replace(/,/g,'')):null);
   const raw=(S.sfRaw||[]).find(x=>x.id===a.sf)||{},org=raw.org||{};
-  return {orig:orig>0?orig:null,a,owed,pay,paySrc,rate,months,interest,A,hist,proj:A?projOf(A.path):[],last,mInt:owed*rate/1200,org:org.name||org.domain||'',url:/^https:\/\//.test(org.url||'')?org.url:'',at:(S.balSf[a.sf]||{}).at};
+  return {orig:orig>0?orig:null,a,owed,extra,escrow,pi:a.pay>0?a.pay:null,pay,paySrc,rate,months,interest,A,hist,proj:A?projOf(A.path):[],last,mInt:owed*rate/1200,org:org.name||org.domain||'',url:/^https:\/\//.test(org.url||'')?org.url:'',at:(S.balSf[a.sf]||{}).at};
 }
 // pay a loan down month by month: how long, how much interest
 function amort(owed,rate,pay){
@@ -1863,16 +1864,16 @@ function loansHTML(){
     const nm=esc(titleCase(String(a.name).replace(/\s*\(\s*orig[^)]*\)/i,'').replace(/\s*••\d{4}$/,'').trim().toLowerCase()));
     const pct=L.orig?Math.max(0,Math.min(100,(L.orig-L.owed)/L.orig*100)):null;
     const left=L.months!=null?L.months:null;
-    const ex=(UI.lnX||{})[a.id]||0,XA=ex&&L.A?amort(L.owed,a.rate===0?0:L.rate,L.pay+ex):null;
+    const ex=(UI.lnX||{})[a.id]||0,XA=ex&&L.A?amort(L.owed,L.rate,L.pay+ex):null;
     // milestones (needs the original amount)
     let ms='';
     if(L.orig){const mk=[25,50,75,100].map(p=>{const T=L.orig*(1-p/100),done=L.owed<=T+0.5;let when='';if(!done&&L.A){const m=L.A.path.findIndex(v=>v<=T+0.5);if(m>=0) when=inMonths(m);}return '<div class="lnm '+(done?'done':'')+'"><b>'+p+'%</b><span>'+(done?'Done':(when||fmtT(L.owed-T)+' to go'))+'</span></div>';}).join('');ms='<div class="lnms">'+mk+'</div>';}
     const eta=left!=null?'<div class="lneta">Debt-free by <b>'+inMonths(left)+'</b> <span>· '+monthsTxt(left)+' · '+left+' payments left</span></div>':'<div class="lneta mute">'+(L.pay?'Tap <b>Rate</b> to see your payoff date. Your bank does not share it.':'Tap <b>Set payment</b> and <b>Rate</b> to see your payoff date.')+'</div>';
     const hero='<div class="lnhero">'+(pct!=null?loanRing(pct):'')+'<div class="lnk"><div class="lnbig">'+fmt0(L.owed)+'</div><div class="sub">'+(L.orig?'left of '+fmt0(L.orig)+' · '+fmt0(L.orig-L.owed)+' paid':'owed')+'</div>'+eta+'</div></div>';
-    const tiles=stiles([{k:'Payment',v:L.pay?fmtT(L.pay):'–',s:L.pay?(L.paySrc==='you'?'per month':L.paySrc==='checking'?'incl. escrow?':'per month'):'not found',c:'#6366f1'},{k:'Interest now',v:L.rate&&L.owed?fmtT(L.mInt):'–',s:L.rate?(L.pay?'≈'+Math.round(L.mInt/L.pay*100)+'% of pmt':'per month'):'add rate',c:'#f97316'},{k:'Interest left',v:L.interest!=null?fmtT(L.interest):'–',s:L.rate?'until payoff':'add rate',c:'#e11d48'}]);
+    const tiles=stiles([{k:'Payment',v:L.pay?fmtT(L.pay):'–',s:L.pay?(L.extra?'incl. '+fmt0(L.extra)+' extra':L.paySrc==='checking'&&!L.escrow?'incl. escrow?':L.escrow?'+'+fmt0(L.escrow)+' escrow':'per month'):'not found',c:'#6366f1'},{k:'Interest now',v:L.rate&&L.owed?fmtT(L.mInt):'–',s:L.rate?(L.pay?'≈'+Math.round(L.mInt/L.pay*100)+'% of pmt':'per month'):'add rate',c:'#f97316'},{k:'Interest left',v:L.interest!=null?fmtT(L.interest):'–',s:L.rate?'until payoff':'add rate',c:'#e11d48'}]);
     let wi='';
     if(L.A){wi='<div class="lnwi"><div class="lnwh">What if you paid extra each month?</div><div class="lnch">'+LNX.map(v=>'<button type="button" data-act="lnextra" data-id="'+a.id+'" data-v="'+v+'" class="'+(v===ex?'on':'')+'" aria-pressed="'+(v===ex)+'">'+(v?'+$'+v:'None')+'</button>').join('')+'</div>'+(XA?'<div class="lnres">Debt-free <b>'+monthsTxt(L.months-XA.months)+' sooner</b> ('+inMonths(XA.months)+') · saves <b>'+fmt0(L.interest-XA.interest)+'</b> in interest</div>':'<div class="sub" style="margin-top:6px">Pick an amount to see how much sooner you would finish.</div>')+'</div>';}
-    const facts=[];if(L.last) facts.push('Last payment '+L.last+(L.pay?' · '+fmt0(L.pay):''));if(L.at) facts.push('Balance as of '+new Date(L.at).toLocaleDateString('en-US',{month:'short',day:'numeric'}));
+    const facts=[];if(L.escrow) facts.push('Escrow '+fmt0(L.escrow)+'/mo (taxes and insurance) is not counted toward the balance');if(L.last) facts.push('Last payment '+L.last+(L.pay?' · '+fmt0(L.pay):''));if(L.at) facts.push('Balance as of '+new Date(L.at).toLocaleDateString('en-US',{month:'short',day:'numeric'}));
     const links='<button class="btn ghost small" data-act="rateacct" data-id="'+a.id+'">'+(a.rate>=0&&a.rate!=null?(a.rate+'% APR'):'Set rate')+'</button><button class="btn ghost small" data-act="loanpay" data-id="'+a.id+'">'+(a.pay>0?'Edit payment':'Set payment')+'</button>'+(L.url?'<a class="btn ghost small" href="'+esc(L.url)+'" target="_blank" rel="noopener">Servicer ↗</a>':'');
     return '<div class="lnb"><div class="lnh"><div style="min-width:0"><b>'+nm+'</b>'+(L.org?'<div class="sub">'+esc(L.org)+'</div>':'')+'</div><span class="row" style="gap:6px;flex-wrap:wrap">'+links+'</span></div>'
      +hero+ms+tiles+wi
@@ -2426,7 +2427,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · last synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="row"><button class="btn" data-act="sfsync">Sync now</button><a class="btn ghost" href="https://bridge.simplefin.org" target="_blank" rel="noopener">Manage on SimpleFIN</a><button class="btn danger" data-act="sfdisconnect">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.34.0';
+const APP_VERSION='1.34.1';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -3098,7 +3099,7 @@ const ACT={
     dialog({msg:'Money held in vaults or pockets inside "'+a.name+'" that the bank does not report. Enter today\'s total (0 to clear). The app then adjusts it as you move money in and out of vaults.',input:true,value:a.vaults?String(vaultTotal(a)):'',placeholder:'e.g. 72744.62',ok:'Save',onOk:v=>{const n=parseFloat(String(v).replace(/[$,\s]/g,''));if(isNaN(n)||n===0){delete a.vaults;}else a.vaults={v:Math.round(n*100)/100,d:new Date().toISOString().slice(0,10)};save();render();toast(a.vaults?'Vaults saved.':'Vaults cleared.');}});},
   lnextra(el){UI.lnX=UI.lnX||{};UI.lnX[el.dataset.id]=+el.dataset.v;loansRefresh();},
   loanpay(el){const a=S.accounts.find(x=>x.id===el.dataset.id);if(!a)return;
-    dialog({msg:'Monthly payment for "'+a.name+'". Leave it empty to use the payment found in your transactions.',input:true,value:a.pay>0?String(a.pay):'',placeholder:'e.g. 1850',ok:'Save',onOk:v=>{v=String(v||'').replace(/[$,]/g,'').trim();if(!v){delete a.pay;}else{const n=parseFloat(v);if(!isFinite(n)||n<=0||n>1e6){toast('Enter an amount.');return;}a.pay=n;}save();render();toast('Payment saved');}});},
+    dialog({msg:'Payment for "'+a.name+'", from your statement: principal + interest, then extra per month, then escrow. Example: 1244.68, 300, 941.93. Only the first is needed. Leave empty to detect it from your transactions.',input:true,value:a.pay>0?[a.pay,a.extra||'',a.escrow||''].join(', ').replace(/(, )+$/,''):'',placeholder:'1244.68, 300, 941.93',ok:'Save',onOk:v=>{const L=String(v||'').replace(/[$]/g,'').split(/[,;]+/).map(x=>x.trim().replace(/,/g,'')).filter(x=>x!=='');if(!L.length){delete a.pay;delete a.extra;delete a.escrow;}else{const n=L.map(parseFloat);if(n.some(x=>!isFinite(x)||x<0||x>1e6)||!(n[0]>0)){toast('Enter amounts like 1244.68, 300, 941.93');return;}a.pay=n[0];if(n[1]>0)a.extra=n[1];else delete a.extra;if(n[2]>0)a.escrow=n[2];else delete a.escrow;}save();render();toast('Payment saved');}});},
   rateacct(el){const a=S.accounts.find(x=>x.id===el.dataset.id);if(!a)return;
     dialog({msg:'Interest rate for "'+a.name+'" ('+rateLabel(a)+', as a percent, like 3.9). Leave it empty to clear.',input:true,value:a.rate==null?'':String(a.rate),placeholder:'e.g. 3.9',ok:'Save',onOk:v=>{
       v=String(v||'').replace('%','').trim();
