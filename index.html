@@ -58,6 +58,8 @@ h1{font-size:28px;font-weight:800;letter-spacing:-.03em;margin:2px 0 12px}h2{fon
 .hl{font-size:13px;font-weight:600;opacity:.95;letter-spacing:.01em;position:relative}
 .hn{font-size:42px;font-weight:800;letter-spacing:-.035em;line-height:1.1;margin:4px 0 16px;font-variant-numeric:tabular-nums;position:relative}
 .hrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;position:relative}
+.hchip.hgo{cursor:pointer;transition:background .15s,transform .1s}.hchip.hgo:hover{background:rgba(255,255,255,.24)}.hchip.hgo:active{transform:scale(.98)}.hchip.hgo:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.fchip{border:0;font:inherit;font-size:13px;font-weight:700;cursor:pointer;color:var(--brand);background:color-mix(in srgb,var(--brand) 12%,var(--card));border-radius:999px;padding:4px 12px}
 .hchip{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.18);border-radius:16px;padding:10px 12px;min-width:0;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
 .hchip span{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;opacity:.95}
 .hchip b{display:block;font-size:19px;font-weight:750;font-variant-numeric:tabular-nums;margin-top:2px}
@@ -1756,7 +1758,7 @@ function viewDash(){
    if(uncat) h+=bn('uncat',String(uncat),uncat+' to categorize','gouncat','Review');
    if(stale) h+=bn('backup',String(wk),'Not backed up recently','backup','Back up');}
   h+='<div class="mprow">'+monthPicker()+(UI.wedit?'':'<button type="button" class="wed" data-act="wedit" title="Edit widgets" aria-label="Edit widgets: rearrange, add or remove"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></button>')+'</div>';
-  h+='<div class="stats chv'+(anim?'':' still')+'"><div class="hero"><div class="hl">'+(net<0?'Net this month · spending ahead of income':'Net this month')+'</div><div class="hn">'+(net<0?'−':'')+fmt0(Math.abs(net)).replace('-','')+'</div>'+heroSpark(UI.month)+'<div class="hrow"><div class="hchip"><span><i>↓</i>Income</span><b>'+fmt0(d.income)+'</b></div><div class="hchip"><span><i>↑</i>Spending</span><b>'+fmt0(d.spend)+'</b></div>'+(totalBudget?(()=>{const bs=budgetedSpend(UI.month,d),lf=totalBudget-bs;return '<div class="hchip"><span><i>◔</i>'+(lf<0?'Over budget':'Left in budget')+'</span><b>'+fmt0(Math.abs(lf))+'</b></div>';})():'')+'</div></div></div>';
+  h+='<div class="stats chv'+(anim?'':' still')+'"><div class="hero"><div class="hl">'+(net<0?'Net this month · spending ahead of income':'Net this month')+'</div><div class="hn">'+(net<0?'−':'')+fmt0(Math.abs(net)).replace('-','')+'</div>'+heroSpark(UI.month)+'<div class="hrow"><div class="hchip hgo" role="button" tabindex="0" data-act="herogo" data-k="in" aria-label="See this month\'s income transactions"><span><i>↓</i>Income</span><b>'+fmt0(d.income)+'</b></div><div class="hchip hgo" role="button" tabindex="0" data-act="herogo" data-k="out" aria-label="See this month\'s spending transactions"><span><i>↑</i>Spending</span><b>'+fmt0(d.spend)+'</b></div>'+(totalBudget?(()=>{const bs=budgetedSpend(UI.month,d),lf=totalBudget-bs;return '<div class="hchip hgo" role="button" tabindex="0" data-act="herogo" data-k="left" aria-label="Open budgets"><span><i>◔</i>'+(lf<0?'Over budget':'Left in budget')+'</span><b>'+fmt0(Math.abs(lf))+'</b></div>';})():'')+'</div></div></div>';
   const cats=Object.entries(d.byCat).filter(e=>Math.abs(e[1])>0.005).sort((a,b)=>b[1]-a[1]);
   const catsT=cats.reduce((x,e)=>x+Math.max(0,e[1]),0);
   const catCard='<section class="card"><h2>Spending by category</h2>'+donutHTML(cats.filter(e=>e[1]>0),catsT)+(cats.filter(([c])=>budgetOf(c,UI.month)).length?'<h3 style="margin:14px 0 0">Budgets</h3>':'')+(cats.length?cats.filter(([c])=>budgetOf(c,UI.month)).map(([c,v])=>{
@@ -1831,7 +1833,7 @@ document.addEventListener('keydown',e=>{
   }
 },true);
 document.addEventListener('keydown',e=>{if(e.key==='Escape')cbClose();if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('[role=button][data-act]')){e.preventDefault();e.target.click();}if(e.key==='Enter'&&e.target.closest&&e.target.closest('.cbi')){const box=e.target.closest('.cb'),f=box.querySelector('.cbo:not(.on)')||box.querySelector('.cbo');const first=[...box.querySelectorAll('.cbo')][1];if(first&&UI.filters[CB[box.dataset.cb].q])cbPick(box,first.dataset.v);else cbClose();e.target.blur();}});
-const filtersOn=()=>{const f=UI.filters;return !!(f.q||f.acct||f.acctq||f.cat||f.catq||f.month);};
+const filtersOn=()=>{const f=UI.filters;return !!(f.q||f.acct||f.acctq||f.cat||f.catq||f.month||f.flow);};
 function viewTxns(){
   const f=UI.filters;
   const ms=[...new Set(S.txns.map(t=>t.date.slice(0,7)))].sort().reverse();
@@ -1839,7 +1841,7 @@ function viewTxns(){
    +cbHTML('acct')
    +cbHTML('cat')
    +mpHTML('f')
-   +'</div><div class="frst"><button type="button" class="btn ghost small" id="fReset" data-act="resetfilters"'+(filtersOn()?'':' hidden')+'>Reset filters</button></div></section>'
+   +'</div>'+(f.flow?'<div class="frst"><button type="button" class="hchipx fchip" data-act="clearflow" aria-label="Show all transactions again">'+(f.flow==='in'?'Money in only':'Spending only')+' ✕</button></div>':'')+'<div class="frst"><button type="button" class="btn ghost small" id="fReset" data-act="resetfilters"'+(filtersOn()?'':' hidden')+'>Reset filters</button></div></section>'
    +'<section class="card" style="padding:4px 8px"><div id="txnlist"></div></section>';
 }
 function pendingHTML(){
@@ -1853,7 +1855,7 @@ function filtered(){
   const f=UI.filters,q=f.q.trim().toLowerCase();
   const AQ=f.acctq?new Set(S.accounts.filter(a=>acctHay(a).includes(f.acctq.trim().toLowerCase())).map(a=>a.id)):null;
   const AP=acctPred(f.acct);
-  return S.txns.filter(t=>(!AP||AP(t))&&(!AQ||AQ.has(t.acct))&&(!f.catq||t.cat.toLowerCase().includes(f.catq.trim().toLowerCase()))&&(!f.cat||t.cat===f.cat)&&(!f.month||t.date.startsWith(f.month))&&(!q||t.desc.toLowerCase().includes(q)||(t.nick||'').toLowerCase().includes(q)||Math.abs(t.amount).toFixed(2).includes(q))).sort((a,b)=>b.date.localeCompare(a.date));
+  return S.txns.filter(t=>(!AP||AP(t))&&(!AQ||AQ.has(t.acct))&&(!f.catq||t.cat.toLowerCase().includes(f.catq.trim().toLowerCase()))&&(!f.cat||t.cat===f.cat)&&(!f.flow||(!EXCLUDED.includes(t.cat)&&(f.flow==='in'?isInc(t.cat):!isInc(t.cat))))&&(!f.month||t.date.startsWith(f.month))&&(!q||t.desc.toLowerCase().includes(q)||(t.nick||'').toLowerCase().includes(q)||Math.abs(t.amount).toFixed(2).includes(q))).sort((a,b)=>b.date.localeCompare(a.date));
 }
 const PAGE=25;
 function renderTxnList(){
@@ -2046,7 +2048,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · last synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="row"><button class="btn" data-act="sfsync">Sync now</button><a class="btn ghost" href="https://bridge.simplefin.org" target="_blank" rel="noopener">Manage on SimpleFIN</a><button class="btn danger" data-act="sfdisconnect">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.30.0';
+const APP_VERSION='1.30.1';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -2723,6 +2725,12 @@ const ACT={
   importcancel(){UI.import=null;render();},
   gocds(){const e=document.querySelector('[data-w="cds"]');if(e){e.scrollIntoView({behavior:'instant',block:'start'});}else{UI.tab='invest';render();}},
   goaccts(){UI.tab='settings';render();setTimeout(()=>{const e=document.getElementById('acctcard');if(e)e.scrollIntoView({behavior:'smooth',block:'start'});},50);},
+  herogo(el){
+    const k=el.dataset.k;
+    if(k==='left'){UI.tab='budgets';render();window.scrollTo(0,0);return;}
+    UI.filters={q:'',acct:'',cat:'',month:UI.month||latestMonth(),flow:k};UI.limit=200;UI.tab='txns';render();window.scrollTo(0,0);
+  },
+  clearflow(){UI.filters.flow='';render();},
   resetfilters(){UI.filters={q:'',acct:'',cat:'',month:''};UI.limit=200;render();},
   gocat(el){UI.filters={q:'',acct:'',cat:el.dataset.cat,month:''};UI.limit=200;UI.tab='txns';render();window.scrollTo(0,0);},
   gouncat(){UI.filters={q:'',acct:'',cat:'Uncategorized',month:''};UI.limit=200;UI.tab='txns';render();},
