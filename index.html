@@ -1095,7 +1095,10 @@ const fmt0=n=>(n<0?'-':'')+'$'+Math.round(Math.abs(n)).toLocaleString('en-US');
 const monthLabel=ym=>new Date(+ym.slice(0,4),+ym.slice(5)-1,1).toLocaleString('en-US',{month:'long',year:'numeric'});
 const shortMonth=ym=>new Date(+ym.slice(0,4),+ym.slice(5)-1,1).toLocaleString('en-US',{month:'short'});
 function addMonths(ym,n){let y=+ym.slice(0,4),m=+ym.slice(5)-1+n;y+=Math.floor(m/12);m=((m%12)+12)%12;return y+'-'+String(m+1).padStart(2,'0');}
-const TYPES={checking:'Checking',savings:'Savings',credit:'Credit card',brokerage:'Brokerage',other:'Other'};
+const TYPES={checking:'Checking',savings:'Savings',credit:'Credit card',loan:'Loan',brokerage:'Brokerage',other:'Other'};
+const LOANRE=/mortgage|\bloan\b|heloc|line of credit|student|installment|\bauto (?:finance|loan)\b/i;
+// loans are money owed: whatever sign the bank sends, the balance counts against you
+function fixLoans(){let ch=false;for(const a of S.accounts){if(!a.sf) continue;if(a.type==='other'&&LOANRE.test(a.name||'')){a.type='loan';ch=true;}if(a.type==='loan'){const b=S.balSf&&S.balSf[a.sf];if(b&&b.v>0){b.v=-b.v;}}}if(ch)save();}
 
 let dbp=null;
 function idb(){return dbp||(dbp=new Promise((res,rej)=>{const r=indexedDB.open('homebudget',2);
@@ -1252,6 +1255,7 @@ const budgetCats=()=>allCats().filter(c=>!['Income','Interest','Transfer','Inves
 // ---------- views ----------
 function render(){
   try{fixSfNames();}catch(e){}
+  try{fixLoans();}catch(e){}
   UI.mdc={};
   if(UI.tab==='import')UI.tab='settings';
   document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('on',b.dataset.tab===UI.tab));
@@ -1323,7 +1327,7 @@ const vaultTotal=a=>{if(!a.vaults)return 0;const m=S.txns.filter(t=>t.acct===a.i
 function accountsHTML(){
   if(!S.accounts.length) return '';
   const B=S.balSf||{},rows=sortedAccts().map(a=>({a,b:a.sf?B[a.sf]:null}));
-  const G=[['Cash',['checking','savings'],'var(--good)'],['Credit cards',['credit'],'var(--bad)'],['Investments',['brokerage'],'var(--brand)'],['Other',['other'],'var(--mute)']];
+  const G=[['Cash',['checking','savings'],'var(--good)'],['Credit cards',['credit'],'var(--bad)'],['Loans',['loan'],'#f97316'],['Investments',['brokerage'],'var(--brand)'],['Other',['other'],'var(--mute)']];
   const known=G.flatMap(g=>g[1]),has=rows.some(r=>r.b);let tot=0,body='';
   const money=(v,cls)=>'<span class="agv '+(cls||'')+(v<0?' neg':'')+'">'+fmt(v)+'</span>';
   for(const [gn,ty,col] of G){
@@ -1707,8 +1711,8 @@ function acctTv(a){
 }
 function netWorthHTML(){
   const rows=S.accounts.map(a=>({a,v:acctTv(a)})).filter(r=>r.v!=null);if(!rows.length) return '';
-  const g=[['Cash',['checking','savings'],'#10b981'],['Investments',['brokerage'],'#6366f1'],['Other assets',null,'#0ea5e9'],['Credit cards',['credit'],'#e11d48']];
-  const known=['checking','savings','brokerage','credit'],o=g.map(([n,ty,c])=>({n,c,v:rows.filter(r=>ty?ty.includes(r.a.type):!known.includes(r.a.type)).reduce((t,r)=>t+r.v,0),k:rows.filter(r=>ty?ty.includes(r.a.type):!known.includes(r.a.type)).length})).filter(x=>x.k);
+  const g=[['Cash',['checking','savings'],'#10b981'],['Investments',['brokerage'],'#6366f1'],['Other assets',null,'#0ea5e9'],['Credit cards',['credit'],'#e11d48'],['Loans',['loan'],'#f97316']];
+  const known=['checking','savings','brokerage','credit','loan'],o=g.map(([n,ty,c])=>({n,c,v:rows.filter(r=>ty?ty.includes(r.a.type):!known.includes(r.a.type)).reduce((t,r)=>t+r.v,0),k:rows.filter(r=>ty?ty.includes(r.a.type):!known.includes(r.a.type)).length})).filter(x=>x.k);
   const net=o.reduce((t,x)=>t+x.v,0),assets=o.filter(x=>x.v>0).reduce((t,x)=>t+x.v,0),debt=o.filter(x=>x.v<0).reduce((t,x)=>t+x.v,0),mx=Math.max(1,...o.map(x=>Math.abs(x.v)));
   return wCard('Net worth','',
     '<div class="nwbig'+(net<0?' neg':'')+'">'+(net<0?'−':'')+fmt0(Math.abs(net)).replace('-','')+'</div><div class="sub" style="margin:0 0 12px">Assets <b>'+fmt0(assets)+'</b>'+(debt<0?' · Owed <b>'+fmt0(-debt)+'</b>':'')+'</div>'
@@ -2014,14 +2018,14 @@ function renderTxnList(){
    +'<div class="pager"><span class="mute pgs">'+(from+1)+'–'+(from+shown.length)+' of '+list.length+' · net '+fmt(total)+'</span>'+(pages>1?'<div class="pgc"><button class="btn ghost small" data-act="pgprev"'+(UI.page===0?' disabled':'')+' aria-label="Previous page">‹ Prev</button><span class="pgn">'+(UI.page+1)+' / '+pages+'</span><button class="btn ghost small" data-act="pgnext"'+(UI.page>=pages-1?' disabled':'')+' aria-label="Next page">Next ›</button></div>':'')+'</div>';
 }
 const isCD=a=>/certificate|\bcd\b/i.test(a.name||'');
-const rateLabel=a=>a.type==='credit'?'APR':'APY';
+const rateLabel=a=>a.type==='credit'||a.type==='loan'?'APR':'APY';
 function rateChip(a){
   if(a.rate==null) return '';
   const src=a.rateSrc==='manual'?'Entered by you':'From your statement'+(a.rateAt?' ('+a.rateAt+')':'');
   return '<span class="pill rt" title="'+esc(src)+'">'+(+a.rate).toFixed(2)+'% '+rateLabel(a)+'</span> ';
 }
 function yearlyInterest(a){
-  if(a.type==='credit'||a.type==='brokerage'||a.rate==null||!(a.rate>0)) return null;
+  if(a.type==='credit'||a.type==='loan'||a.type==='brokerage'||a.rate==null||!(a.rate>0)) return null;
   const b=a.sf&&S.balSf&&S.balSf[a.sf];return b&&b.v>0&&b.v*a.rate/100>=1?b.v*a.rate/100:null;
 }
 function accountsCardHTML(HL){
@@ -2191,7 +2195,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · last synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="row"><button class="btn" data-act="sfsync">Sync now</button><a class="btn ghost" href="https://bridge.simplefin.org" target="_blank" rel="noopener">Manage on SimpleFIN</a><button class="btn danger" data-act="sfdisconnect">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.31.3';
+const APP_VERSION='1.31.4';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -2684,7 +2688,7 @@ function healthCardHTML(h){
    +(n?'<ul class="hcl">'+h.issues.map(x=>'<li><span class="hcn"><b>'+esc(x.bank)+'</b>'+(x.n>1?' <span class="mute">· '+x.n+' accounts</span>':'')+'</span><span class="hchipx warn">'+esc(x.why)+'</span></li>').join('')+'</ul>'
      +'<div class="row hca"><a class="btn small" href="https://bridge.simplefin.org" target="_blank" rel="noopener">Fix at SimpleFIN ↗</a><button type="button" class="btn ghost small" data-act="sfsync">Sync now</button></div>':'')+'</div>';
 }
-const sfType=s=>{s=String(s).replace(/credit union/ig,'cu');return /saving|money market|\bcd\b|certificate/i.test(s)?'savings':/check|debit/i.test(s)?'checking':/credit|card|visa|mastercard|amex|freedom|sapphire/i.test(s)?'credit':/\b(ira|401k?|403b?|roth|brokerage|invest\w*|retire\w*|stock)\b/i.test(s)?'brokerage':'other';};
+const sfType=s=>{s=String(s).replace(/credit union/ig,'cu');return LOANRE.test(s)?'loan':/saving|money market|\bcd\b|certificate/i.test(s)?'savings':/check|debit/i.test(s)?'checking':/credit|card|visa|mastercard|amex|freedom|sapphire/i.test(s)?'credit':/\b(ira|401k?|403b?|roth|brokerage|invest\w*|retire\w*|stock)\b/i.test(s)?'brokerage':'other';};
 // A bank timestamp in seconds (milliseconds are tolerated). Anything that is not a real date between 1990 and a month from now is rejected.
 function sfDate(v){let ts=+v;if(!ts||!isFinite(ts))return null;if(ts>1e11)ts/=1000;const d=new Date(ts*1000);if(isNaN(d))return null;const y=d.getUTCFullYear();if(y<1990||ts>Date.now()/1000+30*86400)return null;return d.toISOString().slice(0,10);}
 function sfItems(j){
