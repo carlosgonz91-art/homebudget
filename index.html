@@ -206,6 +206,8 @@ label select,label input{display:block;margin-top:4px;color:var(--ink)}
 .tkp{text-align:right;display:flex;align-items:center;gap:8px}.tkp b{font-variant-numeric:tabular-nums;font-size:14.5px}
 .tkc{font-style:normal;font-weight:800;font-size:12.5px;min-width:68px;text-align:center;padding:5px 8px;border-radius:99px;font-variant-numeric:tabular-nums}
 .tkc.up{background:color-mix(in srgb,#10b981 18%,var(--card));color:color-mix(in srgb,#10b981 80%,var(--ink))}.tkc.dn{background:color-mix(in srgb,#e11d48 16%,var(--card));color:color-mix(in srgb,#e11d48 85%,var(--ink))}.tkc.fl{background:var(--track);color:var(--mute)}
+.tkpg{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;font-size:12.5px;color:var(--mute)}.tkpg .btn{min-width:40px}
+.lnb{margin:2px 0 16px}.lnb:last-child{margin-bottom:0}.lnh{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}.lnh b{font-size:16px}.lnx{margin-top:8px;line-height:1.6}.lnx b{color:var(--ink)}
 .tkh{margin:12px 0 2px;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
 .tkx{border:0;background:none;padding:0;font:inherit;font-size:12px;color:var(--mute);cursor:pointer;text-decoration:underline}
 .tksg{display:flex;flex-direction:column;gap:2px;margin-top:8px}.tksg button{display:flex;gap:10px;align-items:baseline;text-align:left;border:0;background:var(--soft);border-radius:10px;padding:8px 10px;font:inherit;color:var(--ink);cursor:pointer}.tksg button span{color:var(--mute);font-size:12px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -1089,7 +1091,7 @@ function auditCore(S0,today){
 // ==CORE END==
 
 // ---------- state & storage ----------
-const blank=()=>({watch:[],accounts:[],txns:[],rules:[],budgets:{},rollover:{},mappings:{},customCats:[],pendingTx:[],pendingAt:null,balSf:{},subs:{},catGroup:{},holdings:{},widgets:null,lastBackup:null,files:[],catV:0});
+const blank=()=>({balHist:{},watch:[],accounts:[],txns:[],rules:[],budgets:{},rollover:{},mappings:{},customCats:[],pendingTx:[],pendingAt:null,balSf:{},subs:{},catGroup:{},holdings:{},widgets:null,lastBackup:null,files:[],catV:0});
 // budgets are stored per category as {firstMonth: amount}; a month uses the latest entry at or before it
 function migrateBudgets(st){const b=st.budgets||{};for(const k of Object.keys(b)) if(typeof b[k]==='number') b[k]={'0000-00':b[k]};st.budgets=b;if(!st.rollover) st.rollover={};}
 // make an untrusted profile safe to use: right types, no half-made rows. Returns how many transactions were dropped.
@@ -1654,13 +1656,13 @@ function merchHTML(ym){
 const WID=[
   {id:'cat',t:'Spending by category',w:'half'},{id:'trend',t:'Last 6 months',w:'half'},{id:'flow',t:'Where the money went',w:'full'},
   {id:'cal',t:'Day by day',w:'half'},{id:'merch',t:'Biggest merchants',w:'half'},{id:'accts',t:'Accounts',w:'full'},{id:'inv',t:'Investments',w:'half'},
-  {id:'pace',t:'Spending pace',w:'half'},{id:'usual',t:'Compared with usual',w:'half'},{id:'big',t:'Biggest purchases',w:'half'},{id:'recur',t:'Recurring charges',w:'half'},{id:'nw',t:'Net worth',w:'half'},{id:'bank',t:'Bank connections',w:'half'},{id:'mix',t:'Investment mix',w:'half'},{id:'tick',t:'Market watch',w:'half'},{id:'bubble',t:'AI bubble meter',w:'half'},{id:'cds',t:'CD maturities',w:'half'}
+  {id:'pace',t:'Spending pace',w:'half'},{id:'usual',t:'Compared with usual',w:'half'},{id:'big',t:'Biggest purchases',w:'half'},{id:'recur',t:'Recurring charges',w:'half'},{id:'nw',t:'Net worth',w:'half'},{id:'bank',t:'Bank connections',w:'half'},{id:'mix',t:'Investment mix',w:'half'},{id:'loans',t:'Loans',w:'full'},{id:'tick',t:'Market watch',w:'half'},{id:'bubble',t:'AI bubble meter',w:'half'},{id:'cds',t:'CD maturities',w:'half'}
 ];
 function wState(){
   const all=WID.map(x=>x.id),W=S.widgets;
-  if(!W||!Array.isArray(W.order)) {const d=['cat','trend','flow','cal','merch','accts','cds'];return {order:d,hidden:all.filter(i=>!d.includes(i))};}
+  if(!W||!Array.isArray(W.order)) {const d=['cat','trend','flow','cal','merch','accts','loans','cds'];return {order:d,hidden:all.filter(i=>!d.includes(i))};}
   const order=W.order.filter(i=>all.includes(i)),hidden=(W.hidden||[]).filter(i=>all.includes(i)&&!order.includes(i));
-  all.forEach(i=>{if(!order.includes(i)&&!hidden.includes(i)){if(i==='cds') order.push(i);else hidden.push(i);}});
+  all.forEach(i=>{if(!order.includes(i)&&!hidden.includes(i)){if(i==='cds'||i==='loans') order.push(i);else hidden.push(i);}});
   return {order,hidden};
 }
 // one-time: put the CD widget on pages that already have a saved layout (it stays hidden when there are no CDs)
@@ -1759,13 +1761,14 @@ function tickHTML(){
   const dayV=qd.reduce((t,x)=>t+MK.q[x.s].d*x.sh,0),prevV=qd.reduce((t,x)=>t+MK.q[x.s].pc*x.sh,0);
   const mv=held.filter(x=>MK.q[x.s]).slice().sort((a,b)=>MK.q[b.s].dp-MK.q[a.s].dp);
   const tiles=qd.length?stiles([{k:'Today',v:(dayV<0?'−':'+')+fmtT(Math.abs(dayV)),s:pf(prevV>0?dayV/prevV*100:0),c:dayV<0?'#e11d48':'#10b981'},mv.length?{k:'Best',v:esc(mv[0].s),s:pf(MK.q[mv[0].s].dp),c:'#10b981'}:{k:'Best',v:'–',s:'',c:'#94a3b8'},mv.length>1?{k:'Weakest',v:esc(mv[mv.length-1].s),s:pf(MK.q[mv[mv.length-1].s].dp),c:MK.q[mv[mv.length-1].s].dp<0?'#e11d48':'#f59e0b'}:{k:'Tracking',v:String(held.length),s:'holding'+(held.length===1?'':'s'),c:'#6366f1'}]):'';
+  const PER=6,all=hs.map(x=>({s:x.s,sh:x.sh,v:x.v,w:false})).concat(watch.map(s=>({s,sh:0,v:0,w:true}))),pages=Math.max(1,Math.ceil(all.length/PER)),pgN=Math.max(0,Math.min(pages-1,UI.tkPg||0)),pg=all.slice(pgN*PER,(pgN+1)*PER);
   const upd=MK.upd?new Date(MK.upd).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}):'';
   const head='<div class="trh" style="margin:0 0 8px"><h2>Market watch</h2><div class="row" style="gap:8px;align-items:center"><div class="seg2" role="group" aria-label="Sort"><button type="button" data-act="tksort" data-m="val" class="'+(sortM?'':'on')+'">Value</button><button type="button" data-act="tksort" data-m="mov" class="'+(sortM?'on':'')+'">Movers</button></div><button type="button" class="wed tkre" data-act="tkrefresh" aria-label="Refresh prices" title="Refresh prices"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg></button></div></div>';
   const stat='<p class="sub" style="margin:0 0 8px">'+(MK.err==='key'?'<span style="color:var(--bad)">Finnhub rejected the key.</span> ':MK.err==='rate'?'Too many requests, retrying soon. ':'')+(MK.open===null?(MK.busy?'Loading prices…':''):(MK.open?'Market open':'Market closed · showing the last session'))+(upd?' · updated '+upd:'')+'</p>';
   const look='<div class="row tkl" style="gap:8px"><input type="text" id="tkIn" placeholder="Look up a ticker or company" autocomplete="off" autocapitalize="characters" spellcheck="false" style="flex:1;min-width:0"><button class="btn small" data-act="tkadd">Add</button></div>'
    +(MK.sug?'<div class="tksg">'+(MK.sug.length?MK.sug.map(x=>'<button type="button" data-act="tkpick" data-s="'+esc(x.s)+'"><b>'+esc(x.s)+'</b><span>'+esc(x.n)+'</span></button>').join(''):'<span class="sub">No matches.</span>')+'</div>':'');
-  return '<section class="card">'+head+stat+tiles+(hs.length?hs.map(x=>row(x.s,x.sh,x.v,false)).join(''):'<p class="mute" style="margin:6px 0">No stocks in your accounts yet. Add tickers below.</p>')
-   +(watch.length?'<div class="tkh">Watching</div>'+watch.map(s=>row(s,0,0,true)).join(''):'')+'<div style="margin-top:12px">'+look+'</div><p class="sub" style="margin:10px 0 0"><button type="button" class="tkx" data-act="fhclear">Change API key</button></p></section>';
+  return '<section class="card">'+head+stat+tiles+(all.length?pg.map((x,i)=>(x.w&&(i===0||!pg[i-1].w)?'<div class="tkh">Watching</div>':'')+row(x.s,x.sh,x.v,x.w)).join('')+(pages>1?'<div class="tkpg"><button type="button" class="btn ghost small" data-act="tkpage" data-d="-1" '+(pgN===0?'disabled':'')+' aria-label="Previous page">‹</button><span>'+(pgN*PER+1)+'–'+Math.min(all.length,(pgN+1)*PER)+' of '+all.length+'</span><button type="button" class="btn ghost small" data-act="tkpage" data-d="1" '+(pgN>=pages-1?'disabled':'')+' aria-label="Next page">›</button></div>':''):'<p class="mute" style="margin:6px 0">No stocks in your accounts yet. Add tickers below.</p>')
+   +'<div style="margin-top:12px">'+look+'</div><p class="sub" style="margin:10px 0 0"><button type="button" class="tkx" data-act="fhclear">Change API key</button></p></section>';
 }
 function bubbleCalc(){
   const met=metLoad(),pes=[],drops=[],dps=[];
@@ -1793,6 +1796,55 @@ function bubbleHTML(){
    +'<div style="text-align:center;margin-top:2px"><b style="font-size:18px">'+lv[0]+'</b><div class="sub" style="margin-top:2px">'+lv[1]+'</div></div>'
    +(c?'<div style="margin-top:12px">'+bar('Froth',c.froth,'median P/E '+Math.round(c.pe))+bar('Cracks',c.cracks,(c.drop*100).toFixed(0)+'% off highs')+bar('Jitters',c.jit,'today '+(c.mv<0?'−':'+')+Math.abs(c.mv).toFixed(1)+'%')+'</div>':'')
    +'<p class="sub" style="margin:10px 0 0;font-size:11.5px">Based on '+BUBBLE.join(', ')+'. Just for fun, not a prediction or advice.</p></section>';
+}
+// ---- loans: owed, payment, payoff, graph ----
+function loanInfo(a){
+  const b=a.sf&&S.balSf&&S.balSf[a.sf];if(!b) return null;
+  const owed=Math.abs(b.v),ts=S.txns.filter(t=>t.acct===a.id).sort((x,y)=>y.date<x.date?-1:y.date>x.date?1:0);
+  const pays=ts.filter(t=>t.amount>0&&!/interest|escrow/i.test(t.desc||''));
+  let pay=a.pay>0?a.pay:null,paySrc=pay?'you':'';
+  if(!pay&&pays.length){const L=pays.slice(0,6).map(t=>t.amount).sort((x,y)=>x-y);pay=L[Math.floor(L.length/2)];paySrc='detected';}
+  const rate=a.rate>0?a.rate:0,r=rate/1200;
+  let months=null,interest=null;
+  if(pay>0&&owed>0){
+    if(r>0){if(pay>owed*r+0.01){months=Math.ceil(-Math.log(1-r*owed/pay)/Math.log(1+r));interest=pay*months-owed;}}
+    else if(a.rate===0||a.rate==null){months=null;}
+  }
+  if(pay>0&&owed>0&&a.rate===0){months=Math.ceil(owed/pay);interest=0;}
+  // history (owed over time): walk the ledger backwards from today's balance
+  let hist=[];{let o=owed;hist.push([todayISO(),o]);ts.forEach(t=>{hist.push([t.date,o]);o=o+t.amount;});hist.push([ts.length?ts[ts.length-1].date:todayISO(),o]);}
+  hist=hist.reverse();
+  if(ts.length<2){const h=(S.balHist||{})[a.sf]||[];if(h.length>=2) hist=h.map(x=>[x[0],Math.abs(x[1])]);else hist=[];}
+  const proj=[];if(months&&r>=0){let o=owed;const step=Math.max(1,Math.ceil(months/60));for(let m=0;m<=months;m++){if(m%step===0||m===months) proj.push([m,Math.max(0,o)]);o=o*(1+r)-pay;}}
+  const last=pays[0]?pays[0].date:null;
+  return {a,owed,pay,paySrc,rate,months,interest,hist,proj,last,mInt:owed*r};
+}
+function loanChart(L){
+  const W=320,H=150,Lm=40,Rm=8,T=10,B=22,pw=W-Lm-Rm,ph=H-T-B,dN=s=>dayNum(s),t0=todayN();
+  const hist=L.hist.map(([d,v])=>[dN(d)-t0,v]),proj=L.proj.map(([m,v])=>[m*30.4,v]);
+  const xs=hist.map(p=>p[0]).concat(proj.map(p=>p[0]),[0]),x0=Math.min(...xs),x1=Math.max(...xs,x0+30),top=Math.max(1,...hist.map(p=>p[1]),...proj.map(p=>p[1]),L.owed)*1.05;
+  const X=d=>Lm+(d-x0)/(x1-x0)*pw,Y=v=>T+ph-v/top*ph,k=v=>v>=1e6?'$'+(v/1e6).toFixed(1)+'M':'$'+Math.round(v/1000)+'k';
+  const line=a=>a.map((p,i)=>(i?'L':'M')+X(p[0]).toFixed(1)+' '+Y(p[1]).toFixed(1)).join(' ');
+  let g='';for(let i=0;i<=3;i++){const v=top/3*i,y=Y(v);g+='<line x1="'+Lm+'" x2="'+(W-Rm)+'" y1="'+y+'" y2="'+y+'" stroke="var(--line)" stroke-dasharray="'+(i?'2 4':'0')+'"/><text x="'+(Lm-5)+'" y="'+(y+3.5)+'" text-anchor="end" font-size="9.5" style="fill:var(--mute)">'+k(v)+'</text>';}
+  const fmtD=d=>{const dt=new Date();dt.setDate(dt.getDate()+Math.round(d));return dt.toLocaleDateString('en-US',{month:'short',year:'2-digit'});};
+  const ticks=[(0-x0)/(x1-x0)<0.2?null:x0,0,x1].filter((v,i,a)=>v!==null&&a.indexOf(v)===i).map(d=>'<text x="'+X(d)+'" y="'+(H-6)+'" text-anchor="'+(d===x0?'start':d===x1&&d!==0?'end':'middle')+'" font-size="9.5" style="fill:var(--mute)">'+(d===0?'Today':fmtD(d))+'</text>').join('');
+  return '<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Loan balance over time" style="width:100%;max-width:620px;height:auto;display:block;margin:0 auto">'+g
+   +(hist.length>1?'<path d="'+line(hist)+' L'+X(hist[hist.length-1][0])+' '+Y(0)+' L'+X(hist[0][0])+' '+Y(0)+' Z" fill="#f97316" fill-opacity=".14"/><path d="'+line(hist)+'" fill="none" stroke="#f97316" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>':'')
+   +(proj.length>1?'<path d="'+line(proj)+'" fill="none" stroke="#6366f1" stroke-width="2.4" stroke-dasharray="5 4" stroke-linecap="round"/>':'')
+   +'<line x1="'+X(0)+'" x2="'+X(0)+'" y1="'+T+'" y2="'+(T+ph)+'" stroke="var(--brand)" stroke-opacity=".45" stroke-dasharray="3 3"/><circle cx="'+X(0)+'" cy="'+Y(L.owed)+'" r="4.5" fill="var(--card)" stroke="#f97316" stroke-width="2.4"/>'+ticks+'</svg>';
+}
+function loansHTML(){
+  const A=S.accounts.filter(a=>a.type==='loan'&&a.sf&&S.balSf&&S.balSf[a.sf]);if(!A.length) return '';
+  const body=A.map(a=>{
+    const L=loanInfo(a);if(!L) return '';
+    const payoff=L.months!=null?(()=>{const d=new Date();d.setMonth(d.getMonth()+L.months);return d.toLocaleDateString('en-US',{month:'short',year:'numeric'});})():null;
+    const yrs=L.months!=null?(L.months>=24?(L.months/12).toFixed(1).replace(/\.0$/,'')+' yrs left':L.months+' mo left'):(L.rate?'payment too low':'add rate + payment');
+    const tiles=stiles([{k:'Owed',v:fmtT(L.owed),s:L.rate?L.rate+'% APR':'rate not set',c:'#f97316'},{k:'Payment',v:L.pay?fmtT(L.pay):'–',s:L.pay?(L.paySrc==='you'?'per month':'per month · detected'):'not found',c:'#6366f1'},{k:'Paid off',v:payoff||'–',s:yrs,c:'#10b981'}]);
+    const extra=[];if(L.mInt>0&&L.pay) extra.push('Interest this month ≈ <b>'+fmt0(L.mInt)+'</b> · principal ≈ <b>'+fmt0(Math.max(0,L.pay-L.mInt))+'</b>');if(L.interest!=null&&L.interest>0) extra.push('Interest over the rest of the loan ≈ <b>'+fmt0(L.interest)+'</b>');if(L.last) extra.push('Last payment '+L.last);
+    const nm=esc(a.name.replace(/\s*••\d{4}$/,''));
+    return '<div class="lnb"><div class="lnh"><b>'+nm+'</b><span class="row" style="gap:6px"><button class="btn ghost small" data-act="rateacct" data-id="'+a.id+'">'+(a.rate>0?'Rate':'Set rate')+'</button><button class="btn ghost small" data-act="loanpay" data-id="'+a.id+'">'+(a.pay>0?'Payment':'Set payment')+'</button></span></div>'+tiles+(L.hist.length>1||L.proj.length>1?loanChart(L)+'<div class="legend"><span><i class="dot" style="background:#f97316"></i>Balance</span>'+(L.proj.length>1?'<span><i class="dot" style="background:#6366f1"></i>If you keep paying</span>':'')+'</div>':'<p class="sub" style="margin:4px 0">The graph fills in as your balance changes. Add the rate and payment to see the payoff curve.</p>')+(extra.length?'<div class="sub lnx">'+extra.join('<br>')+'</div>':'')+'</div>';
+  }).join('');
+  return wCard('Loans','',body);
 }
 // ---- CD maturities ----
 function cdList(){
@@ -1963,7 +2015,7 @@ function widgetsHTML(H,anim){
   };
   let h='<div id="wmain"></div>';
   if(ed){
-    const can=st.hidden.filter(i=>(i!=='inv'&&i!=='mix')||hasInv()||S.accounts.some(a=>a.type==='brokerage')).filter(i=>i!=='nw'||S.accounts.some(a=>a.sf&&S.balSf&&S.balSf[a.sf])).filter(i=>i!=='cds'||cdList().length);
+    const can=st.hidden.filter(i=>(i!=='inv'&&i!=='mix')||hasInv()||S.accounts.some(a=>a.type==='brokerage')).filter(i=>i!=='nw'||S.accounts.some(a=>a.sf&&S.balSf&&S.balSf[a.sf])).filter(i=>i!=='cds'||cdList().length).filter(i=>i!=='loans'||S.accounts.some(a=>a.type==='loan'));
     h+='<div class="wtop" id="wtop"><b>Edit widgets</b><span class="spacer"></span><button class="btn small ghost" data-act="wreset">Reset</button><button class="btn small" data-act="wdone">Done</button></div>'
      +'<section class="card wtray"><h2>Add a widget</h2>'+(can.length?'<div class="row" style="gap:8px;flex-wrap:wrap">'+can.map(i=>'<button class="btn ghost small" data-act="wadd" data-id="'+i+'">＋ '+esc(meta[i].t)+'</button>').join('')+'</div>':'<p class="mute" style="margin:0">Every widget is on the page.</p>')+'<p class="sub" style="margin:10px 0 0">Below: drag ⠿ to reorder, × to remove.</p></section>';
   }
@@ -2052,7 +2104,7 @@ function viewDash(){
     flow:d.spend>0?'<section class="card"><h2>Where the money went</h2><p class="sub" style="margin:-4px 0 8px">'+fmt0(d.spend)+' spent'+(d.income>0?' of '+fmt0(d.income)+' earned':'')+'</p>'+flowHTML(UI.month)+'</section>':'',
     cal:'<section class="card"><h2>Day by day</h2>'+calHTML(UI.month)+'</section>',
     merch:'<section class="card"><h2>Biggest merchants</h2>'+merchHTML(UI.month)+'</section>',
-    accts:accountsHTML(),inv:invWidgetHTML(),pace:paceHTML(UI.month),usual:usualHTML(UI.month),big:bigHTML(UI.month),recur:recurHTML(),nw:netWorthHTML(),bank:bankConnHTML(),mix:invMixHTML(),cds:cdWidgetHTML(),tick:tickHTML(),bubble:bubbleHTML()};
+    accts:accountsHTML(),inv:invWidgetHTML(),pace:paceHTML(UI.month),usual:usualHTML(UI.month),big:bigHTML(UI.month),recur:recurHTML(),nw:netWorthHTML(),bank:bankConnHTML(),mix:invMixHTML(),cds:cdWidgetHTML(),loans:loansHTML(),tick:tickHTML(),bubble:bubbleHTML()};
   h+=widgetsHTML(HW,anim);
   return h;
 }
@@ -2338,7 +2390,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · last synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="row"><button class="btn" data-act="sfsync">Sync now</button><a class="btn ghost" href="https://bridge.simplefin.org" target="_blank" rel="noopener">Manage on SimpleFIN</a><button class="btn danger" data-act="sfdisconnect">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.32.2';
+const APP_VERSION='1.33.0';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -2571,8 +2623,21 @@ function flowData(from,to){
   if(income-spent>0.005){addN('sav','Left over',2);L.push({source:'inc',target:'sav',value:r2(income-spent)});}
   return {nodes:[...nodes.values()],links:L.filter(l=>l.value>0),totals:{income:r2(income),spent:r2(spent),left:r2(income-spent)}};
 }
+// what you already chose for the same merchant: used when no rule matches
+let _LC=null;
+function learnedCat(desc,amount){
+  const now=Date.now();
+  if(!_LC||now-_LC.t>2000||_LC.n!==S.txns.length){
+    const by={};for(const t of S.txns){if(!t.cat||t.cat==='Uncategorized'||t.cat==='Transfer') continue;const mk=merchantKey(t.desc);if(mk.length<3) continue;const k=mk+(t.amount>0?'+':'-'),o=by[k]||(by[k]={});o[t.cat]=(o[t.cat]||0)+1;}
+    const m={};for(const k in by){let tot=0,tn=0,top=null;for(const c in by[k]){tot+=by[k][c];if(by[k][c]>tn){tn=by[k][c];top=c;}}if(tot>=2&&tn/tot>=0.75) m[k]=top;}
+    _LC={t:now,n:S.txns.length,m};
+  }
+  const mk=merchantKey(desc);return mk.length<3?null:(_LC.m[mk+(amount>0?'+':'-')]||null);
+}
+function learnUncat(){let n=0;for(const t of S.txns) if(t.cat==='Uncategorized'){const c=autoCat(t.desc,t.amount,t.acct);if(c!=='Uncategorized'){t.cat=c;n++;}}return n;}
 function autoCat(desc,amount,acctId){
   const A=S.accounts.find(a=>a.id===acctId);let c=categorize(desc,amount,S.rules);
+  if(c==='Uncategorized'||(c==='Income'&&amount>0)){const l=learnedCat(desc,amount);if(l) c=l;}
   if(A&&A.type==='brokerage'&&isInc(c)) c='Investing';
   return c;
 }
@@ -2893,6 +2958,7 @@ async function sfSync(){
     S.sfRaw=(j.accounts||[]).map(a=>{const o=Object.assign({},a);delete o.transactions;o.txCount=(a.transactions||[]).length;if(o.holdings){o.holdings=o.holdings.length;}return o;});
     S.holdings=S.holdings||{};{let any=false;(j.accounts||[]).forEach(a=>{if(Array.isArray(a.holdings)){S.holdings[a.id]=a.holdings.map(normHolding).filter(Boolean);any=true;}});if(any)S.holdingsAt=Date.now();}
     S.balSf=S.balSf||{};fixSfNames();
+    S.balHist=S.balHist||{};(j.accounts||[]).forEach(a=>{const v=parseFloat(a.balance);if(isNaN(v)) return;const h=S.balHist[a.id]=S.balHist[a.id]||[],d=todayISO(),l=h[h.length-1];if(!l||l[0]!==d){if(!l||l[1]!==v) h.push([d,v]);}else l[1]=v;if(h.length>500) h.splice(0,h.length-500);});
     (j.accounts||[]).forEach(a=>{const v=parseFloat(a.balance);if(!isNaN(v)){const at=+a['balance-date']||0;S.balSf[a.id]={v,at:at?(at>1e11?at:at*1000):Date.now()};}});
     S.sfErrs=[...(j.errlist||[]).map(e=>({code:e.code,msg:e.msg||e.code,conn:e.conn_id||null,acct:e.account_id||null})),...(j.errors||[]).map(e=>typeof e==='string'?{msg:e}:{code:e.code,msg:e.msg||e.code,conn:e.conn_id||null,acct:e.account_id||null})].filter(e=>e.msg);
     S.sfOwn=S.sfOwn||{};S.sfOrgOf=S.sfOrgOf||{};(j.accounts||[]).forEach(a=>{if(a.conn_id)S.sfOwn[a.id]=a.conn_id;const o=a.org&&(a.org.name||a.org.domain);if(o)S.sfOrgOf[a.id]=String(o);});
@@ -2994,6 +3060,8 @@ const ACT={
   addacct(){const n=$('#newName').value.trim();if(!n){toast('Give the account a name');return;}const a={id:uid(),name:n,type:$('#newType').value};S.accounts.push(a);UI.impAcct=a.id;save();render();},
   vaultacct(el){const a=S.accounts.find(x=>x.id===el.dataset.id);if(!a)return;
     dialog({msg:'Money held in vaults or pockets inside "'+a.name+'" that the bank does not report. Enter today\'s total (0 to clear). The app then adjusts it as you move money in and out of vaults.',input:true,value:a.vaults?String(vaultTotal(a)):'',placeholder:'e.g. 72744.62',ok:'Save',onOk:v=>{const n=parseFloat(String(v).replace(/[$,\s]/g,''));if(isNaN(n)||n===0){delete a.vaults;}else a.vaults={v:Math.round(n*100)/100,d:new Date().toISOString().slice(0,10)};save();render();toast(a.vaults?'Vaults saved.':'Vaults cleared.');}});},
+  loanpay(el){const a=S.accounts.find(x=>x.id===el.dataset.id);if(!a)return;
+    dialog({msg:'Monthly payment for "'+a.name+'". Leave it empty to use the payment found in your transactions.',input:true,value:a.pay>0?String(a.pay):'',placeholder:'e.g. 1850',ok:'Save',onOk:v=>{v=String(v||'').replace(/[$,]/g,'').trim();if(!v){delete a.pay;}else{const n=parseFloat(v);if(!isFinite(n)||n<=0||n>1e6){toast('Enter an amount.');return;}a.pay=n;}save();render();toast('Payment saved');}});},
   rateacct(el){const a=S.accounts.find(x=>x.id===el.dataset.id);if(!a)return;
     dialog({msg:'Interest rate for "'+a.name+'" ('+rateLabel(a)+', as a percent, like 3.9). Leave it empty to clear.',input:true,value:a.rate==null?'':String(a.rate),placeholder:'e.g. 3.9',ok:'Save',onOk:v=>{
       v=String(v||'').replace('%','').trim();
@@ -3024,7 +3092,8 @@ const ACT={
   fhsave:async()=>{const k=(document.getElementById('fhKey')||{}).value;const key=String(k||'').trim();if(!key) return;fhSet(key);MK.err='';MK.msg='';try{const q=await fhGet('/quote?symbol=AAPL');if(!(q&&q.c>0)) throw new Error('bad');MK.at={};ensureQuotes(true);toast('Key saved');}catch(e){fhSet('');MK.msg=MK.err==='rate'?'Finnhub says too many requests. Try again in a minute.':'That key did not work. Check it and try again.';}marketRefresh();},
   fhclear(){fhSet('');MK.q={};MK.at={};MK.err='';MK.msg='';MK.open=null;marketRefresh();},
   tkrefresh(){ensureQuotes(true);marketRefresh();},
-  tksort(el){UI.tkSort=el.dataset.m==='mov'?'mov':'val';marketRefresh();},
+  tksort(el){UI.tkSort=el.dataset.m==='mov'?'mov':'val';UI.tkPg=0;marketRefresh();},
+  tkpage(el){UI.tkPg=Math.max(0,(UI.tkPg||0)+(+el.dataset.d));marketRefresh();},
   tkdel(el){S.watch=(S.watch||[]).filter(x=>x!==el.dataset.s);save();marketRefresh();},
   tkpick(el){const s=el.dataset.s;MK.sug=null;if(!(S.watch||[]).includes(s)&&!tickHeld().some(x=>x.s===s)){S.watch=(S.watch||[]).concat([s]);save();}ensureQuotes(true);marketRefresh();},
   tkadd:async()=>{const el=document.getElementById('tkIn'),raw=String((el||{}).value||'').trim();if(!raw) return;
@@ -3071,7 +3140,7 @@ const ACT={
   pgprev(){UI.page=Math.max(0,(UI.page||0)-1);renderTxnList();window.scrollTo(0,0);},
   pgnext(){UI.page=(UI.page||0)+1;renderTxnList();window.scrollTo(0,0);},
   delrule(el){S.rules.splice(+el.dataset.i,1);save();render();},
-  reapply(){let n=0;for(const t of S.txns) if(t.cat==='Uncategorized'){const c=categorize(t.desc,t.amount,S.rules);if(c!=='Uncategorized'){t.cat=c;n++;}}save();render();toast(n+' updated');},
+  reapply(){const n=learnUncat();save();render();toast(n+' updated');},
   rfhome(){UI.tab='dash';render();},
   async backup(){
     const ok=await saveFile(profileName(),await profileText(),'application/json');
@@ -3125,7 +3194,7 @@ const ACT={
     dlog(P.sync?'simplefin':'import','Saved',{newTransactions:nNew,duplicatesSkipped:nDup,accountsCreated:nAcct,originalsKept:nFiles,totalTransactions:S.txns.length});
     try{const F=auditCore(S,todayISO()),bad=F.filter(f=>f.lvl==='bad'),dp=stmtSyncPairs(S).length;dlog('audit','Check after '+(P.sync?'sync':'import'),{problems:bad.map(f=>({title:f.title,details:(f.items||[]).slice(0,6)})),toCheck:F.filter(f=>f.lvl==='warn').map(f=>f.title),duplicatesBetweenSyncAndStatements:dp},bad.length||dp?'error':'info');}catch(e){dlog('audit','Check failed',errInfo(e),'error');}
     if(P.sync){UI._an=null;UI._posAnim=true;UI._fx=true;UI._okAt=Date.now();}
-    UI.pdf=null;UI.month=latestMonth();UI.tab='dash';save();render();
+    UI.pdf=null;UI.month=latestMonth();UI.tab='dash';learnUncat();save();render();
     const u=S.txns.filter(t=>t.cat==='Uncategorized').length;
     toast((nNew?(P.sync?'Synced ':'Imported ')+nNew:(P.sync?'Already up to date':'Saved'))+(nAcct?' · '+nAcct+' account'+(nAcct>1?'s':'')+' created':'')+(nFiles?' · '+nFiles+' original'+(nFiles>1?'s':'')+' kept':'')+(nDup&&nNew?' · '+nDup+' duplicates skipped':'')+(u?' · '+u+' to review':''));
   },
