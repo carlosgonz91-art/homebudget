@@ -59,6 +59,7 @@ h1{font-size:28px;font-weight:800;letter-spacing:-.03em;margin:2px 0 12px}h2{fon
 .hn{font-size:42px;font-weight:800;letter-spacing:-.035em;line-height:1.1;margin:4px 0 16px;font-variant-numeric:tabular-nums;position:relative}
 .hrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;position:relative}
 .hchip.hgo{cursor:pointer;transition:background .15s,transform .1s}.hchip.hgo:hover{background:rgba(255,255,255,.24)}.hchip.hgo:active{transform:scale(.98)}.hchip.hgo:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.fxrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .fchip{border:0;font:inherit;font-size:13px;font-weight:700;cursor:pointer;color:var(--brand);background:color-mix(in srgb,var(--brand) 12%,var(--card));border-radius:999px;padding:4px 12px}
 .hchip{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.18);border-radius:16px;padding:10px 12px;min-width:0;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
 .hchip span{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;opacity:.95}
@@ -132,12 +133,13 @@ label select,label input{display:block;margin-top:4px;color:var(--ink)}
 .sk .rb,.sk .nd{transition:fill-opacity .2s,opacity .2s}.sk [data-go],.sk [data-note]{cursor:pointer}
 .skn[hidden]{display:none}
 .skn{display:flex;gap:10px;align-items:flex-start;background:color-mix(in srgb,var(--brand) 10%,var(--card));border:1px solid color-mix(in srgb,var(--brand) 30%,var(--line));border-radius:14px;padding:10px 12px;margin:0 0 10px;font-size:13.5px;line-height:1.45;font-weight:550;animation:fadeup .25s ease both}
-.skn span{flex:1}.skn button{border:0;background:transparent;color:var(--mute);font-size:20px;line-height:1;cursor:pointer;padding:0 2px}
+.skn span{flex:1}.skn .skgo{font-size:13.5px;font-weight:800;color:var(--brand);white-space:nowrap;padding:2px 4px;align-self:center}.skn button[hidden]{display:none}.skn button{border:0;background:transparent;color:var(--mute);font-size:20px;line-height:1;cursor:pointer;padding:0 2px}
 .sk svg[data-f] .rb:not(.f):not(.sr){fill-opacity:.07}.sk svg[data-g] .rb:not(.f){fill-opacity:.07}.sk svg[data-g] .nd:not(.f),.sk svg[data-g] .lb:not(.f){opacity:.35}.sk svg[data-f] .nd:not(.f),.sk svg[data-f] .lb:not(.f){opacity:.35}.sk .rb.f{fill-opacity:.7}
 .cal{max-width:440px}.cal .cw,.cal .cg{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}.cal .cw span{text-align:center;font-size:10.5px;font-weight:700;color:var(--mute)}
 .cal .cg{margin-top:5px}.cc,.ce{aspect-ratio:1;border-radius:10px}.cc{border:0;background:var(--soft);color:var(--mute);font:inherit;font-size:11.5px;font-weight:650;cursor:pointer;display:grid;place-items:center;padding:0;transition:transform .12s}
 .cc:hover{transform:scale(1.12);z-index:1}.cc.fut{opacity:.55}.cc.today{outline:2px solid var(--brand);outline-offset:1px}
-.cc.sel{box-shadow:0 0 0 2px var(--card),0 0 0 4px var(--ink)}.cdh{margin:8px 0 0}.cdl{margin-top:12px;border-top:1px solid var(--line);padding-top:12px;animation:posin .3s cubic-bezier(.2,.8,.2,1) both}.cdl .tx{padding:9px 2px}.bx2{border:0;background:none;color:var(--mute);font:inherit;font-size:20px;line-height:1;width:30px;height:30px;border-radius:50%;cursor:pointer;margin-left:4px}.bx2:hover{background:var(--track);color:var(--ink)}
+.cc.sel{box-shadow:0 0 0 2px var(--card),0 0 0 4px var(--ink)}.cdh{margin:8px 0 0}.cdl{margin-top:12px;border-top:1px solid var(--line);padding-top:12px;animation:posin .3s cubic-bezier(.2,.8,.2,1) both}.cdl .tx{padding:9px 2px}
+.cdh{display:flex;align-items:flex-start;gap:10px;margin:0 0 6px}.cdh>div{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.cdh b{font-size:16px}.cdh .bx2{flex:none;margin:0}.bx2{border:0;background:none;color:var(--mute);font:inherit;font-size:20px;line-height:1;width:30px;height:30px;border-radius:50%;cursor:pointer;margin-left:4px}.bx2:hover{background:var(--track);color:var(--ink)}
 .cinfo{margin-top:12px;font-size:12.5px;font-weight:600;color:var(--mute);min-height:18px}
 .mer{display:grid;gap:14px;grid-template-columns:minmax(0,1fr)}.mer>*,.mr>*{min-width:0}.mr{display:flex;gap:12px;align-items:flex-start}.mrk{width:26px;height:26px;border-radius:9px;display:grid;place-items:center;font-size:12px;font-weight:800;flex:none}
 .mrb{flex:1;min-width:0}.mrt{display:flex;justify-content:space-between;gap:10px;font-size:14px;margin-bottom:6px}.mrt .n{font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}.mrt b{font-variant-numeric:tabular-nums}
@@ -1373,6 +1375,90 @@ function trendHTML(td,cur){
    +'<div class="legend"><span><i class="dot" style="background:var(--good)"></i>Income</span><span><i class="dot" style="background:var(--bad)"></i>Spending</span></div>';
 }
 // Where the month's money went: one ribbon per category, as thick as what you spent there.
+// ---- picture of "Where the money went": large, labelled, with a detail table (saved as PNG) ----
+function flowExportSVG(ym){
+  const d=md(ym),all=Object.entries(d.byCat).filter(e=>e[1]>0.005).sort((a,b)=>b[1]-a[1]);
+  if(!all.length) return null;
+  const spent=all.reduce((a,e)=>a+e[1],0),income=d.income,left=income-spent,base=income>0.005?income:spent,baseWord=income>0.005?'income':'spending';
+  const pdt=new Date(+ym.slice(0,4),+ym.slice(5)-2,1),py=pdt.getFullYear()+'-'+String(pdt.getMonth()+1).padStart(2,'0'),pd=md(py),hasPrev=pd.spend>0.005;
+  const cnt={};let ntx=0;for(const t of S.txns){if(t.date.slice(0,7)!==ym||EXCLUDED.includes(t.cat)||isInc(t.cat)) continue;cnt[t.cat]=(cnt[t.cat]||0)+1;ntx++;}
+  const TOP=12,top=all.slice(0,TOP),rest=all.slice(TOP),restV=rest.reduce((a,e)=>a+e[1],0);
+  const items=top.map(([c,v])=>({c,v,col:catColor(c)}));
+  if(restV>0.005) items.push({c:'Everything else',v:restV,col:'#a1a1aa'});
+  if(left>0.005) items.push({c:'Left over',v:left,col:'#22c55e'});
+  const inc={};for(const t of S.txns){if(t.date.slice(0,7)!==ym||!isInc(t.cat)) continue;const k=t.cat==='Interest'?'Interest':incomeSource(t);inc[k]=(inc[k]||0)+t.amount;}
+  let src=Object.entries(inc).filter(e=>e[1]>0.005).sort((a,b)=>b[1]-a[1]).map(([n,v],i)=>({n,v,col:['#10b981','#14b8a6','#22c55e','#84cc16','#06b6d4'][i%5]}));
+  if(src.length>5){const r=src.slice(4).reduce((a,x)=>a+x.v,0);src=src.slice(0,4).concat([{n:'Other income',v:r,col:'#06b6d4'}]);}
+  if(-left>0.005) src.push({n:'Savings & other',v:-left,col:'#94a3b8'});
+  const W=1400,M=48,F="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
+  const T=(x,y,s,o)=>{o=o||{};return '<text x="'+x+'" y="'+y+'" font-size="'+(o.s||16)+'" font-weight="'+(o.w||400)+'" fill="'+(o.f||'#1f2433')+'" text-anchor="'+(o.a||'start')+'">'+esc(s)+'</text>';};
+  const cut=(s,n)=>s.length>n?s.slice(0,n-1)+'…':s;
+  const pct=v=>(base>0?v/base*100:0);const pf=v=>(v>=10?Math.round(v):(+v.toFixed(1)))+'%';
+  let o='';
+  // header
+  o+='<defs><linearGradient id="hg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4f46e5"/><stop offset="1" stop-color="#7c3aed"/></linearGradient></defs>';
+  o+='<rect width="'+W+'" height="132" fill="url(#hg)"/>'+T(M,62,'Where the money went',{s:40,w:800,f:'#fff'})+T(M,100,monthLabel(ym)+' · '+ntx+' transaction'+(ntx===1?'':'s'),{s:23,f:'#e0e7ff'})
+   +T(W-M,60,'HomeBudget',{s:26,w:800,f:'#fff',a:'end'})+T(W-M,100,'Made '+new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}),{s:16,f:'#c7d2fe',a:'end'});
+  // stat tiles
+  const tw=(W-2*M-3*16)/4,ty=156,th=98;
+  const chg=hasPrev?(spent-pd.spend)/pd.spend*100:null;
+  const tiles=[
+    {k:'INCOME',v:fmt0(income),s:src.filter(x=>x.n!=='Savings & other').length+' source'+(src.filter(x=>x.n!=='Savings & other').length===1?'':'s'),c:'#10b981',bg:'#ecfdf5'},
+    {k:'SPENT',v:fmt0(spent),s:income>0.005?pf(spent/income*100)+' of income':'no income this month',c:'#ef4444',bg:'#fef2f2'},
+    left>=0?{k:'LEFT OVER',v:fmt0(left),s:income>0.005?pf(left/income*100)+' of income kept':'',c:'#22c55e',bg:'#f0fdf4'}:{k:'OVERSPENT',v:fmt0(-left),s:'spent more than earned',c:'#f59e0b',bg:'#fffbeb'},
+    {k:'VS LAST MONTH',v:chg===null?'—':(chg>0?'+':chg<0?'−':'')+Math.round(Math.abs(chg))+'%',s:chg===null?'no earlier month to compare':'spending was '+fmt0(pd.spend)+' in '+monthLabel(py).split(' ')[0],c:'#6366f1',bg:'#eef2ff'}];
+  tiles.forEach((t,i)=>{const x=M+i*(tw+16);o+='<rect x="'+x+'" y="'+ty+'" width="'+tw+'" height="'+th+'" rx="16" fill="'+t.bg+'" stroke="'+t.c+'" stroke-opacity=".35"/>'
+    +T(x+18,ty+28,t.k,{s:13,w:800,f:t.c})+T(x+18,ty+66,t.v,{s:34,w:800})+T(x+18,ty+88,t.s,{s:14,f:'#5b6275'});});
+  // sankey
+  let y0=300;o+=T(M,y0,'Money in → money out',{s:22,w:800})+T(M,y0+24,'Each band is as tall as its dollars. Percentages are of '+baseWord+'.',{s:14,f:'#5b6275'});
+  y0+=48;
+  const n=items.length,total=items.reduce((a,x)=>a+x.v,0),gap=8,minH=36,minS=46,H0=Math.max(380,n*46),sc=(H0-(n-1)*gap)/total;
+  items.forEach(x=>x.h=Math.max(minH,x.v*sc));src.forEach(x=>x.h=Math.max(minS,x.v*sc));
+  const hC=items.reduce((a,x)=>a+x.h,0)+(n-1)*gap,hS=src.reduce((a,x)=>a+x.h,0)+Math.max(0,src.length-1)*gap,H=Math.max(hC,hS,total*sc),Lh=Math.min(H,total*sc),py0=(H-Lh)/2;
+  const sx=300,sw=14,px=690,pw=14,cx=1010,cw=14,m1=(sx+sw+px)/2,m2=(px+pw+cx)/2;
+  let rib='',nodes='',lab='';
+  let cs=(H-hS)/2,cp=py0;
+  src.forEach(x=>{const a=cs,b=cs+x.h,c=cp,e=cp+x.v*sc;cs=b+gap;cp=e;
+    rib+='<path d="M'+(sx+sw)+','+(y0+a).toFixed(1)+' C'+m1+','+(y0+a).toFixed(1)+' '+m1+','+(y0+c).toFixed(1)+' '+px+','+(y0+c).toFixed(1)+' L'+px+','+(y0+e).toFixed(1)+' C'+m1+','+(y0+e).toFixed(1)+' '+m1+','+(y0+b).toFixed(1)+' '+(sx+sw)+','+(y0+b).toFixed(1)+' Z" fill="'+x.col+'" fill-opacity=".30"/>';
+    nodes+='<rect x="'+sx+'" y="'+(y0+a).toFixed(1)+'" width="'+sw+'" height="'+x.h.toFixed(1)+'" rx="5" fill="'+x.col+'"/>';
+    const my=y0+a+x.h/2;lab+=T(sx-14,my-3,cut(x.n,26),{s:17,w:700,a:'end'})+T(sx-14,my+16,fmt0(x.v)+' · '+pf(pct(x.v)),{s:15,f:'#5b6275',a:'end'});});
+  let cc=0;cp=py0;
+  items.forEach(x=>{const a=cp,b=cp+x.v*sc,c=cc,e=cc+x.h;cp=b;cc=e+gap;
+    rib+='<path d="M'+(px+pw)+','+(y0+a).toFixed(1)+' C'+m2+','+(y0+a).toFixed(1)+' '+m2+','+(y0+c).toFixed(1)+' '+cx+','+(y0+c).toFixed(1)+' L'+cx+','+(y0+e).toFixed(1)+' C'+m2+','+(y0+e).toFixed(1)+' '+m2+','+(y0+b).toFixed(1)+' '+(px+pw)+','+(y0+b).toFixed(1)+' Z" fill="'+x.col+'" fill-opacity=".30"/>';
+    nodes+='<rect x="'+cx+'" y="'+(y0+c).toFixed(1)+'" width="'+cw+'" height="'+x.h.toFixed(1)+'" rx="5" fill="'+x.col+'"/>';
+    const my=y0+c+x.h/2;lab+=T(cx+cw+14,my-3,cut(x.c,26),{s:17,w:700})+T(cx+cw+14,my+16,fmt0(x.v)+' · '+pf(pct(x.v))+' of '+baseWord,{s:15,f:'#5b6275'});});
+  o+=rib+'<rect x="'+px+'" y="'+(y0+py0).toFixed(1)+'" width="'+pw+'" height="'+Lh.toFixed(1)+'" rx="5" fill="#1f2433" fill-opacity=".85"/>'+nodes+lab
+   +T(px+pw/2,y0+py0-12,fmt0(total)+' total',{s:15,w:700,a:'middle',f:'#5b6275'});
+  let y=y0+H+46;
+  // table
+  o+=T(M,y,'Category details',{s:22,w:800});y+=22;
+  const cols={nm:M+36,sp:560,ps:720,pi:880,tx:1010,vs:W-M};
+  const hdr=(x,s,a)=>T(x,y+22,s,{s:13,w:800,f:'#5b6275',a:a||'start'});
+  o+='<rect x="'+M+'" y="'+y+'" width="'+(W-2*M)+'" height="34" rx="8" fill="#f1f2f8"/>'+hdr(cols.nm,'CATEGORY')+hdr(cols.sp,'SPENT','end')+hdr(cols.ps,'% OF SPENDING','end')+hdr(cols.pi,income>0.005?'% OF INCOME':'','end')+hdr(cols.tx,'TRANSACTIONS','end')+hdr(cols.vs,'VS LAST MONTH','end');
+  y+=40;const RH=34,LIM=20,showRows=all.slice(0,LIM),moreRows=all.slice(LIM);
+  const rowsAll=showRows.map(([c,v])=>({c,v,n:cnt[c]||0,pv:pd.byCat[c]||0,col:catColor(c)}));
+  if(moreRows.length) rowsAll.push({c:moreRows.length+' smaller categories',v:moreRows.reduce((a,e)=>a+e[1],0),n:moreRows.reduce((a,e)=>a+(cnt[e[0]]||0),0),pv:moreRows.reduce((a,e)=>a+(pd.byCat[e[0]]||0),0),col:'#a1a1aa'});
+  rowsAll.forEach((r,i)=>{
+    if(i%2===0) o+='<rect x="'+M+'" y="'+(y-4)+'" width="'+(W-2*M)+'" height="'+RH+'" rx="8" fill="#f8f9fc"/>';
+    const dlt=r.v-r.pv,vs=!hasPrev?'':(r.pv<0.005?'new':Math.abs(dlt)<0.5?'no change':(dlt>=0?'+':'−')+fmt0(Math.abs(dlt))+' ('+(dlt>=0?'+':'−')+Math.round(Math.abs(dlt)/r.pv*100)+'%)');
+    o+='<circle cx="'+(M+16)+'" cy="'+(y+13)+'" r="7" fill="'+r.col+'"/>'+T(cols.nm,y+19,cut(r.c,34),{s:16,w:600})+T(cols.sp,y+19,fmt(r.v),{s:16,w:700,a:'end'})+T(cols.ps,y+19,pf(r.v/spent*100),{s:16,a:'end'})+(income>0.005?T(cols.pi,y+19,pf(r.v/income*100),{s:16,a:'end'}):'')+T(cols.tx,y+19,String(r.n),{s:16,a:'end'})
+     +T(cols.vs,y+19,vs,{s:15,w:600,a:'end',f:(vs==='new'||vs==='no change')?'#6366f1':(vs.startsWith('+')?'#dc2626':'#059669')});
+    y+=RH;});
+  o+='<line x1="'+M+'" x2="'+(W-M)+'" y1="'+(y+2)+'" y2="'+(y+2)+'" stroke="#d9dbe8"/>'+T(cols.nm,y+28,'Total spent',{s:17,w:800})+T(cols.sp,y+28,fmt(spent),{s:17,w:800,a:'end'})+T(cols.ps,y+28,'100%',{s:16,w:700,a:'end'})+(income>0.005?T(cols.pi,y+28,pf(spent/income*100),{s:16,w:700,a:'end'}):'')+T(cols.tx,y+28,String(ntx),{s:16,w:700,a:'end'});
+  y+=62;
+  o+=T(M,y,'Transfers and investing are not counted as spending. Interest counts as income. Color of each band matches its category.',{s:13,f:'#8a90a6'});
+  y+=34;
+  return {svg:'<svg xmlns="http://www.w3.org/2000/svg" width="'+W+'" height="'+y+'" viewBox="0 0 '+W+' '+y+'" font-family="'+F+'"><rect width="'+W+'" height="'+y+'" fill="#ffffff"/>'+o+'</svg>',w:W,h:y};
+}
+async function flowPng(ym){
+  const x=flowExportSVG(ym);if(!x) return null;
+  const url=URL.createObjectURL(new Blob([x.svg],{type:'image/svg+xml;charset=utf-8'}));
+  try{
+    const img=new Image();await new Promise((ok,no)=>{img.onload=ok;img.onerror=()=>no(new Error('image'));img.src=url;});
+    const k=2,c=document.createElement('canvas');c.width=x.w*k;c.height=x.h*k;const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);g.drawImage(img,0,0,c.width,c.height);
+    return await new Promise(r=>c.toBlob(r,'image/png'));
+  }finally{URL.revokeObjectURL(url);}
+}
 function flowHTML(ym){
   const d=md(ym),cats=Object.entries(d.byCat).filter(e=>e[1]>0.005).sort((a,b)=>b[1]-a[1]);
   if(!cats.length) return '';
@@ -1392,8 +1478,9 @@ function flowHTML(ym){
   const sx=mob?72:92,sw=10,px=mob?132:190,pw=10,cx=mob?206:312,cw=10,m1=(sx+sw+px)/2,m2=(px+pw+cx)/2;
   let rib='',nodes='',lab='',srib='',snodes='',slab='',hits='';
   const NOGO=['Left over','Everything else'],NOTE={'Left over':'Income not spent this month.','Everything else':'Smaller categories, grouped together.'},
-    go=x=>NOGO.includes(x.c)?' data-note="'+esc(NOTE[x.c])+'"':' data-go="'+esc(x.c)+'"',
-    goS=x=>x.n==='Savings & other'?' data-note="'+esc('Not a transaction. Spending exceeded income received this month by '+fmt0(x.v)+'. The difference was covered by savings or by income from earlier months.')+'"':' data-go="Income"';
+    bse=d.income>0.005?d.income:spent,bw=d.income>0.005?'income':'spending',pc=v=>{const q=bse>0?v/bse*100:0;return (q>=10?Math.round(q):(+q.toFixed(1)))+'% of '+bw;},
+    go=x=>NOGO.includes(x.c)?' data-note="'+esc(x.c+' · '+fmt0(x.v)+' · '+pc(x.v)+'. '+NOTE[x.c])+'"':' data-go="'+esc(x.c)+'" data-note="'+esc(x.c+' · '+fmt0(x.v)+' · '+pc(x.v))+'"',
+    goS=x=>x.n==='Savings & other'?' data-note="'+esc('Not a transaction. Spending exceeded income received this month by '+fmt0(x.v)+'. The difference was covered by savings or by income from earlier months.')+'"':' data-go="Income" data-note="'+esc(x.n+' · '+fmt0(x.v)+' · '+pc(x.v))+'"';
   // sources -> pool
   let cs=(H-hS)/2,cp=py0;
   src.forEach((x,i)=>{
@@ -1412,8 +1499,9 @@ function flowHTML(ym){
     hits+='<rect class="ht" data-sk="'+i+'"'+go(x)+' x="'+cx+'" y="'+(c-gap/2).toFixed(1)+'" width="'+(W-cx)+'" height="'+(x.h+gap).toFixed(1)+'" fill="transparent"/>';
     lab+='<text class="lb" data-sk="'+i+'"'+go(x)+' x="'+(cx+cw+9)+'" y="'+(c+x.h/2+4).toFixed(1)+'" font-size="'+FS+'"><tspan font-weight="650" style="fill:var(--ink)">'+esc(x.c.length>LC?x.c.slice(0,LC-1)+'…':x.c)+'</tspan><tspan x="'+(W-2)+'" text-anchor="end" style="fill:var(--mute)">'+fmt0(x.v)+'</tspan></text>';
   });
-  return '<div class="sk"><div class="skn" hidden><span></span><button type="button" aria-label="Close">×</button></div><svg viewBox="-2 -4 '+(W+4)+' '+(H+8)+'" role="img" aria-label="Where this month\'s income came from and where it went">'
-   +srib+rib+'<rect x="'+px+'" y="'+py0.toFixed(1)+'" width="'+pw+'" height="'+Lh.toFixed(1)+'" rx="4" style="fill:var(--ink)" fill-opacity=".85"/>'+snodes+nodes+slab+lab+hits+'</svg></div>';
+  return '<div class="sk"><div class="skn" hidden><span></span><button type="button" class="skgo" data-act="skgo" hidden>See transactions ›</button><button type="button" class="skx" aria-label="Close">×</button></div><svg viewBox="-2 -4 '+(W+4)+' '+(H+8)+'" role="img" aria-label="Where this month\'s income came from and where it went">'
+   +srib+rib+'<rect x="'+px+'" y="'+py0.toFixed(1)+'" width="'+pw+'" height="'+Lh.toFixed(1)+'" rx="4" style="fill:var(--ink)" fill-opacity=".85"/>'+snodes+nodes+slab+lab+hits+'</svg></div>'
+   +'<div class="fxrow"><button type="button" class="btn ghost small" data-act="flowsave" data-ym="'+ym+'">Save picture</button>'+(navigator.share?'<button type="button" class="btn ghost small" data-act="flowshare" data-ym="'+ym+'">Share</button>':'')+'</div>';
 }
 function calHTML(ym){
   const days=dailyData(ym),n=days.length,first=new Date(+ym.slice(0,4),+ym.slice(5)-1,1).getDay(),today=new Date().toISOString().slice(0,10);
@@ -1429,7 +1517,7 @@ function calHTML(ym){
 function dayTxHTML(dt){
   const L=S.txns.filter(t=>t.date===dt&&!EXCLUDED.includes(t.cat)&&!isInc(t.cat)).sort((a,b)=>a.amount-b.amount);
   const wd=new Date(dt+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'}),net=-L.reduce((t,x)=>t+x.amount,0);
-  return '<div class="cdl"><div class="row" style="align-items:center;margin:0 0 4px"><b>'+esc(wd)+'</b><span class="spacer"></span><span class="sub">'+(L.length?fmt(net)+' · '+L.length+' transaction'+(L.length>1?'s':''):'')+'</span><button type="button" class="bx2" data-act="calday" data-d="'+dt+'" aria-label="Close">×</button></div>'
+  return '<div class="cdl"><div class="cdh"><div><b>'+esc(wd)+'</b><span class="sub">'+(L.length?fmt(net)+' · '+L.length+' transaction'+(L.length>1?'s':''):'Nothing spent')+'</span></div><button type="button" class="bx2" data-act="calday" data-d="'+dt+'" aria-label="Close">×</button></div>'
    +(L.length?L.map(t=>'<div class="tx ta">'+avHTML(t.cat)+'<div class="txb"><div class="t1" role="button" tabindex="0" data-act="txedit" data-id="'+t.id+'"><span class="ds" title="'+esc(t.desc)+'">'+esc(t.nick||t.desc)+'</span><span class="amt '+(t.amount<0?'neg':'pos')+'">'+fmt(t.amount)+'</span></div><div class="t2"><span class="sub">'+esc(t.cat)+' · '+esc(acctName(t.acct))+'</span></div></div></div>').join(''):'<p class="mute" style="margin:6px 0 0">Nothing spent on this day.</p>')+'</div>';
 }
 function merchHTML(ym){
@@ -1482,10 +1570,8 @@ function merchHTML(ym){
     const hi=e.target.closest&&e.target.closest('.tr .hit');
     if(hi){const D=JSON.parse(hi.closest('.tr').dataset.tr),x=D[+hi.dataset.ti];if(x&&x.ym&&x.ym!==UI.month){UI.month=x.ym;render();}}
     const nt=e.target.closest&&e.target.closest('.sk [data-note]');
-    if(nt){const box=nt.closest('.sk').querySelector('.skn');if(box){box.querySelector('span').textContent=nt.dataset.note;box.hidden=false;}return;}
-    if(e.target.closest&&e.target.closest('.skn button')){e.target.closest('.skn').hidden=true;return;}
-    const go=e.target.closest&&e.target.closest('.sk [data-go]');
-    if(go){UI.filters={q:'',acct:'',cat:go.dataset.go,month:UI.month};UI.limit=200;UI.tab='txns';render();window.scrollTo(0,0);return;}
+    if(nt){const box=nt.closest('.sk').querySelector('.skn');if(box){box.querySelector('span').textContent=nt.dataset.note;const g=box.querySelector('.skgo');box.dataset.go=nt.dataset.go||'';if(g) g.hidden=!nt.dataset.go;box.hidden=false;}return;}
+    if(e.target.closest&&e.target.closest('.skx')){e.target.closest('.skn').hidden=true;return;}
     const cc=e.target.closest&&e.target.closest('.cc');if(cc) cc.closest('.cal').querySelector('.cinfo').textContent=cc.dataset.info;
   });
   window.__chartInit=()=>{document.querySelectorAll('.tr').forEach(tr=>trFocus(tr,+tr.dataset.ci));};
@@ -2048,7 +2134,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · last synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="row"><button class="btn" data-act="sfsync">Sync now</button><a class="btn ghost" href="https://bridge.simplefin.org" target="_blank" rel="noopener">Manage on SimpleFIN</a><button class="btn danger" data-act="sfdisconnect">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.30.1';
+const APP_VERSION='1.31.2';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -2730,6 +2816,26 @@ const ACT={
     if(k==='left'){UI.tab='budgets';render();window.scrollTo(0,0);return;}
     UI.filters={q:'',acct:'',cat:'',month:UI.month||latestMonth(),flow:k};UI.limit=200;UI.tab='txns';render();window.scrollTo(0,0);
   },
+  async flowsave(el){
+    busyShow('Making picture','Large, with all the details');
+    try{
+      const ym=el.dataset.ym||UI.month,b=await flowPng(ym);busyHide();
+      if(!b){toast('Nothing to draw yet');return;}
+      const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='homebudget-where-the-money-went-'+ym+'.png';document.body.appendChild(a);a.click();
+      setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},800);toast('Picture saved');
+    }catch(e){busyHide();dlog('app','Picture failed',errInfo(e),'error');toast('Could not make the picture');}
+  },
+  async flowshare(el){
+    busyShow('Making picture','Large, with all the details');
+    let b,ym=el.dataset.ym||UI.month;
+    try{b=await flowPng(ym);}catch(e){busyHide();toast('Could not make the picture');return;}
+    busyHide();
+    if(!b){toast('Nothing to draw yet');return;}
+    const f=new File([b],'homebudget-where-the-money-went-'+ym+'.png',{type:'image/png'});
+    if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f],title:'Where the money went'});}catch(e){if(e&&e.name!=='AbortError') toast('Could not open sharing');}}
+    else toast('Sharing is not available here. Use Save picture.');
+  },
+  skgo(el){const box=el.closest('.skn'),c=box&&box.dataset.go;if(!c) return;UI.filters={q:'',acct:'',cat:c,month:UI.month};UI.limit=200;UI.tab='txns';render();window.scrollTo(0,0);},
   clearflow(){UI.filters.flow='';render();},
   resetfilters(){UI.filters={q:'',acct:'',cat:'',month:''};UI.limit=200;render();},
   gocat(el){UI.filters={q:'',acct:'',cat:el.dataset.cat,month:''};UI.limit=200;UI.tab='txns';render();window.scrollTo(0,0);},
