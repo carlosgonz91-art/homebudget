@@ -207,13 +207,18 @@ label select,label input{display:block;margin-top:4px;color:var(--ink)}
 .tkc{font-style:normal;font-weight:800;font-size:12.5px;min-width:68px;text-align:center;padding:5px 8px;border-radius:99px;font-variant-numeric:tabular-nums}
 .tkc.up{background:color-mix(in srgb,#10b981 18%,var(--card));color:color-mix(in srgb,#10b981 80%,var(--ink))}.tkc.dn{background:color-mix(in srgb,#e11d48 16%,var(--card));color:color-mix(in srgb,#e11d48 85%,var(--ink))}.tkc.fl{background:var(--track);color:var(--mute)}
 .tkpg{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;font-size:12.5px;color:var(--mute)}.tkpg .btn{min-width:40px}
-.lnb{margin:2px 0 16px}.lnb:last-child{margin-bottom:0}.lnh{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}.lnh b{font-size:16px}.lnp{height:8px;border-radius:4px;background:var(--track);overflow:hidden;margin:-4px 0 12px}.lnp i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,#10b981,#0ea5e9)}
+.lnb{margin:2px 0 16px}.lnb:last-child{margin-bottom:0}.lnh{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}.lnh b{font-size:16px}.lnhero{display:flex;align-items:center;gap:16px;margin:4px 0 12px}.lnk{min-width:0;flex:1}.lnbig{font-size:30px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.1}
+.lneta{margin-top:8px;font-size:14px}.lneta b{color:#059669}.lneta span{color:var(--mute);font-size:12.5px}.lneta.mute{color:var(--mute)}.lneta.mute b{color:var(--ink)}
+.lnms{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:0 0 12px}.lnm{border-radius:12px;padding:7px 8px;background:var(--soft);border:1px solid var(--line);text-align:center;min-width:0}.lnm b{display:block;font-size:13px}.lnm span{display:block;font-size:11px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.lnm.done{background:color-mix(in srgb,#10b981 14%,var(--card));border-color:color-mix(in srgb,#10b981 35%,var(--line))}.lnm.done span{color:#059669;font-weight:700}
+.lnwi{border-radius:14px;padding:10px 12px;background:var(--soft);border:1px solid var(--line);margin:2px 0 4px}.lnwh{font-weight:700;font-size:13.5px;margin-bottom:8px}.lnch{display:flex;gap:6px;flex-wrap:wrap}.lnch button{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:99px;padding:7px 13px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;min-height:36px}.lnch button.on{background:linear-gradient(135deg,#10b981,#0ea5e9);border-color:transparent;color:#fff}.lnres{margin-top:8px;font-size:14px}.lnres b{color:#059669}
+.lnp{height:8px;border-radius:4px;background:var(--track);overflow:hidden;margin:-4px 0 12px}.lnp i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,#10b981,#0ea5e9)}
 .lnx{margin-top:8px;line-height:1.6}.lnx b{color:var(--ink)}
 .tkh{margin:12px 0 2px;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
 .tkx{border:0;background:none;padding:0;font:inherit;font-size:12px;color:var(--mute);cursor:pointer;text-decoration:underline}
 .tksg{display:flex;flex-direction:column;gap:2px;margin-top:8px}.tksg button{display:flex;gap:10px;align-items:baseline;text-align:left;border:0;background:var(--soft);border-radius:10px;padding:8px 10px;font:inherit;color:var(--ink);cursor:pointer}.tksg button span{color:var(--mute);font-size:12px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tkre{width:34px;height:34px}
-.bbr{display:grid;grid-template-columns:52px minmax(0,1fr) auto;align-items:center;gap:10px;margin:7px 0;font-size:12.5px}.bbr span{font-weight:700}.bbr i{height:7px;border-radius:4px;background:var(--track);overflow:hidden}.bbr i b{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,#10b981,#eab308,#e11d48)}.bbr em{font-style:normal;color:var(--mute);white-space:nowrap}
+.bbr u{text-decoration:none;font-weight:800;color:var(--ink);margin-left:2px}
+.bbr{display:grid;grid-template-columns:48px minmax(0,1fr) auto;align-items:center;gap:10px;margin:7px 0;font-size:12.5px}.bbr span{font-weight:700}.bbr i{height:7px;border-radius:4px;background:var(--track);overflow:hidden}.bbr i b{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,#10b981,#eab308,#e11d48)}.bbr em{font-style:normal;color:var(--mute);white-space:nowrap}
 .bbn{transition:all .6s cubic-bezier(.3,.7,.2,1)}
 .pvc{--c:var(--line);margin:10px 0;padding:12px 13px;border-radius:16px;background:var(--soft);border:1px solid var(--line);border-left:4px solid var(--c)}
 .pvc.new{--c:#6366f1}.pvc.ok{--c:#10b981}.pvc.bad{--c:#f97316}.pvc.skip{--c:#94a3b8;opacity:.7}
@@ -1789,14 +1794,15 @@ function bubbleHTML(){
   const seg=(a,b,col)=>{const [x1,y1]=pt(a,R),[x2,y2]=pt(b,R);return '<path d="M'+x1.toFixed(1)+' '+y1.toFixed(1)+' A'+R+' '+R+' 0 0 1 '+x2.toFixed(1)+' '+y2.toFixed(1)+'" fill="none" stroke="'+col+'" stroke-width="16"/>';};
   const sc=c?c.score:0,[nx,ny]=pt(sc,R-8);
   const lv=!c?['Reading the tea leaves…','Pulling prices for the usual suspects.']:sc<20?['Chill','Totally fine. Nothing to see here.']:sc<40?['Simmering','Somebody just raised at 80x revenue.']:sc<60?['Frothy','Your barber has opinions about GPUs.']:sc<80?['Wobbling','"This time it\'s different" is trending.']:['Pop imminent','Locate the nearest exit. Calmly.'];
-  const bar=(l,v,t)=>'<div class="bbr"><span>'+l+'</span><i><b style="width:'+Math.round(v)+'%"></b></i><em>'+t+'</em></div>';
+  const bar=(l,v,t,w)=>'<div class="bbr"><span>'+l+'</span><i><b style="width:'+Math.max(3,Math.round(v))+'%"></b></i><em>'+t+(w?' <u>'+w+'</u>':'')+'</em></div>';
+  const vw=(v,a)=>a[v<25?0:v<50?1:v<75?2:3];
   return '<section class="card bbl"><h2>AI bubble meter</h2><svg viewBox="0 0 '+W+' 132" role="img" aria-label="Bubble burst gauge: '+(c?sc+' out of 100':'loading')+'" style="width:100%;height:auto;display:block;max-width:320px;margin:0 auto">'
    +seg(0,25,'#10b981')+seg(25,50,'#eab308')+seg(50,75,'#f97316')+seg(75,100,'#e11d48')
    +(c?'<line x1="'+cx+'" y1="'+cy+'" x2="'+nx.toFixed(1)+'" y2="'+ny.toFixed(1)+'" stroke="var(--ink)" stroke-width="4" stroke-linecap="round" class="bbn"/><circle cx="'+cx+'" cy="'+cy+'" r="8" fill="var(--ink)"/>':'')
    +'<text x="'+cx+'" y="'+(cy-30)+'" text-anchor="middle" font-size="30" font-weight="800" style="fill:var(--ink)">'+(c?sc:'–')+'</text></svg>'
    +'<div style="text-align:center;margin-top:2px"><b style="font-size:18px">'+lv[0]+'</b><div class="sub" style="margin-top:2px">'+lv[1]+'</div></div>'
-   +(c?'<div style="margin-top:12px">'+bar('Froth',c.froth,'median P/E '+Math.round(c.pe))+bar('Cracks',c.cracks,(c.drop*100).toFixed(0)+'% off highs')+bar('Jitters',c.jit,'today '+(c.mv<0?'−':'+')+Math.abs(c.mv).toFixed(1)+'%')+'</div>':'')
-   +'<p class="sub" style="margin:10px 0 0;font-size:11.5px">Based on '+BUBBLE.join(', ')+'. Just for fun, not a prediction or advice.</p></section>';
+   +(c?'<div style="margin-top:12px">'+bar('Prices',c.froth,Math.round(c.pe)+'× earnings',vw(c.froth,['Fair','Rich','Pricey','Wild']))+bar('Slide',c.cracks,Math.round(c.drop*100)+'% below peak',vw(c.cracks,['Calm','Slipping','Sliding','Crashing']))+bar('Today',c.jit,(c.mv<0?'down ':'up ')+Math.abs(c.mv).toFixed(1)+'%',vw(c.jit,['Fine','Wobbly','Rough','Ugly']))+'</div>':'')
+   +'<p class="sub" style="margin:10px 0 0;font-size:11.5px">Tracks the AI giants ('+BUBBLE.join(', ')+'). For fun only, not advice.</p></section>';
 }
 // ---- loans: owed, payment, payoff, graph ----
 function loanInfo(a){
@@ -1808,49 +1814,74 @@ function loanInfo(a){
   const pays=ts.filter(t=>t.amount>0&&!/interest|escrow/i.test(t.desc||'')).concat(out).sort((x,y)=>y.date<x.date?-1:y.date>x.date?1:0);
   let pay=a.pay>0?a.pay:null,paySrc=pay?'you':'';
   if(!pay&&pays.length){const L=pays.slice(0,6).map(t=>t.amount).sort((x,y)=>x-y);pay=L[Math.floor(L.length/2)];paySrc=out.length&&!ts.some(t=>t.amount>0)?'checking':'detected';}
-  const rate=a.rate>0?a.rate:0,r=rate/1200;
-  let months=null,interest=null;
-  if(pay>0&&owed>0){
-    if(r>0){if(pay>owed*r+0.01){months=Math.ceil(-Math.log(1-r*owed/pay)/Math.log(1+r));interest=pay*months-owed;}}
-    else if(a.rate===0||a.rate==null){months=null;}
-  }
-  if(pay>0&&owed>0&&a.rate===0){months=Math.ceil(owed/pay);interest=0;}
+  const rate=a.rate>0?a.rate:0;
+  const A=pay>0&&owed>0?amort(owed,a.rate===0?0:rate,pay):null;
+  const months=A?A.months:null,interest=A?A.interest:null;
   // history (owed over time): walk the ledger backwards from today's balance
   let hist=[];{let o=owed;hist.push([todayISO(),o]);ts.forEach(t=>{hist.push([t.date,o]);o=o+t.amount;});hist.push([ts.length?ts[ts.length-1].date:todayISO(),o]);}
   hist=hist.reverse();
   if(ts.length<2){const h=(S.balHist||{})[a.sf]||[];if(h.length>=2) hist=h.map(x=>[x[0],Math.abs(x[1])]);else hist=[];}
-  const proj=[];if(months&&r>=0){let o=owed;const step=Math.max(1,Math.ceil(months/60));for(let m=0;m<=months;m++){if(m%step===0||m===months) proj.push([m,Math.max(0,o)]);o=o*(1+r)-pay;}}
   const last=pays[0]?pays[0].date:null;
   const om=String(a.name||'').match(/orig(?:inal|\.)?\s*\$?\s*([\d,]+(?:\.\d+)?)/i),orig=a.orig>0?a.orig:(om?parseFloat(om[1].replace(/,/g,'')):null);
-  return {orig:orig>0?orig:null,a,owed,pay,paySrc,rate,months,interest,hist,proj,last,mInt:owed*r};
+  const raw=(S.sfRaw||[]).find(x=>x.id===a.sf)||{},org=raw.org||{};
+  return {orig:orig>0?orig:null,a,owed,pay,paySrc,rate,months,interest,A,hist,proj:A?projOf(A.path):[],last,mInt:owed*rate/1200,org:org.name||org.domain||'',url:/^https:\/\//.test(org.url||'')?org.url:'',at:(S.balSf[a.sf]||{}).at};
 }
-function loanChart(L){
+// pay a loan down month by month: how long, how much interest
+function amort(owed,rate,pay){
+  if(!(pay>0)||!(owed>0)) return null;const r=rate/1200;
+  if(r<=0){const n=Math.ceil(owed/pay),path=[];for(let m=0;m<=n;m++) path.push(Math.max(0,owed-pay*m));return {months:n,interest:0,path};}
+  if(pay<=owed*r+0.01) return null;
+  let o=owed,m=0,int=0;const path=[o];
+  while(o>0.005&&m<1200){const i=o*r;int+=i;o=o+i-pay;m++;path.push(Math.max(0,o));}
+  if(o<0) int+=o; // the last payment is smaller
+  return {months:m,interest:int,path};
+}
+function projOf(path){const step=Math.max(1,Math.ceil((path.length-1)/60)),o=[];path.forEach((v,m)=>{if(m%step===0||m===path.length-1) o.push([m,v]);});return o;}
+const monthsTxt=n=>{const y=Math.floor(n/12),m=n%12;return (y?y+' yr'+(y===1?'':'s'):'')+(y&&m?' ':'')+(m||!y?m+' mo':'');};
+const inMonths=n=>{const d=new Date();d.setMonth(d.getMonth()+n);return d.toLocaleDateString('en-US',{month:'short',year:'numeric'});};
+function loanChart(L,X){
   const W=320,H=150,Lm=40,Rm=8,T=10,B=22,pw=W-Lm-Rm,ph=H-T-B,dN=s=>dayNum(s),t0=todayN();
-  const hist=L.hist.map(([d,v])=>[dN(d)-t0,v]),proj=L.proj.map(([m,v])=>[m*30.4,v]);
+  const hist=L.hist.map(([d,v])=>[dN(d)-t0,v]),proj=L.proj.map(([m,v])=>[m*30.4,v]),xp=(X||[]).map(([m,v])=>[m*30.4,v]);
   const xs=hist.map(p=>p[0]).concat(proj.map(p=>p[0]),[0]),x0=Math.min(...xs),x1=Math.max(...xs,x0+30),top=Math.max(1,...hist.map(p=>p[1]),...proj.map(p=>p[1]),L.owed)*1.05;
-  const X=d=>Lm+(d-x0)/(x1-x0)*pw,Y=v=>T+ph-v/top*ph,k=v=>v>=1e6?'$'+(v/1e6).toFixed(1)+'M':'$'+Math.round(v/1000)+'k';
-  const line=a=>a.map((p,i)=>(i?'L':'M')+X(p[0]).toFixed(1)+' '+Y(p[1]).toFixed(1)).join(' ');
+  const Xc=d=>Lm+(d-x0)/(x1-x0)*pw,Y=v=>T+ph-v/top*ph,k=v=>v>=1e6?'$'+(v/1e6).toFixed(1)+'M':'$'+Math.round(v/1000)+'k';
+  const line=a=>a.map((p,i)=>(i?'L':'M')+Xc(p[0]).toFixed(1)+' '+Y(p[1]).toFixed(1)).join(' ');
   let g='';for(let i=0;i<=3;i++){const v=top/3*i,y=Y(v);g+='<line x1="'+Lm+'" x2="'+(W-Rm)+'" y1="'+y+'" y2="'+y+'" stroke="var(--line)" stroke-dasharray="'+(i?'2 4':'0')+'"/><text x="'+(Lm-5)+'" y="'+(y+3.5)+'" text-anchor="end" font-size="9.5" style="fill:var(--mute)">'+k(v)+'</text>';}
   const fmtD=d=>{const dt=new Date();dt.setDate(dt.getDate()+Math.round(d));return dt.toLocaleDateString('en-US',{month:'short',year:'2-digit'});};
-  const ticks=[(0-x0)/(x1-x0)<0.2?null:x0,0,x1].filter((v,i,a)=>v!==null&&a.indexOf(v)===i).map(d=>'<text x="'+X(d)+'" y="'+(H-6)+'" text-anchor="'+(d===x0?'start':d===x1&&d!==0?'end':'middle')+'" font-size="9.5" style="fill:var(--mute)">'+(d===0?'Today':fmtD(d))+'</text>').join('');
+  const ticks=[(0-x0)/(x1-x0)<0.2?null:x0,0,x1].filter((v,i,a)=>v!==null&&a.indexOf(v)===i).map(d=>'<text x="'+Xc(d)+'" y="'+(H-6)+'" text-anchor="'+(d===x0?'start':d===x1&&d!==0?'end':'middle')+'" font-size="9.5" style="fill:var(--mute)">'+(d===0?'Today':fmtD(d))+'</text>').join('');
   return '<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Loan balance over time" style="width:100%;max-width:620px;height:auto;display:block;margin:0 auto">'+g
-   +(hist.length>1?'<path d="'+line(hist)+' L'+X(hist[hist.length-1][0])+' '+Y(0)+' L'+X(hist[0][0])+' '+Y(0)+' Z" fill="#f97316" fill-opacity=".14"/><path d="'+line(hist)+'" fill="none" stroke="#f97316" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>':'')
+   +(hist.length>1?'<path d="'+line(hist)+' L'+Xc(hist[hist.length-1][0])+' '+Y(0)+' L'+Xc(hist[0][0])+' '+Y(0)+' Z" fill="#f97316" fill-opacity=".14"/><path d="'+line(hist)+'" fill="none" stroke="#f97316" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>':'')
    +(proj.length>1?'<path d="'+line(proj)+'" fill="none" stroke="#6366f1" stroke-width="2.4" stroke-dasharray="5 4" stroke-linecap="round"/>':'')
-   +'<line x1="'+X(0)+'" x2="'+X(0)+'" y1="'+T+'" y2="'+(T+ph)+'" stroke="var(--brand)" stroke-opacity=".45" stroke-dasharray="3 3"/><circle cx="'+X(0)+'" cy="'+Y(L.owed)+'" r="4.5" fill="var(--card)" stroke="#f97316" stroke-width="2.4"/>'+ticks+'</svg>';
+   +(xp.length>1?'<path d="'+line(xp)+'" fill="none" stroke="#10b981" stroke-width="2.6" stroke-dasharray="5 4" stroke-linecap="round"/>':'')
+   +'<line x1="'+Xc(0)+'" x2="'+Xc(0)+'" y1="'+T+'" y2="'+(T+ph)+'" stroke="var(--brand)" stroke-opacity=".45" stroke-dasharray="3 3"/><circle cx="'+Xc(0)+'" cy="'+Y(L.owed)+'" r="4.5" fill="var(--card)" stroke="#f97316" stroke-width="2.4"/>'+ticks+'</svg>';
 }
+function loanRing(pct){const R=38,C=2*Math.PI*R,f=Math.max(0,Math.min(1,pct/100));return '<svg viewBox="0 0 100 100" width="112" height="112" role="img" aria-label="'+Math.round(pct)+' percent paid off"><circle cx="50" cy="50" r="'+R+'" fill="none" stroke="var(--track)" stroke-width="11"/><circle cx="50" cy="50" r="'+R+'" fill="none" stroke="url(#lng)" stroke-width="11" stroke-linecap="round" stroke-dasharray="'+(C*f).toFixed(1)+' '+C.toFixed(1)+'" transform="rotate(-90 50 50)"/><defs><linearGradient id="lng" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#10b981"/><stop offset="1" stop-color="#0ea5e9"/></linearGradient></defs><text x="50" y="52" text-anchor="middle" font-size="22" font-weight="800" style="fill:var(--ink)">'+Math.round(pct)+'%</text><text x="50" y="67" text-anchor="middle" font-size="9" style="fill:var(--mute)">paid off</text></svg>';}
+const LNX=[0,100,250,500,1000];
 function loansHTML(){
   const A=S.accounts.filter(a=>a.type==='loan'&&a.sf&&S.balSf&&S.balSf[a.sf]);if(!A.length) return '';
   const body=A.map(a=>{
     const L=loanInfo(a);if(!L) return '';
-    const payoff=L.months!=null?(()=>{const d=new Date();d.setMonth(d.getMonth()+L.months);return d.toLocaleDateString('en-US',{month:'short',year:'numeric'});})():null;
-    const yrs=L.months!=null?(L.months>=24?(L.months/12).toFixed(1).replace(/\.0$/,'')+' yrs left':L.months+' mo left'):(L.rate?'payment too low':'add rate + payment');
-    const tiles=stiles([{k:'Owed',v:fmtT(L.owed),s:L.rate?L.rate+'% APR':'rate not set',c:'#f97316'},{k:'Payment',v:L.pay?fmtT(L.pay):'–',s:L.pay?(L.paySrc==='you'?'per month':L.paySrc==='checking'?'per month · may include escrow':'per month · detected'):'not found',c:'#6366f1'},(L.orig?{k:'Paid off',v:fmtT(Math.max(0,L.orig-L.owed)),s:Math.max(0,Math.round((L.orig-L.owed)/L.orig*100))+'% of '+fmtT(L.orig),c:'#10b981'}:{k:'Paid off',v:payoff||'–',s:yrs,c:'#10b981'})]);
-    const extra=[];if(L.orig&&payoff) extra.push('Projected payoff <b>'+payoff+'</b> · '+yrs);if(L.mInt>0&&L.pay) extra.push('Interest this month ≈ <b>'+fmt0(L.mInt)+'</b> · principal ≈ <b>'+fmt0(Math.max(0,L.pay-L.mInt))+'</b>');if(L.interest!=null&&L.interest>0) extra.push('Interest over the rest of the loan ≈ <b>'+fmt0(L.interest)+'</b>');if(L.last) extra.push('Last payment '+L.last);
-    const nm=esc(a.name.replace(/\s*••\d{4}$/,''));
-    return '<div class="lnb"><div class="lnh"><b>'+nm+'</b><span class="row" style="gap:6px"><button class="btn ghost small" data-act="rateacct" data-id="'+a.id+'">'+(a.rate>0?'Rate':'Set rate')+'</button><button class="btn ghost small" data-act="loanpay" data-id="'+a.id+'">'+(a.pay>0?'Payment':'Set payment')+'</button></span></div>'+tiles+(L.orig?'<div class="lnp" title="Paid off"><i style="width:'+Math.max(2,Math.min(100,(L.orig-L.owed)/L.orig*100)).toFixed(1)+'%"></i></div>':'')+(L.hist.length>1||L.proj.length>1?loanChart(L)+'<div class="legend"><span><i class="dot" style="background:#f97316"></i>Balance</span>'+(L.proj.length>1?'<span><i class="dot" style="background:#6366f1"></i>If you keep paying</span>':'')+'</div>':'<p class="sub" style="margin:4px 0">'+(L.pay&&!L.rate?'Tap Rate to see the payoff curve. Your bank does not share it.':'The graph fills in as your balance changes. Add the rate and payment to see the payoff curve.')+'</p>')+(extra.length?'<div class="sub lnx">'+extra.join('<br>')+'</div>':'')+'</div>';
+    const nm=esc(titleCase(String(a.name).replace(/\s*\(\s*orig[^)]*\)/i,'').replace(/\s*••\d{4}$/,'').trim().toLowerCase()));
+    const pct=L.orig?Math.max(0,Math.min(100,(L.orig-L.owed)/L.orig*100)):null;
+    const left=L.months!=null?L.months:null;
+    const ex=(UI.lnX||{})[a.id]||0,XA=ex&&L.A?amort(L.owed,a.rate===0?0:L.rate,L.pay+ex):null;
+    // milestones (needs the original amount)
+    let ms='';
+    if(L.orig){const mk=[25,50,75,100].map(p=>{const T=L.orig*(1-p/100),done=L.owed<=T+0.5;let when='';if(!done&&L.A){const m=L.A.path.findIndex(v=>v<=T+0.5);if(m>=0) when=inMonths(m);}return '<div class="lnm '+(done?'done':'')+'"><b>'+p+'%</b><span>'+(done?'Done':(when||fmtT(L.owed-T)+' to go'))+'</span></div>';}).join('');ms='<div class="lnms">'+mk+'</div>';}
+    const eta=left!=null?'<div class="lneta">Debt-free by <b>'+inMonths(left)+'</b> <span>· '+monthsTxt(left)+' · '+left+' payments left</span></div>':'<div class="lneta mute">'+(L.pay?'Tap <b>Rate</b> to see your payoff date. Your bank does not share it.':'Tap <b>Set payment</b> and <b>Rate</b> to see your payoff date.')+'</div>';
+    const hero='<div class="lnhero">'+(pct!=null?loanRing(pct):'')+'<div class="lnk"><div class="lnbig">'+fmt0(L.owed)+'</div><div class="sub">'+(L.orig?'left of '+fmt0(L.orig)+' · '+fmt0(L.orig-L.owed)+' paid':'owed')+'</div>'+eta+'</div></div>';
+    const tiles=stiles([{k:'Payment',v:L.pay?fmtT(L.pay):'–',s:L.pay?(L.paySrc==='you'?'per month':L.paySrc==='checking'?'incl. escrow?':'per month'):'not found',c:'#6366f1'},{k:'Interest now',v:L.rate&&L.owed?fmtT(L.mInt):'–',s:L.rate?(L.pay?'≈'+Math.round(L.mInt/L.pay*100)+'% of pmt':'per month'):'add rate',c:'#f97316'},{k:'Interest left',v:L.interest!=null?fmtT(L.interest):'–',s:L.rate?'until payoff':'add rate',c:'#e11d48'}]);
+    let wi='';
+    if(L.A){wi='<div class="lnwi"><div class="lnwh">What if you paid extra each month?</div><div class="lnch">'+LNX.map(v=>'<button type="button" data-act="lnextra" data-id="'+a.id+'" data-v="'+v+'" class="'+(v===ex?'on':'')+'" aria-pressed="'+(v===ex)+'">'+(v?'+$'+v:'None')+'</button>').join('')+'</div>'+(XA?'<div class="lnres">Debt-free <b>'+monthsTxt(L.months-XA.months)+' sooner</b> ('+inMonths(XA.months)+') · saves <b>'+fmt0(L.interest-XA.interest)+'</b> in interest</div>':'<div class="sub" style="margin-top:6px">Pick an amount to see how much sooner you would finish.</div>')+'</div>';}
+    const facts=[];if(L.last) facts.push('Last payment '+L.last+(L.pay?' · '+fmt0(L.pay):''));if(L.at) facts.push('Balance as of '+new Date(L.at).toLocaleDateString('en-US',{month:'short',day:'numeric'}));
+    const links='<button class="btn ghost small" data-act="rateacct" data-id="'+a.id+'">'+(a.rate>=0&&a.rate!=null?(a.rate+'% APR'):'Set rate')+'</button><button class="btn ghost small" data-act="loanpay" data-id="'+a.id+'">'+(a.pay>0?'Edit payment':'Set payment')+'</button>'+(L.url?'<a class="btn ghost small" href="'+esc(L.url)+'" target="_blank" rel="noopener">Servicer ↗</a>':'');
+    return '<div class="lnb"><div class="lnh"><div style="min-width:0"><b>'+nm+'</b>'+(L.org?'<div class="sub">'+esc(L.org)+'</div>':'')+'</div><span class="row" style="gap:6px;flex-wrap:wrap">'+links+'</span></div>'
+     +hero+ms+tiles+wi
+     +((L.hist.length>1||L.proj.length>1)?'<div style="margin-top:10px">'+loanChart(L,XA?projOf(XA.path):null)+'</div><div class="legend"><span><i class="dot" style="background:#f97316"></i>Balance</span>'+(L.proj.length>1?'<span><i class="dot" style="background:#6366f1"></i>On your current payment</span>':'')+(XA?'<span><i class="dot" style="background:#10b981"></i>With +$'+ex+'</span>':'')+'</div>':'')
+     +(facts.length?'<div class="sub lnx">'+facts.join(' · ')+'</div>':'')+'</div>';
   }).join('');
   return wCard('Loans','',body);
 }
+function loansRefresh(){const old=document.querySelector('[data-w="loans"] .wbody > .card');if(!old) return;const t=document.createElement('div');t.innerHTML=loansHTML();if(t.firstElementChild) old.replaceWith(t.firstElementChild);}
 // ---- CD maturities ----
 function cdList(){
   const H=S.holdings||{},m={};
@@ -2395,7 +2426,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · last synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="row"><button class="btn" data-act="sfsync">Sync now</button><a class="btn ghost" href="https://bridge.simplefin.org" target="_blank" rel="noopener">Manage on SimpleFIN</a><button class="btn danger" data-act="sfdisconnect">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.33.2';
+const APP_VERSION='1.34.0';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -3065,6 +3096,7 @@ const ACT={
   addacct(){const n=$('#newName').value.trim();if(!n){toast('Give the account a name');return;}const a={id:uid(),name:n,type:$('#newType').value};S.accounts.push(a);UI.impAcct=a.id;save();render();},
   vaultacct(el){const a=S.accounts.find(x=>x.id===el.dataset.id);if(!a)return;
     dialog({msg:'Money held in vaults or pockets inside "'+a.name+'" that the bank does not report. Enter today\'s total (0 to clear). The app then adjusts it as you move money in and out of vaults.',input:true,value:a.vaults?String(vaultTotal(a)):'',placeholder:'e.g. 72744.62',ok:'Save',onOk:v=>{const n=parseFloat(String(v).replace(/[$,\s]/g,''));if(isNaN(n)||n===0){delete a.vaults;}else a.vaults={v:Math.round(n*100)/100,d:new Date().toISOString().slice(0,10)};save();render();toast(a.vaults?'Vaults saved.':'Vaults cleared.');}});},
+  lnextra(el){UI.lnX=UI.lnX||{};UI.lnX[el.dataset.id]=+el.dataset.v;loansRefresh();},
   loanpay(el){const a=S.accounts.find(x=>x.id===el.dataset.id);if(!a)return;
     dialog({msg:'Monthly payment for "'+a.name+'". Leave it empty to use the payment found in your transactions.',input:true,value:a.pay>0?String(a.pay):'',placeholder:'e.g. 1850',ok:'Save',onOk:v=>{v=String(v||'').replace(/[$,]/g,'').trim();if(!v){delete a.pay;}else{const n=parseFloat(v);if(!isFinite(n)||n<=0||n>1e6){toast('Enter an amount.');return;}a.pay=n;}save();render();toast('Payment saved');}});},
   rateacct(el){const a=S.accounts.find(x=>x.id===el.dataset.id);if(!a)return;
