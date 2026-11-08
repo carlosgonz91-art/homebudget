@@ -400,7 +400,7 @@ td.ds{max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .chk input{accent-color:var(--brand);width:18px;height:18px}
 .pv{border-top:1px solid var(--line);margin-top:16px;padding-top:14px}
 .banner.ok{background:color-mix(in srgb,var(--good) 11%,var(--card));border-color:color-mix(in srgb,var(--good) 35%,var(--line))}
-.banner.row{display:grid;grid-template-columns:minmax(0,1fr) 96px;align-items:center;gap:0 8px}.banner.row>span:first-child{min-width:0;text-wrap:balance}.banner.row>.spacer{display:none}.banner.row>.btn{width:100%;justify-content:center;text-align:center;white-space:nowrap;padding-left:8px;padding-right:8px}
+.banner.row{display:grid;grid-template-columns:minmax(0,1fr) 96px;align-items:center;gap:0 8px}.banner.row>span:first-child{min-width:0;text-wrap:balance}.banner.sy>span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-wrap:nowrap}.banner.row>.spacer{display:none}.banner.row>.btn{width:100%;justify-content:center;text-align:center;white-space:nowrap;padding-left:8px;padding-right:8px}
 .banner{position:relative;touch-action:pan-y;-webkit-user-select:none;user-select:none}
 .banner>.bx{position:absolute;top:-9px;right:-7px;z-index:2;width:22px;height:22px;margin:0;padding:0;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--mute);font:inherit;font-size:15px;line-height:19px;text-align:center;cursor:pointer;box-shadow:var(--sh);opacity:0;pointer-events:none;transition:opacity .15s}
 .banner>.bx::after{display:none!important}
@@ -2137,6 +2137,12 @@ function widgetsHTML(H,anim){
   });
 }
 
+// short, one-line wording: "today 2:43 AM", "yesterday 11:24 PM", "Nov 5, 2:43 AM"
+function syncWhen(ms){
+  const d=new Date(ms),tm=d.toLocaleTimeString([], {hour:'numeric',minute:'2-digit'}),t0=new Date();t0.setHours(0,0,0,0);
+  const days=Math.round((t0-new Date(d.getFullYear(),d.getMonth(),d.getDate()))/864e5);
+  return days<=0?'today '+tm:days===1?'yesterday '+tm:d.toLocaleDateString([], {month:'short',day:'numeric'})+', '+tm;
+}
 function viewDash(){
   if(!S.txns.length) return emptyHTML();
   const ms=months(); if(!UI.month||!ms.includes(UI.month)) UI.month=latestMonth();
@@ -2147,7 +2153,7 @@ function viewDash(){
   let h='';
   const stale=!S.lastBackup||(Date.now()-S.lastBackup)>30*864e5;
   const fresh=UI._okAt&&Date.now()-UI._okAt<3200;
-  if(SF.access&&sfOnline()) h+='<div class="banner row'+(SF.last&&(Date.now()/1000-SF.last)<86400?' ok':'')+'"><span>'+(SF.last?(fresh?'<i class="okck" aria-hidden="true">✓</i>':'')+'Synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'Not synced yet')+'</span><span class="spacer"></span><button class="btn small" data-act="sfsync">Sync now</button></div>';
+  if(SF.access&&sfOnline()) h+='<div class="banner row sy'+(SF.last&&(Date.now()/1000-SF.last)<86400?' ok':'')+'"><span>'+(SF.last?(fresh?'<i class="okck" aria-hidden="true">✓</i>':'')+'Synced '+syncWhen(SF.last*1000):'Not synced yet')+'</span><span class="spacer"></span><button class="btn small" data-act="sfsync">Sync now</button></div>';
   // announcements: sit with the sync banner and can be dismissed (each comes back if its situation changes)
   {const DS=dismissed(),day=Math.floor(Date.now()/864e5),wk=Math.floor(Date.now()/(7*864e5)),HH=sfHealth(),nn=HH.bad+HH.general.length;
    const bn=(id,sig,txt,act,lbl)=>DS[id]===sig?'':'<div class="banner row"><span>'+txt+'</span><span class="spacer"></span><button class="btn small" data-act="'+act+'">'+lbl+'</button><button type="button" class="bx" data-act="bndis" data-id="'+id+'" data-sig="'+sig+'" aria-label="Dismiss" title="Dismiss (or swipe the banner away)">×</button></div>';
@@ -2457,7 +2463,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · last synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="row"><button class="btn" data-act="sfsync">Sync now</button><a class="btn ghost" href="https://bridge.simplefin.org" target="_blank" rel="noopener">Manage on SimpleFIN</a><button class="btn danger" data-act="sfdisconnect">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.35.2';
+const APP_VERSION='1.35.3';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
