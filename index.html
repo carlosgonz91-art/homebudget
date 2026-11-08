@@ -193,11 +193,12 @@ label select,label input{display:block;margin-top:4px;color:var(--ink)}
 .ivr{margin:9px 0}
 .ivn{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
 .ivn b{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px}
-.ivn span{font-weight:800;font-variant-numeric:tabular-nums;font-size:14px}
+.ivn span{font-weight:800;font-variant-numeric:tabular-nums;font-size:14px;white-space:nowrap;flex:none}
+.stile small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ivm{display:flex;align-items:center;gap:10px;margin-top:4px}
 .ivbar{flex:1;height:6px;border-radius:3px;background:var(--track);overflow:hidden}
 .ivbar i{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,#6366f1,#0ea5e9)}
-.ivm em{font-style:normal;font-size:12px;font-weight:700;white-space:nowrap;min-width:0}
+.ivm em{font-style:normal;font-size:12px;font-weight:700;white-space:nowrap;min-width:8.6em;text-align:right;flex:none}
 .ivcs{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-top:14px}
 .ivc{--c:#10b981;min-width:0;border-radius:12px;padding:8px 10px;background:color-mix(in srgb,var(--c) 11%,var(--card));border:1px solid color-mix(in srgb,var(--c) 28%,var(--line));display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:8px}
 .ivc small{grid-column:1/-1;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:color-mix(in srgb,var(--c) 78%,var(--ink))}
@@ -1717,9 +1718,9 @@ function invWidgetHTML(){
   R.sort((a,b)=>b.v-a.v);const gl=gv-gc,cash=tot-inPos,mx=Math.max(1,...R.map(r=>r.v));
   const sg=d=>(d<0?'-':'+')+fmt0(Math.abs(d)).replace('-','');
   const tiles=stiles([{k:'Total',v:fmtT(tot),s:R.length+' account'+(R.length===1?'':'s'),c:'#6366f1'},
-    gc>0?{k:'Gain / loss',v:sg(gl),s:pf(gl/gc*100),c:gl<0?'#e11d48':'#10b981'}:{k:'Gain / loss',v:'–',s:'no cost data',c:'#94a3b8'},
-    {k:'Idle cash',v:fmtT(Math.max(0,cash)),s:tot>0?Math.round(Math.max(0,cash)/tot*100)+'% of total':'',c:'#0ea5e9'}]);
-  const rows=R.map(r=>'<div class="ivr"><div class="ivn"><b>'+esc(r.name)+'</b><span>'+fmt0(r.v)+'</span></div><div class="ivm"><span class="ivbar"><i style="width:'+Math.max(3,r.v/mx*100).toFixed(1)+'%"></i></span>'+(r.gl?'<em class="'+(r.gl.d<0?'neg':'pos')+'">'+sg(r.gl.d)+' · '+pf(r.gl.p)+'</em>':'<em>&nbsp;</em>')+'</div></div>').join('');
+    gc>0?{k:'Return',v:sg(gl),s:pf(gl/gc*100),c:gl<0?'#e11d48':'#10b981'}:{k:'Return',v:'–',s:'no cost data',c:'#94a3b8'},
+    {k:'Cash',v:fmtT(Math.max(0,cash)),s:tot>0?Math.round(Math.max(0,cash)/tot*100)+'% idle':'',c:'#0ea5e9'}]);
+  const rows=R.map(r=>'<div class="ivr"><div class="ivn"><b title="'+esc(r.name)+'">'+esc(r.name.replace(/\s*\([^)]*\)/g,'').trim()||r.name)+'</b><span>'+fmt0(r.v)+'</span></div><div class="ivm"><span class="ivbar"><i style="width:'+Math.max(3,r.v/mx*100).toFixed(1)+'%"></i></span>'+(r.gl?'<em class="'+(r.gl.d<0?'neg':'pos')+'">'+sg(r.gl.d)+' · '+pf(r.gl.p)+'</em>':'<em>&nbsp;</em>')+'</div></div>').join('');
   mv.sort((a,b)=>b.p-a.p);const best=mv[0],worst=mv.length>1?mv[mv.length-1]:null;
   const chip=(l,x,c)=>'<span class="ivc" style="--c:'+c+'"><small>'+l+'</small><b>'+esc(x.k)+'</b><em>'+pf(x.p)+'</em></span>';
   return '<section class="card"><h2>Investments</h2>'+tiles+rows+(best?'<div class="ivcs">'+chip('Best',best,'#10b981')+(worst&&worst.p<best.p?chip('Weakest',worst,worst.p<0?'#e11d48':'#f59e0b'):'')+'</div>':'')+'</section>';
@@ -2463,7 +2464,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · last synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="row"><button class="btn" data-act="sfsync">Sync now</button><a class="btn ghost" href="https://bridge.simplefin.org" target="_blank" rel="noopener">Manage on SimpleFIN</a><button class="btn danger" data-act="sfdisconnect">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.35.3';
+const APP_VERSION='1.35.4';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
