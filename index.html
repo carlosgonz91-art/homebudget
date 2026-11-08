@@ -212,6 +212,15 @@ label select,label input{display:block;margin-top:4px;color:var(--ink)}
 .tkre{width:34px;height:34px}
 .bbr{display:grid;grid-template-columns:52px minmax(0,1fr) auto;align-items:center;gap:10px;margin:7px 0;font-size:12.5px}.bbr span{font-weight:700}.bbr i{height:7px;border-radius:4px;background:var(--track);overflow:hidden}.bbr i b{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,#10b981,#eab308,#e11d48)}.bbr em{font-style:normal;color:var(--mute);white-space:nowrap}
 .bbn{transition:all .6s cubic-bezier(.3,.7,.2,1)}
+.pvc{--c:var(--line);margin:10px 0;padding:12px 13px;border-radius:16px;background:var(--soft);border:1px solid var(--line);border-left:4px solid var(--c)}
+.pvc.new{--c:#6366f1}.pvc.ok{--c:#10b981}.pvc.bad{--c:#f97316}.pvc.skip{--c:#94a3b8;opacity:.7}
+.pvh{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.pvh b{font-size:15.5px;overflow-wrap:anywhere}.pvo{margin-top:1px}
+.pvs{flex:none;font-style:normal;font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:4px 9px;border-radius:99px;background:color-mix(in srgb,var(--c) 18%,var(--card));color:color-mix(in srgb,var(--c) 85%,var(--ink))}
+.pvs.new{--c:#6366f1}.pvs.ok{--c:#10b981}.pvs.bad{--c:#f97316}.pvs.skip{--c:#94a3b8}
+.pvn{display:flex;flex-wrap:wrap;gap:4px 16px;margin-top:8px;font-size:13px;color:var(--mute)}.pvn b{color:var(--ink);font-size:15px;font-variant-numeric:tabular-nums}.pvn .pvb{margin-left:auto}
+.pvm{margin-top:6px;font-size:13px}
+.pvq{margin:10px 0;border:1px solid var(--line);border-radius:14px;padding:2px 12px;background:var(--soft)}.pvq summary{display:flex;align-items:baseline;gap:10px;padding:10px 0;color:var(--ink)}.pvq summary b{font-weight:750}
+.pvr{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px solid var(--line);font-size:14px}.pvr span{min-width:0;overflow-wrap:anywhere}.pvr b{font-variant-numeric:tabular-nums;white-space:nowrap}.pvr .pvs{margin-left:6px;padding:2px 7px}
 .aga{margin:3px 0;background:var(--soft);border-radius:14px;overflow:hidden}
 .aga>.agr{margin:0;border-radius:0;background:none;padding-bottom:8px}
 .aga .agv2{padding:0;border-top:1px solid var(--line);font-size:13px}
@@ -2172,26 +2181,36 @@ function pdfPreviewHTML(){
   const P=UI.pdf;
   if(P.busy) return '<div class="pv"><p id="pdfProgress">'+esc(P.progress)+'</p></div>';
   const ok=P.items.filter(i=>i.res&&i.choice),tot=ok.reduce((a,i)=>a+i.fresh.length,0),dup=ok.reduce((a,i)=>a+i.dup,0);
+  const isBad=i=>i.res&&((i.res.reconcile&&!i.res.reconcile.ok)||(i.res.warnings||[]).length);
   const bad=P.items.filter(i=>i.res&&i.res.reconcile&&!i.res.reconcile.ok).length,keep=new Set(ok.filter(i=>!i.hasFile&&i.hash).map(i=>i.hash+'|'+(i.choice==='new'?i.res.ref||i.fileName:i.choice))).size,nFiles=new Set(P.items.map(i=>i.fileName)).size;
-  let h='<div class="pv"><h3>'+(P.sync?nFiles+' account'+(nFiles>1?'s':'')+' from SimpleFIN':nFiles+' file'+(nFiles>1?'s':'')+' read')+'</h3><p><b>'+tot+' new transactions</b> · '+dup+' duplicates skipped'+(keep?' · 📎 '+keep+' original'+(keep>1?'s':'')+' will be kept':'')+(bad?' · <span class="neg">'+bad+' with totals that don\'t match</span>':'')+'</p>';
+  const nNew=P.items.filter(i=>i.res&&i.choice==='new').length,probs=P.items.filter(i=>!i.res||isBad(i)).length;
+  let h='<div class="pv"><h3>'+(P.sync?nFiles+' account'+(nFiles>1?'s':'')+' from SimpleFIN':nFiles+' file'+(nFiles>1?'s':'')+' read')+'</h3>'
+   +stiles([{k:'New',v:String(tot),s:'transaction'+(tot===1?'':'s'),c:tot?'#10b981':'#94a3b8'},{k:'New accounts',v:String(nNew),s:dup+' already in',c:nNew?'#6366f1':'#94a3b8'},{k:'Check',v:String(probs),s:probs?'need a look':'all clear',c:probs?'#f97316':'#10b981'}])
+   +(keep?'<p class="sub" style="margin:-4px 0 8px">'+keep+' original'+(keep>1?'s':'')+' will be kept</p>':'');
   (P.warn||[]).slice(0,3).forEach(w=>{h+='<p class="neg" style="margin:6px 0"><i class="wi"></i>'+esc(w)+'</p>';});
+  const bal=it=>{if(it.balance==null||it.balance==='') return '';const v=parseFloat(it.balance);if(isNaN(v)) return '';return it.res.type==='loan'?-Math.abs(v):v;};
+  const quiet=[];
   P.items.forEach((it,i)=>{
-    h+='<div class="card" style="padding:12px;margin:8px 0"><div class="sub">'+esc(it.fileName.replace(/^[0-9a-f]{8}-/,''))+'</div>';
-    if(!it.res){h+='<p class="neg" style="margin:6px 0 0">'+esc(it.err)+'</p></div>';return;}
-    const r=it.res;
-    h+='<div><b>'+esc(r.generic?(it.kind==='pdf'?'Unrecognized statement':(it.choice&&it.choice!=='new'?'Goes into '+acctName(it.choice):'Which account is this file for?')):r.name+(r.last4?' ••'+r.last4:''))+'</b> <span class="mute">'+(r.start?r.start+' → '+r.end:'')+'</span></div>';
-    h+='<div>'+(it.kind&&it.kind!=='pdf'?'<span class="pill">'+it.kind.toUpperCase()+'</span> ':'')+r.txns.length+' transactions · '+it.fresh.length+' new'+(it.dup?' · '+it.dup+' already imported':'')+'</div>';
-    if(r.reconcile) h+=r.reconcile.ok?'<div class="pos">✓ Matches the totals printed on the statement</div>':'<div class="neg"><i class="wi"></i>Statement says '+fmt(r.reconcile.expected)+' net, I read '+fmt(r.reconcile.got)+' — check before importing</div>';
-    r.warnings.slice(0,3).forEach(w=>{h+='<div class="neg"><i class="wi"></i>'+esc(w)+'</div>';});
-    if(r.vaultNote&&r.txns.length) h+='<div class="sub">Moves to and from vaults are filed as Transfers; vault interest is counted as income.</div>';
-    h+='<div class="row" style="margin-top:8px"><select data-chg="pdfacct" data-i="'+i+'"><option value="">— Skip this file —</option>'
+    if(!it.res){h+='<div class="pvc bad"><div class="pvh"><b>'+esc(it.fileName.replace(/^[0-9a-f]{8}-/,''))+'</b><span class="pvs bad">Error</span></div><p class="neg" style="margin:6px 0 0">'+esc(it.err)+'</p></div>';return;}
+    const r=it.res,hasW=isBad(it);
+    if(P.sync&&!it.fresh.length&&!hasW&&it.choice){quiet.push({it,i});return;}
+    const st=!it.choice?['Skipped','skip']:(r.reconcile&&!r.reconcile.ok)?['Check','bad']:it.choice==='new'?['New account','new']:['Matched','ok'];
+    const nm=r.generic?(it.kind==='pdf'?'Unrecognized statement':(it.choice&&it.choice!=='new'?'Goes into '+acctName(it.choice):'Which account is this file for?')):r.name+(r.last4?' ••'+r.last4:'');
+    const org=P.sync?(it.fileName.split(' · ')[0]!==it.fileName?it.fileName.split(' · ')[0]:''):it.fileName.replace(/^[0-9a-f]{8}-/,'');
+    h+='<div class="pvc '+st[1]+'"><div class="pvh"><div style="min-width:0"><b>'+esc(nm)+'</b>'+(org?'<div class="sub pvo">'+esc(org)+'</div>':'')+'</div><span class="pvs '+st[1]+'">'+st[0]+'</span></div>'
+     +'<div class="pvn"><span><b>'+it.fresh.length+'</b> new</span>'+(it.dup?'<span><b>'+it.dup+'</b> already in</span>':'')+(bal(it)!==''?'<span class="pvb">Balance <b class="'+(bal(it)<0?'neg':'')+'">'+fmt(bal(it))+'</b></span>':'')+(r.start?'<span class="pvd">'+r.start+' → '+r.end+'</span>':'')+(it.kind&&it.kind!=='pdf'&&it.kind!=='sync'?'<span class="pill">'+it.kind.toUpperCase()+'</span>':'')+'</div>';
+    if(r.reconcile) h+=r.reconcile.ok?'<div class="pos pvm">✓ Matches the totals printed on the statement</div>':'<div class="neg pvm"><i class="wi"></i>Statement says '+fmt(r.reconcile.expected)+' net, I read '+fmt(r.reconcile.got)+' — check before importing</div>';
+    r.warnings.slice(0,3).forEach(w=>{h+='<div class="neg pvm"><i class="wi"></i>'+esc(w)+'</div>';});
+    if(r.vaultNote&&r.txns.length) h+='<div class="sub pvm">Moves to and from vaults are filed as Transfers; vault interest is counted as income.</div>';
+    h+='<div class="row" style="margin-top:10px"><select data-chg="pdfacct" data-i="'+i+'" aria-label="Account for this file"><option value="">— Skip this one —</option>'
       +(r.generic?'':'<option value="new" '+(it.choice==='new'?'selected':'')+'>＋ New account: '+esc(r.name+(r.last4?' ••'+r.last4:''))+'</option>')
       +sortedAccts().map(a=>'<option value="'+a.id+'" '+(it.choice===a.id?'selected':'')+'>'+esc(a.name)+'</option>').join('')+'</select>'
-      +'<label class="chk" style="margin:0"><input type="checkbox" data-chg="pdfflip" data-i="'+i+'" '+(it.flip?'checked':'')+'> Flip signs</label></div>';
+      +(P.sync?'':'<label class="chk" style="margin:0"><input type="checkbox" data-chg="pdfflip" data-i="'+i+'" '+(it.flip?'checked':'')+'> Flip signs</label>')+'</div>';
     if(r.txns.length) h+='<details><summary>Show transactions</summary><div class="tw"><table><tbody>'+r.txns.slice(0,40).map(t=>{const a=it.flip?-t.amount:t.amount;return '<tr><td class="d">'+t.date+'</td><td class="ds">'+esc(t.desc)+'</td><td class="amt '+(a<0?'neg':'pos')+'">'+fmt(a)+'</td></tr>';}).join('')+'</tbody></table></div>'+(r.txns.length>40?'<p class="sub">…and '+(r.txns.length-40)+' more</p>':'')+'</details>';
     h+='</div>';
   });
-  h+='<div class="row"><button class="btn" data-act="pdfgo" '+(tot||keep?'':'disabled style="opacity:.5"')+'>'+(tot?'Import '+tot:'Save originals')+'</button><button class="btn ghost" data-act="pdfcancel">Cancel</button></div></div>';
+  if(quiet.length) h+='<details class="pvq"><summary><b>'+quiet.length+' account'+(quiet.length===1?'':'s')+' up to date</b><span class="sub">nothing new to import</span></summary>'+quiet.map(({it})=>{const v=bal(it);return '<div class="pvr"><span>'+esc(it.res.name+(it.res.last4?' ••'+it.res.last4:''))+(it.choice==='new'?' <i class="pvs new">New</i>':'')+'</span>'+(v!==''?'<b class="'+(v<0?'neg':'')+'">'+fmt(v)+'</b>':'')+'</div>';}).join('')+'</details>';
+  h+='<div class="row" style="margin-top:12px"><button class="btn" data-act="pdfgo" '+(tot||keep?'':'disabled style="opacity:.5"')+'>'+(tot?'Import '+tot:'Save originals')+'</button><button class="btn ghost" data-act="pdfcancel">Cancel</button></div></div>';
   return h;
 }
 function previewHTML(){
@@ -2319,7 +2338,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · last synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="row"><button class="btn" data-act="sfsync">Sync now</button><a class="btn ghost" href="https://bridge.simplefin.org" target="_blank" rel="noopener">Manage on SimpleFIN</a><button class="btn danger" data-act="sfdisconnect">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.32.1';
+const APP_VERSION='1.32.2';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -2868,7 +2887,7 @@ async function sfSync(){
     let j=await sfFetch(SF.access,start);
     // a brand-new bank/account only gets the short window above: fetch its history properly
     {const isNew=a=>{const l4=(String(a.name||'').match(/(\d{4})(?!.*\d)/)||[])[1]||'';return !S.accounts.find(x=>x.sf===a.id)&&!(l4&&S.accounts.find(x=>((x.ref||'').split(':')[1]===l4)||(x.name.match(/••(\d{4})/)||[])[1]===l4));};
-     if(SF.last&&(j.accounts||[]).some(isNew)){try{const w=await sfFetch(SF.access,Math.floor(Date.now()/1000)-90*86400);if(w&&Array.isArray(w.accounts)){dlog('simplefin','New account found, fetched 90 days',{count:(j.accounts||[]).filter(isNew).length});j=w;}}catch(e){}}}
+     if(SF.last&&(j.accounts||[]).some(isNew)){try{const w=await sfFetch(SF.access,Math.floor(Date.now()/1000)-80*86400);if(w&&Array.isArray(w.accounts)){dlog('simplefin','New account found, fetched 80 days',{count:(j.accounts||[]).filter(isNew).length});j=w;}}catch(e){}}}
     dlog('simplefin','Accounts received',(j.accounts||[]).map(a=>{const tx=a.transactions||[],ds=tx.filter(t=>!t.pending).map(t=>+(t.posted||t.transacted_at||0)).filter(Boolean).sort();return {id:a.id,name:a.name,org:a.org&&(a.org.name||a.org.domain),balance:a.balance,available:a['available-balance'],balanceDate:a['balance-date']?new Date((+a['balance-date'])*1000).toISOString().slice(0,10):null,currency:a.currency,tx:tx.length,pending:tx.filter(t=>t.pending).length,first:ds[0]?new Date(ds[0]*1000).toISOString().slice(0,10):null,last:ds.length?new Date(ds[ds.length-1]*1000).toISOString().slice(0,10):null,holdings:(a.holdings||[]).length||undefined,holdingFields:Array.isArray(a.holdings)&&a.holdings[0]?Object.keys(a.holdings[0]):undefined,txFields:tx[0]?Object.keys(tx[0]):undefined};}));
     SF.last=Math.floor(Date.now()/1000);await kvSet('simplefin-last',SF.last);UI._okAt=Date.now();
     S.sfRaw=(j.accounts||[]).map(a=>{const o=Object.assign({},a);delete o.transactions;o.txCount=(a.transactions||[]).length;if(o.holdings){o.holdings=o.holdings.length;}return o;});
