@@ -63,7 +63,7 @@ h1{font-size:28px;font-weight:800;letter-spacing:-.03em;margin:2px 0 12px}h2{fon
 .bkw>.row{flex-wrap:nowrap}.bkw .bkh{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rcr.go{cursor:pointer;border-radius:12px;transition:background .12s}.rcr.go:hover{background:var(--soft)}.rcmore{margin-top:8px;width:100%}
 .tkre.spin svg{animation:tkspin .8s linear infinite}@keyframes tkspin{to{transform:rotate(360deg)}}.tkre.done{color:var(--good);border-color:color-mix(in srgb,var(--good) 45%,var(--line))}.tkre.done svg{animation:tkpop .5s ease}@keyframes tkpop{40%{transform:scale(1.25)}}@media (prefers-reduced-motion:reduce){.tkre.spin svg,.tkre.done svg{animation:none}}
-.sfbtns{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.sfbtns .sfdc{color:var(--bad);margin-left:auto}
+.sfbtns{display:flex;gap:6px;flex-wrap:nowrap;align-items:center}.sfbtns>*{flex:none}.okg{color:var(--good);font-weight:600}.sfbtns .sfdc{color:var(--bad)!important;margin-left:auto}
 .dgroup{margin-top:14px;border:1px solid var(--line);border-radius:14px;overflow:hidden}
 .drow{border-top:1px solid var(--line)}.drow:first-child{border-top:0}
 .drow>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:12px 14px;font-weight:700}.drow>summary::-webkit-details-marker{display:none}
@@ -413,7 +413,7 @@ td.ds{max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .t2{margin-top:5px}
 .t2 .sub{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .t2 select{max-width:46%;font-size:12.5px;padding:5px 26px 5px 10px;border-radius:99px;background-position:right 9px center;font-weight:600;color:var(--mute)}
-.al{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--line)}
+.ach{align-items:center;gap:8px;flex-wrap:nowrap;margin-bottom:10px}.ach .ivh{flex:1;min-width:0;align-items:center}.alc{margin-top:6px}.alr{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px}.alr:last-child{border-bottom:0}.ald{width:8px;height:8px;border-radius:50%;background:var(--good,#10b981);flex:none}.alr.bad .ald{background:var(--bad)}.aln{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.alr .pill{flex:none;font-size:11px}.alb{flex:none;font-variant-numeric:tabular-nums}.sfbtns .btn.sfdc{color:var(--bad)}.al{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--line)}
 .al:last-of-type{border-bottom:0}
 .al{flex-wrap:wrap}.al>div:first-child{flex:1 1 220px}
 .al{flex-wrap:nowrap!important;align-items:flex-start}.al>div:first-child{flex:1 1 0;min-width:0}.al>.row{flex:none;margin-top:2px}.al>.row .btn.bo.small{width:36px;height:36px}.al .row{flex-wrap:nowrap;gap:6px}.al>div{min-width:0}
@@ -2421,6 +2421,7 @@ function viewDash(){
   const stale=!S.lastBackup||(Date.now()-S.lastBackup)>30*864e5;
   const fresh=UI._okAt&&Date.now()-UI._okAt<5000;
   if(SF.access&&sfOnline()) h+='<div class="banner row sy'+(SF.last&&(Date.now()/1000-SF.last)<86400?' ok':'')+'"><span>'+(SF.last?(fresh?'<i class="okck" aria-hidden="true">✓</i>':'')+'Synced '+syncWhen(SF.last*1000):'Not synced yet')+'</span><span class="spacer"></span><button class="btn small" data-act="sfsync" data-ico="lead">Sync</button></div>';
+  if(UI.pdf&&UI.pdf.sync&&!UI.pdf.busy){const nn=(UI.pdf.items||[]).filter(it=>it.choice==='new'&&(it.fresh||[]).length).length;h+='<div class="banner row"><span><b>'+(nn>1?nn+' new accounts':'New account')+' found.</b> Review to finish the sync.</span><span class="spacer"></span><button class="btn small" data-act="goimport">Review</button></div>';}
   // announcements: sit with the sync banner and can be dismissed (each comes back if its situation changes)
   {const DS=dismissed(),day=Math.floor(Date.now()/864e5),wk=Math.floor(Date.now()/(7*864e5)),HH=sfHealth(),nn=HH.bad+HH.general.length;
    const bn=(id,sig,txt,act,lbl)=>DS[id]===sig?'':'<div class="banner row"><span>'+txt+'</span><span class="spacer"></span><button class="btn small" data-act="'+act+'">'+lbl+'</button><button type="button" class="bx" data-act="bndis" data-id="'+esc(id)+'" data-sig="'+esc(sig)+'" aria-label="Dismiss" title="Dismiss (or swipe the banner away)">×</button></div>';
@@ -2561,12 +2562,19 @@ function yearlyInterest(a){
   const b=a.sf&&S.balSf&&S.balSf[a.sf];return b&&b.v>0&&b.v*a.rate/100>=1?b.v*a.rate/100:null;
 }
 function accountsCardHTML(HL){
-  let h='<section class="card" id="acctcard"><h2>Accounts</h2>'+healthCardHTML(HL);
-  if(S.accounts.length){
+  let av='compact';try{av=localStorage.getItem('hb-acctview')||'compact';}catch(e){}
+  const n=S.accounts.length,mn=av==='min'&&n;
+  let h='<section class="card" id="acctcard">'+(n?'<div class="row ach"><button type="button" class="ivh" data-act="acctview" data-v="'+(mn?'compact':'min')+'" aria-expanded="'+!mn+'"><i class="chv2">›</i><h2 style="margin:0">Accounts <span class="sub">'+n+(mn&&HL.on&&!HL.issues.length?' · <span class="okg">✓ all healthy</span>':'')+'</span></h2></button>'+(mn?'':'<button type="button" class="btn ghost small" data-act="acctview" data-v="'+(av==='full'?'compact':'full')+'">'+(av==='full'?'Compact':'Details')+'</button>')+'</div>':'<h2>Accounts</h2>')+(mn&&HL.on&&!HL.issues.length?'':healthCardHTML(HL));
+  if(mn){}
+  else if(n&&av!=='full'){
+    h+='<div class="alc">'+sortedAccts().map(a=>{const bal=a.sf&&S.balSf&&S.balSf[a.sf],bad=HL.by[a.id]&&!HL.by[a.id].ok;return '<div class="alr'+(bad?' bad':'')+'"><i class="ald" aria-hidden="true"></i><span class="aln">'+esc(a.name)+'</span><span class="pill">'+(isCD(a)?'CD':TYPES[a.type])+'</span><b class="alb">'+(bal?fmt0(bal.v):'')+'</b></div>';}).join('')+'</div>';
+  }
+  else if(n){
     const TBA=new Map();S.txns.forEach(t=>{let g=TBA.get(t.acct);if(!g){g=[];TBA.set(t.acct,g);}g.push(t);});
     h+=sortedAccts().map(a=>{const ts=TBA.get(a.id)||[],nf=S.files.filter(f=>f.acct===a.id).length;const last=ts.reduce((m,t)=>t.date>m?t.date:m,''),bal=a.sf&&S.balSf&&S.balSf[a.sf];return '<div class="al'+((HL.by[a.id]&&!HL.by[a.id].ok)?' bad':'')+'"><div><b>'+esc(a.name)+'</b> <span class="pill">'+(isCD(a)?'CD':TYPES[a.type])+'</span> '+rateChip(a)+acctChip(HL,a.id)+'<div class="sub">'+(bal?'<b>'+fmt(bal.v)+'</b> · ':'')+(yearlyInterest(a)!=null?'≈ '+fmt0(yearlyInterest(a))+'/yr interest · ':'')+ts.length+' txns'+(last?' · latest '+last:'')+(nf?' · '+nf+' original'+(nf>1?'s':'')+' kept':'')+'</div>'+acctNote(HL,a.id)+'</div> <span class="row" style="gap:6px"><button class="btn ghost small" data-act="renacct" data-id="'+esc(a.id)+'" aria-label="Rename '+esc(a.name)+'">Rename</button><button class="btn danger small" data-act="delacct" data-id="'+esc(a.id)+'" aria-label="Delete '+esc(a.name)+'">Delete</button></span></div>';}).join('');
   } else h+='<p class="mute">No accounts yet. Add your first one below.</p>';
-  h+='<details style="margin-top:10px" '+(S.accounts.length?'':'open')+'><summary>Add an account manually</summary><div class="row" style="margin-top:10px"><input type="text" id="newName" placeholder="e.g. Chase Checking" style="flex:1;min-width:150px"><select id="newType" aria-label="Account type">'+Object.entries(TYPES).map(([k,v])=>'<option value="'+k+'">'+v+'</option>').join('')+'</select><button class="btn" data-act="addacct">Add account</button></div></details></section>';
+  if(!mn) h+='<details style="margin-top:10px" '+(S.accounts.length?'':'open')+'><summary>Add an account manually</summary><div class="row" style="margin-top:10px"><input type="text" id="newName" placeholder="e.g. Chase Checking" style="flex:1;min-width:150px"><select id="newType" aria-label="Account type">'+Object.entries(TYPES).map(([k,v])=>'<option value="'+k+'">'+v+'</option>').join('')+'</select><button class="btn" data-act="addacct">Add account</button></div></details>';
+  h+='</section>';
   return h;
 }
 function importCardHTML(){
@@ -2737,9 +2745,9 @@ function sfCardHTML(){
   const hd='<section class="card" id="s-sync"><h2>Bank sync</h2>';
   if(!sfOnline()) return hd+'<p class="mute" style="margin:0">Automatic sync with SimpleFIN works in the desktop copy of HomeBudget, a file saved on your computer. This online viewer blocks network access, so use import here.</p></section>';
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
-  return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · last synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect">Disconnect</button></div></section>';
+  return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" aria-label="Disconnect bank sync" title="Disconnect">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.41.0';
+const APP_VERSION='1.41.1';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -2821,7 +2829,7 @@ function viewInvest0(){
   rows.forEach(r=>{
     const cash=(r.inf.bal!=null?r.inf.bal:r.pos)-r.pos;
     const open=OPEN.includes(r.id);
-    h+='<section class="card" id="iv-'+esc(r.id)+'"><button type="button" class="ivh" data-act="invtoggle" data-id="'+esc(r.id)+'" aria-expanded="'+open+'"><i class="chv2">›</i><h2>'+esc(r.inf.name)+'</h2><span class="spacer"></span><b class="invv">'+fmt0(r.inf.bal!=null?r.inf.bal:r.pos)+'</b></button><div class="sub" style="margin:2px 0 6px 24px">'+esc(r.inf.org)+(r.inf.org?' · ':'')+r.L.length+' position'+(r.L.length===1?'':'s')+(CB.by[r.id]?' · <b class="rdyc">'+fmt0(CB.by[r.id])+' cash ready</b>':'')+'</div>'+(r.gl?'<div class="glr"><span class="'+(r.gl.d<0?'neg':'pos')+'">'+(r.gl.d<0?'-':'+')+fmt0(Math.abs(r.gl.d)).replace('-','')+' ('+pf(r.gl.p)+')</span> gain/loss'+'</div>':'')
+    h+='<section class="card" id="iv-'+esc(r.id)+'"><button type="button" class="ivh" data-act="invtoggle" data-id="'+esc(r.id)+'" aria-expanded="'+open+'"><i class="chv2">›</i><h2>'+esc(r.inf.name)+'</h2><span class="spacer"></span><b class="invv">'+fmt0(r.inf.bal!=null?r.inf.bal:r.pos)+'</b></button><div class="sub" style="margin:2px 0 6px 24px">'+esc(r.inf.org)+(r.inf.org?' · ':'')+r.L.length+' position'+(r.L.length===1?'':'s')+(CB.by[r.id]?' · <b class="rdyc">'+fmt0(CB.by[r.id])+' ready to invest</b>':'')+'</div>'+(r.gl?'<div class="glr"><span class="'+(r.gl.d<0?'neg':'pos')+'">'+(r.gl.d<0?'-':'+')+fmt0(Math.abs(r.gl.d)).replace('-','')+' ('+pf(r.gl.p)+')</span> gain/loss'+'</div>':'')
      +'<div class="ipl"'+(open?'':' hidden')+'>'+r.L.map(x=>{const fi=fixedInc(x),g=(x.value!=null&&x.cost!=null&&!fi)?x.value-x.cost:null;
        return '<div class="ip"><div class="l">'+fxTitle(fi?fi.issuer:(x.sym||x.desc||'Position'))+(fi?'<span class="fi">'+fi.kind+' · <b>'+fi.rate+'%</b> · '+matText(fi.mat)+(x.value>0?' · ≈'+fmt0(x.value*fi.rate/100)+'/yr':'')+'</span>':'<span>'+esc(x.sym&&x.desc?x.desc:'')+(x.shares!=null?(x.sym&&x.desc?' · ':'')+(+x.shares.toFixed(4))+' sh':'')+(x.price!=null?' @ '+fmt(x.price):'')+'</span>')+'</div><div class="r"><b>'+(x.value!=null?fmt(x.value):'–')+'</b>'+(g!=null?'<span class="'+(g<0?'neg':'pos')+'">'+(g<0?'-':'+')+fmt(Math.abs(g)).replace('-','')+' · '+pf(g/x.cost*100)+'</span>':'<span>&nbsp;</span>')+'</div></div>';}).join('')
      +(Math.abs(cash)>=1?'<div class="ip"><div class="l"><b>Cash &amp; other</b><span>Not in a position</span></div><div class="r"><b>'+fmt(cash)+'</b><span>&nbsp;</span></div></div>':'')+'</div></section>';
@@ -3165,8 +3173,8 @@ function applyTheme(){
 function setTheme(v){try{localStorage.setItem('hb-theme',v);}catch(e){}applyTheme();}
 // ---- icon buttons: swap well-known text buttons for standard icons (label kept for screen readers) ----
 const EXTI='<svg class="bi" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4"/></svg>';
-const BIC={download:'<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>',upload:'<path d="M12 16V5M7 10l5-5 5 5M5 20h14"/>',share:'<path d="M12 15V3M8 7l4-4 4 4M7 11H6a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-1"/>',refresh:'<path d="M20 11a8 8 0 0 0-14.5-4M4 4v4h4M4 13a8 8 0 0 0 14.5 4M20 20v-4h-4"/>',trash:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',pencil:'<path d="M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4"/>',plus:'<path d="M12 5v14M5 12h14"/>',copy:'<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/>',x:'<path d="M6 6l12 12M18 6L6 18"/>'};
-const BMAP={flowsave:['download','Save picture',1],flowshare:['share','Share',1],getfile:['download','Download',1],dbgdl:['download',0,0],dbgcopy:['copy','Copy',1],dbgclear:['trash','Clear',1],sfsync:['refresh',0,0],delrule:['trash','Remove',1],tkdel:['trash','Remove',1],delacct:['trash','Delete',1],bdclear:['trash','Remove',1],renacct:['pencil','Rename',1],tkadd:['plus','Add',1],backup:['download',0,0],sharebackup:['share',0,0],exportcsv:['download',0,0],goimport:['upload',0,0],addacct:['plus',0,0],addbud:['plus',0,0],clearall:['trash',0,0],bdclose:['x',0,0]};
+const BIC={unlink:'<path d="M9 15l-2 2a3 3 0 0 1-4-4l3-3a3 3 0 0 1 4 0M15 9l2-2a3 3 0 0 1 4 4l-3 3a3 3 0 0 1-4 0M4 4l16 16"/>',download:'<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>',upload:'<path d="M12 16V5M7 10l5-5 5 5M5 20h14"/>',share:'<path d="M12 15V3M8 7l4-4 4 4M7 11H6a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-1"/>',refresh:'<path d="M20 11a8 8 0 0 0-14.5-4M4 4v4h4M4 13a8 8 0 0 0 14.5 4M20 20v-4h-4"/>',trash:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',pencil:'<path d="M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4"/>',plus:'<path d="M12 5v14M5 12h14"/>',copy:'<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/>',x:'<path d="M6 6l12 12M18 6L6 18"/>'};
+const BMAP={sfdisconnect:['unlink','Disconnect',1],flowsave:['download','Save picture',1],flowshare:['share','Share',1],getfile:['download','Download',1],dbgdl:['download',0,0],dbgcopy:['copy','Copy',1],dbgclear:['trash','Clear',1],sfsync:['refresh',0,0],delrule:['trash','Remove',1],tkdel:['trash','Remove',1],delacct:['trash','Delete',1],bdclear:['trash','Remove',1],renacct:['pencil','Rename',1],tkadd:['plus','Add',1],backup:['download',0,0],sharebackup:['share',0,0],exportcsv:['download',0,0],goimport:['upload',0,0],addacct:['plus',0,0],addbud:['plus',0,0],clearall:['trash',0,0],bdclose:['x',0,0]};
 function icoBtns(root){
   (root||document).querySelectorAll('button[data-act]:not([data-bi]),span.pick:not([data-bi])').forEach(b=>{
     b.dataset.bi='1';const raw=(b.textContent||'').trim(),a=b.dataset.act;let ic,only=0;
@@ -3384,7 +3392,7 @@ async function sfSync(){
     if(!items.length){UI.pdf=null;toast(warn[0]||'SimpleFIN returned no accounts. Link your banks on the SimpleFIN site first.');}
     else if(!nNew){UI.pdf=null;UI._an=null;UI._posAnim=true;UI._fx=true;toast(warn[0]||'Nothing new to sync. Balances are up to date.');}
     else if(!items.some(it=>it.choice==='new'&&(it.fresh||[]).length)){UI._keepTab=UI.tab;busyHide();await ACT.pdfgo();UI._fx=true;UI._posAnim=true;}
-    else{UI.tab='settings';UI.goto='s-import';toast('New account found. Check it, then press Save.');}
+    else{const nn=items.filter(it=>it.choice==='new'&&(it.fresh||[]).length);dlog('simplefin','New account needs review',nn.map(it=>it.fileName));if(UI.tab==='settings')UI.goto='s-import';toast('New account found. Tap Review on the banner to finish.');}
     UI._okAt=Date.now();
   }catch(e){
     dlog('simplefin','Sync failed',errInfo(e),'error');
@@ -3522,6 +3530,7 @@ const ACT={
       if(ex){MK.sug=null;ACT.tkpick({dataset:{s:ex.symbol}});}else{MK.sug=L.slice(0,5).map(x=>({s:x.symbol,n:x.description||''}));marketRefresh();}
     }catch(e){MK.sug=[];marketRefresh();}},
   gocds(){const e=document.querySelector('[data-w="cds"]');if(e){e.scrollIntoView({behavior:'instant',block:'start'});}else{UI.tab='invest';render();}},
+  acctview(el){try{localStorage.setItem('hb-acctview',el.dataset.v);}catch(e){}render();},
   goaccts(){UI.tab='settings';render();setTimeout(()=>{const e=document.getElementById('acctcard');if(e)e.scrollIntoView({behavior:'smooth',block:'start'});},50);},
   herogo(el){
     const k=el.dataset.k;
