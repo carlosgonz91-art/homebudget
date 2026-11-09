@@ -480,7 +480,7 @@ td.ds{max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dlgbox.sheet{max-height:88vh;overflow:auto}
 .t1[data-act]{cursor:pointer;-webkit-user-select:none;user-select:none}
 .brow{display:block;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:14px 0;color:inherit;font:inherit;cursor:pointer}
-.brow:last-child,.bwrap:last-child>.brow{border-bottom:0}.bwrap{position:relative}.bwrap>.brow .b1{padding-right:46px}.bwrap>.btn.bed{position:absolute!important;top:7px;right:-4px;margin:0}
+.brow:last-child,.bwrap:last-child>.brow{border-bottom:0}.bwrap{display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line)}.bwrap:last-child{border-bottom:0}.bwrap>.brow{flex:1;min-width:0;border-bottom:0!important}.bwrap>.btn.bed{flex:none;margin:0;width:36px;height:36px;min-height:36px;padding:0}
 .b1,.b2{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
 .b1{margin-bottom:8px;font-weight:650}
 .b2{margin-top:6px}
@@ -2754,7 +2754,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" aria-label="Disconnect bank sync" title="Disconnect">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.42.0';
+const APP_VERSION='1.42.1';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -3271,7 +3271,7 @@ const STALE_DAYS=4,ageDays=ms=>Math.floor((Date.now()-ms)/864e5);
 const agoTxt=ms=>{const d=ageDays(ms);return d<=0?'today':d===1?'yesterday':d+' days ago';};
 // SimpleFIN's own wording ("Connection to X may need attention. Auth required. Fix it at SimpleFIN...") boiled down to a bank and a short reason
 // sign-in pages for banks SimpleFIN knows; anything else falls back to the bank's own site (https only)
-const BANKLOGIN={'chase.com':'https://secure.chase.com/web/auth/dashboard','americanexpress.com':'https://www.americanexpress.com/en-us/account/login','fidelity.com':'https://digital.fidelity.com/prgw/digital/login/full-page','discoverbank.com':'https://portal.discover.com/customersvcs/universalLogin/ac_main','discover.com':'https://portal.discover.com/customersvcs/universalLogin/ac_main','sofi.com':'https://www.sofi.com/login/','marcus.com':'https://www.marcus.com/us/en/login','optumbank.com':'https://www.optumbank.com/','mytargetcirclecard.target.com':'https://mytargetcirclecard.target.com/ecs/auth/','capitalone.com':'https://verified.capitalone.com/auth/signin','wellsfargo.com':'https://connect.secure.wellsfargo.com/auth/login/present','bankofamerica.com':'https://secure.bankofamerica.com/login/sign-in/signOnV2Screen.go','citi.com':'https://online.citi.com/US/login.do','usbank.com':'https://onlinebanking.usbank.com/auth/login/','ally.com':'https://secure.ally.com/','schwab.com':'https://client.schwab.com/Login/SignOn/CustomerCenterLogin.aspx','vanguard.com':'https://logon.vanguard.com/'};
+const BANKLOGIN={'chase.com':'https://secure.chase.com/web/auth/dashboard','americanexpress.com':'https://www.americanexpress.com/en-us/account/login','fidelity.com':'https://digital.fidelity.com/prgw/digital/login/full-page','discoverbank.com':'https://portal.discover.com/customersvcs/universalLogin/ac_main','discover.com':'https://portal.discover.com/customersvcs/universalLogin/ac_main','sofi.com':'https://www.sofi.com/login/','marcus.com':'https://www.marcus.com/us/en/login','optumbank.com':'https://www.optumbank.com/','mytargetcirclecard.target.com':'https://mytargetcirclecard.target.com/','capitalone.com':'https://verified.capitalone.com/auth/signin','wellsfargo.com':'https://connect.secure.wellsfargo.com/auth/login/present','bankofamerica.com':'https://secure.bankofamerica.com/login/sign-in/signOnV2Screen.go','citi.com':'https://online.citi.com/US/login.do','usbank.com':'https://onlinebanking.usbank.com/auth/login/','ally.com':'https://secure.ally.com/','schwab.com':'https://client.schwab.com/Login/SignOn/CustomerCenterLogin.aspx','vanguard.com':'https://logon.vanguard.com/'};
 function bankUrl(o){
   if(!o) return '';const d=String(o.domain||o.id||'').toLowerCase().replace(/^www\./,'');
   if(BANKLOGIN[d]) return BANKLOGIN[d];
