@@ -60,7 +60,7 @@ h1{font-size:28px;font-weight:800;letter-spacing:-.03em;margin:2px 0 12px}h2{fon
 .hrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;position:relative}
 .hchip.hgo{cursor:pointer;transition:background .15s,transform .1s}.hchip.hgo:hover{background:rgba(255,255,255,.24)}.hchip.hgo:active{transform:scale(.98)}.hchip.hgo:focus-visible{outline:2px solid #fff;outline-offset:2px}
 .fxrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-.bkw>.row{flex-wrap:nowrap}.bkw .bkh{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bkw>.row{flex-wrap:nowrap}.bkt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.bkt h2{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.bkt .bkh{display:flex;align-items:center;gap:6px}.bkw .bkh{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rcr.go{cursor:pointer;border-radius:12px;transition:background .12s}.rcr.go:hover{background:var(--soft)}.rcmore{margin-top:8px;width:100%}
 .tkre.spin svg{animation:tkspin .8s linear infinite}@keyframes tkspin{to{transform:rotate(360deg)}}.tkre.done{color:var(--good);border-color:color-mix(in srgb,var(--good) 45%,var(--line))}.tkre.done svg{animation:tkpop .5s ease}@keyframes tkpop{40%{transform:scale(1.25)}}@media (prefers-reduced-motion:reduce){.tkre.spin svg,.tkre.done svg{animation:none}}
 .sfbtns{display:flex;gap:6px;flex-wrap:nowrap;align-items:center}.sfbtns>*{flex:none}.okg{color:var(--good);font-weight:600}.sfbtns .sfdc{color:var(--bad)!important;margin-left:auto}
@@ -2345,7 +2345,7 @@ function bankConnHTML(){
   if(!L.length) return wCard('Bank connections','',wEmpty('No linked accounts yet. Press Sync now.')+'<p style="margin:10px 0 0"><button class="btn small" data-act="sfsync">Sync now</button></p>');
   const nBad=L.filter(x=>x.bad).length,gen=H.general;
   const head=nBad?'<span class="neg"><i class="wi"></i>'+nBad+' of '+L.length+' need'+(nBad===1?'s':'')+' attention</span>':gen.length?'<span class="neg"><i class="wi"></i>Check your connection</span>':'<span class="pos">● All '+L.length+' connected</span>';
-  return '<section class="card bkw"><div class="row" style="align-items:center;gap:8px"><h2 style="margin:0">Bank connections</h2><span class="sub bkh">'+head+(H.last?' · '+agoTxt(H.last):'')+'</span><span class="spacer"></span><button class="btn ghost small bks" data-act="sfsync" aria-label="Sync now">Sync</button></div>'
+  return '<section class="card bkw"><div class="row" style="align-items:center;gap:8px"><div class="bkt"><h2 style="margin:0">Bank connections</h2><span class="sub bkh">'+head+(H.last?' · '+agoTxt(H.last):'')+'</span></div><button class="btn ghost small bks" data-act="sfsync" aria-label="Sync now">Sync</button></div>'
    +'<div class="bkc">'+L.map(x=>x.bad?'<button type="button" class="bkp bad" data-act="goaccts" title="'+esc(x.bad.msg||x.bad.short||x.bad.label)+'"><i class="bkd warn"></i>'+esc(x.nm)+'<em>'+esc(String(x.bad.why||x.bad.label).slice(0,30))+'</em><span class="vh"> – open Settings to fix it</span></button>':(x.url?'<a class="bkp ok go" href="'+esc(x.url)+'" target="_blank" rel="noopener noreferrer" title="'+esc('Open '+x.nm+' sign-in · '+x.n+' account'+(x.n===1?'':'s')+(x.at?' · updated '+agoTxt(x.at):''))+'"><i class="bkd ok"></i>'+esc(x.nm)+'<span class="bkx">'+EXTI+'</span><span class="vh"> (opens sign-in page in a new tab)</span></a>':'<span class="bkp ok" title="'+esc(x.nm+' · '+x.n+' account'+(x.n===1?'':'s')+(x.at?' · updated '+agoTxt(x.at):''))+'"><i class="bkd ok"></i>'+esc(x.nm)+'</span>')).join('')+'</div>'
    +gen.map(m=>'<div class="hnote" title="'+esc(m)+'">'+esc(shortNote(m))+'</div>').join('')+'</section>';
 }
@@ -2757,7 +2757,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" aria-label="Disconnect bank sync" title="Disconnect">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.42.2';
+const APP_VERSION='1.42.3';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -3482,7 +3482,8 @@ const ACT={
   wedit(){UI.wedit=true;UI.goto='wtop';render();},
   wdone(){UI.wedit=false;UI.goto='wmain';render();},
   wreset(){S.widgets=null;save();render();},
-  wrem(el){const st=wState();st.order=st.order.filter(i=>i!==el.dataset.id);st.hidden.push(el.dataset.id);wSave(st);render();},
+  wrem(el){const nm=(WID.find?((WID.find(w=>w.id===el.dataset.id)||{}).t):'')||'this widget';dialog({msg:'Remove "'+nm+'" from Overview? You can add it back anytime from "Add a widget".',ok:'Remove',bad:true,onOk:()=>ACT._wrem(el)});},
+  _wrem(el){const st=wState();st.order=st.order.filter(i=>i!==el.dataset.id);st.hidden.push(el.dataset.id);wSave(st);render();},
   wadd(el){const st=wState();st.hidden=st.hidden.filter(i=>i!==el.dataset.id);st.order.push(el.dataset.id);wSave(st);render();
     requestAnimationFrame(()=>{const n=document.querySelector('.wgrid>.w[data-w="'+el.dataset.id+'"]');if(n) n.scrollIntoView({behavior:'instant',block:'center'});});},
   setgo(el){const e=document.getElementById(el.dataset.to);if(e)e.scrollIntoView({behavior:'smooth',block:'start'});else{UI.tab='settings';UI.goto=el.dataset.to;render();}},
@@ -3539,7 +3540,8 @@ const ACT={
   tkrefresh(){MK.spinUntil=Date.now()+900;MK.retryAt=0;ensureQuotes(true);marketRefresh();const fin=()=>{if(MK.busy||Date.now()<MK.spinUntil){setTimeout(fin,200);return;}MK.doneAt=MK.err?0:Date.now();marketRefresh();if(!MK.err) toast('Prices updated');setTimeout(marketRefresh,2600);};setTimeout(fin,300);},
   tksort(el){UI.tkSort=el.dataset.m==='mov'?'mov':'val';UI.tkPg=0;marketRefresh();},
   tkpage(el){UI.tkPg=Math.max(0,(UI.tkPg||0)+(+el.dataset.d));marketRefresh();},
-  tkdel(el){S.watch=(S.watch||[]).filter(x=>x!==el.dataset.s);save();marketRefresh();},
+  tkdel(el){dialog({msg:'Remove '+el.dataset.s+' from Market watch?',ok:'Remove',bad:true,onOk:()=>ACT._tkdel(el)});},
+  _tkdel(el){S.watch=(S.watch||[]).filter(x=>x!==el.dataset.s);save();marketRefresh();},
   tkpick(el){const s=el.dataset.s;MK.sug=null;if(!(S.watch||[]).includes(s)&&!tickHeld().some(x=>x.s===s)){S.watch=(S.watch||[]).concat([s]);save();}ensureQuotes(true);marketRefresh();},
   tkadd:async()=>{const el=document.getElementById('tkIn'),raw=String((el||{}).value||'').trim();if(!raw) return;
     try{const j=await fhGet('/search?q='+encodeURIComponent(raw));const L=(j.result||[]).filter(x=>x.symbol&&!/[.:]/.test(x.symbol)&&/stock|etp|etf|adr|common/i.test(x.type||'')||(x.symbol&&!/[.:]/.test(x.symbol)&&!x.type));
@@ -3593,7 +3595,8 @@ const ACT={
   posall(){UI.posAll=!UI.posAll;render();},
   pgprev(){UI.page=Math.max(0,(UI.page||0)-1);renderTxnList();window.scrollTo(0,0);},
   pgnext(){UI.page=(UI.page||0)+1;renderTxnList();window.scrollTo(0,0);},
-  delrule(el){S.rules.splice(+el.dataset.i,1);const pages=Math.max(1,Math.ceil(S.rules.length/RULE_PG));if((UI.rulePg||0)>=pages) UI.rulePg=pages-1;save();render();},
+  delrule(el){const r=S.rules[+el.dataset.i];if(!r) return;dialog({msg:'Delete the rule "'+r.match+'" → '+r.cat+'? Transactions already sorted keep their category.',ok:'Delete rule',bad:true,onOk:()=>ACT._delrule(el)});},
+  _delrule(el){S.rules.splice(+el.dataset.i,1);const pages=Math.max(1,Math.ceil(S.rules.length/RULE_PG));if((UI.rulePg||0)>=pages) UI.rulePg=pages-1;save();render();},
   rulestoggle(){UI.rulesOpen=!UI.rulesOpen;render();},
   rulepg(el){UI.rulePg=Math.max(0,(UI.rulePg||0)+(+el.dataset.d));render();},
   reapply(){const un=learnUncat(),prev=S.txns.map(t=>[t,t.cat,t.sub,t.inc]),n=applyRulesAll();save();render();toast((n+un)+' transaction'+(n+un===1?'':'s')+' updated',n?{label:'Undo',fn:()=>{prev.forEach(([t,c,sb,ic])=>{t.cat=c;if(sb) t.sub=sb;else delete t.sub;if(ic) t.inc=ic;else delete t.inc;});save();render();toast('Undone');}}:undefined);},
@@ -3606,7 +3609,8 @@ const ACT={
   },
   audoff(el){delete (S.auditOk||{})[el.dataset.k];save();render();},
   audxfer(el){const t=S.txns.find(x=>x.id===el.dataset.id);if(!t) return;const old=[t.cat,t.sub,t.inc];t.cat='Transfer';delete t.sub;delete t.inc;t.man=1;save();render();toast('Set to Transfer',{label:'Undo',fn:()=>{t.cat=old[0];if(old[1]) t.sub=old[1];if(old[2]) t.inc=old[2];save();render();}});},
-  audrm(el){const i=S.txns.findIndex(x=>x.id===el.dataset.id);if(i<0) return;const [t]=S.txns.splice(i,1);save();render();toast('Removed one copy',{label:'Undo',fn:()=>{S.txns.push(t);save();render();}});},
+  audrm(el){const t=S.txns.find(x=>x.id===el.dataset.id);if(!t) return;dialog({msg:'Remove this copy? '+(t.nick||t.desc)+' · '+fmt(t.amount)+' on '+t.date+'.',ok:'Remove',bad:true,onOk:()=>ACT._audrm(el)});},
+  _audrm(el){const i=S.txns.findIndex(x=>x.id===el.dataset.id);if(i<0) return;const [t]=S.txns.splice(i,1);save();render();toast('Removed one copy',{label:'Undo',fn:()=>{S.txns.push(t);save();render();}});},
   rfhome(){UI.tab='dash';render();},
   async backup(){
     const ok=await saveFile(profileName(),await profileText(),'application/json');
@@ -3707,7 +3711,8 @@ const ACT={
     if(roll){if(roll.checked) S.rollover[cat]=true;else delete S.rollover[cat];}
     ACT.bdclose();save();render();toast(amt?cat+': '+fmt0(amt)+' a month'+(once?' (this month only)':''):cat+' budget removed');
   },
-  bdclear(el){setBudget(el.dataset.cat,UI.month,0,false);delete S.rollover[el.dataset.cat];ACT.bdclose();save();render();},
+  bdclear(el){const c=el.dataset.cat;dialog({msg:'Remove the '+c+' budget for '+monthLabel(UI.month)+'? Its transactions stay.',ok:'Remove budget',bad:true,onOk:()=>ACT._bdclear(el),onCancel:()=>openSheet(c)});},
+  _bdclear(el){setBudget(el.dataset.cat,UI.month,0,false);delete S.rollover[el.dataset.cat];ACT.bdclose();save();render();},
   bdsee(el){jmp();UI.filters.cat=el.dataset.cat;UI.filters.month=UI.month;UI.filters.q='';UI.filters.acct='';UI.limit=100;ACT.bdclose();UI.tab='txns';render();},
   suggest(){
     // average spending over up to 3 earlier months that have data, rounded up to the next $10
