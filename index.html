@@ -2695,7 +2695,7 @@ function viewBudgets(){
   if(!UI.month) UI.month=latestMonth();
   const ym=UI.month,d=md(ym),cats=expenseCats(),pe=plannedExpenses(ym),pi=budgetOf('Income',ym);
   const spentAll=budgetedSpend(ym,d),unb=d.spend-spentAll,left=pe-spentAll;
-  let h='<h1>Budgets</h1>'+monthPicker();
+  let h=monthPicker();
   if(!pe&&!pi){
     return h+typicalHTML()+'<section class="card"><h2>Plan your month</h2><p class="mute" style="margin-top:0">Set a monthly limit for each category and see what’s left. Limits carry over until you change them.</p><div class="row"><button class="btn" data-act="suggest">Suggest from my last 3 months</button><button class="btn ghost" data-act="addbud">Add one myself</button></div></section>';
   }
@@ -2757,7 +2757,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" aria-label="Disconnect bank sync" title="Disconnect">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.42.3';
+const APP_VERSION='1.42.4';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -2812,13 +2812,13 @@ function viewInvest(){
   if(!hasLoans()) return viewInvest0();
   const m=ivMode();
   const both=hasInv()||S.accounts.some(a=>a.type==='brokerage'&&a.sf);
-  return m==='loans'?'<h1>Loans</h1>'+(both?ivSwitch(m):'')+loansPageHTML():ivSwitchWrap(viewInvest0(),ivSwitch(m));
+  return m==='loans'?(both?ivSwitch(m):'')+loansPageHTML():ivSwitchWrap(viewInvest0(),ivSwitch(m));
 }
 // put the switch right under the page title
-const ivSwitchWrap=(html,sw)=>html.replace(/(<h1>[^<]*<\/h1>)/,'$1'+sw);
+const ivSwitchWrap=(html,sw)=>sw+html;
 function viewInvest0(){
   const H=S.holdings||{},ids=invIds();
-  if(!ids.length)return '<h1>Investments</h1><section class="card"><p class="mute" style="margin:0">No positions loaded yet. Your investment accounts are linked, so press Sync now and the positions will appear here.</p>'+(SF.access?'<p style="margin:12px 0 0"><button class="btn" data-act="sfsync">Sync now</button></p>':'')+'</section>';
+  if(!ids.length)return '<section class="card"><p class="mute" style="margin:0">No positions loaded yet. Your investment accounts are linked, so press Sync now and the positions will appear here.</p>'+(SF.access?'<p style="margin:12px 0 0"><button class="btn" data-act="sfsync">Sync now</button></p>':'')+'</section>';
   const info=id=>{const a=S.accounts.find(x=>x.sf===id),r=(S.sfRaw||[]).find(x=>x.id===id),b=S.balSf&&S.balSf[id];return {name:a?a.name:(r?String(r.name||'').replace(/\s*\(\d{4}\)\s*$/,''):id),org:(r&&r.org&&(r.org.name||r.org.domain))||'',bal:b?b.v:(r&&hnum(r.balance))};};
   const rows=ids.map(id=>{const L=(H[id]||[]).slice().sort((x,y)=>(y.value||0)-(x.value||0)),inf=info(id),pos=L.reduce((t,h)=>t+(h.value||0),0);let gv=0,gc=0,gn=0;L.forEach(h=>{if(h.value!=null&&h.cost!=null&&!fixedInc(h)){gv+=h.value;gc+=h.cost;gn++;}});return {id,L,inf,pos,gl:gc>0?{d:gv-gc,p:(gv-gc)/gc*100,n:gn}:null};}).sort((x,y)=>(y.inf.bal||y.pos)-(x.inf.bal||x.pos));
   const tot=rows.reduce((t,r)=>t+(r.inf.bal!=null?r.inf.bal:r.pos),0),inPos=rows.reduce((t,r)=>t+r.pos,0);
@@ -2827,7 +2827,7 @@ function viewInvest0(){
   const CB=cashByAcct();
   const RDY=CB.tot>=1?'<section class="card rdy"><h2 style="margin:0"><span class="rdyv">'+fmt0(CB.tot)+'</span> ready to invest</h2><p class="sub" style="margin:4px 0 8px">Uninvested cash (like SPAXX). CDs not included.</p>'+CB.L.map(x=>'<div class="ivr go" role="button" tabindex="0" data-act="invgo" data-id="'+esc(x.id)+'"><div class="ivn"><b>'+esc(x.name.replace(/\s*\([^)]*\)/g,'').trim()||x.name)+'</b><span>'+fmt(x.v)+'<i class="ivgo" aria-hidden="true">›</i></span></div><div class="ivm"><span class="ivbar"><i style="width:'+Math.max(3,x.v/CB.L[0].v*100).toFixed(1)+'%"></i></span><em>'+(x.all>0&&x.v/x.all>=.01?Math.round(x.v/x.all*100)+'% of account':'&nbsp;')+'</em></div></div>').join('')+'</section>':'';
   const st=(l,v,c)=>'<div><small>'+l+'</small><b'+(c?' class="'+c+'"':'')+'>'+v+'</b></div>';
-  let h='<h1>Investments</h1><section class="card"><div class="sub" style="margin:0">Total value</div><div class="invtot">'+fmt0(tot)+'</div><div class="ivst">'+st('In positions',fmt0(Math.max(0,Math.round(tot)-Math.round(CB.tot))))+(CB.tot>=1?st('Ready to invest',fmt0(CB.tot),'rdyc'):'')+(gc>0?st('Gain / loss',(gl<0?'-':'+')+fmt0(Math.abs(gl)).replace('-','')+' ('+pf(gl/gc*100)+')',gl<0?'neg':'pos'):'')+(fiN?st('CD &amp; bond interest','≈'+fmt0(fiInt)+'/yr'):'')+'</div>'+(S.holdingsAt?(()=>{const H=S.holdings||{},ats=Object.keys(H).filter(i=>H[i]&&H[i].length).map(i=>S.balSf&&S.balSf[i]&&S.balSf[i].at).filter(Boolean),asOf=ats.length?Math.min(...ats):null,f=(t,w)=>new Date(t).toLocaleString([], w?{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}:{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});return '<p class="ivnote">'+(asOf?'Prices from '+f(asOf,true)+' · ':'')+'Synced '+f(S.holdingsAt)+'</p>';})():'')+'</section>';
+  let h='<section class="card"><div class="sub" style="margin:0">Total value</div><div class="invtot">'+fmt0(tot)+'</div><div class="ivst">'+st('In positions',fmt0(Math.max(0,Math.round(tot)-Math.round(CB.tot))))+(CB.tot>=1?st('Ready to invest',fmt0(CB.tot),'rdyc'):'')+(gc>0?st('Gain / loss',(gl<0?'-':'+')+fmt0(Math.abs(gl)).replace('-','')+' ('+pf(gl/gc*100)+')',gl<0?'neg':'pos'):'')+(fiN?st('CD &amp; bond interest','≈'+fmt0(fiInt)+'/yr'):'')+'</div>'+(S.holdingsAt?(()=>{const H=S.holdings||{},ats=Object.keys(H).filter(i=>H[i]&&H[i].length).map(i=>S.balSf&&S.balSf[i]&&S.balSf[i].at).filter(Boolean),asOf=ats.length?Math.min(...ats):null,f=(t,w)=>new Date(t).toLocaleString([], w?{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}:{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});return '<p class="ivnote">'+(asOf?'Prices from '+f(asOf,true)+' · ':'')+'Synced '+f(S.holdingsAt)+'</p>';})():'')+'</section>';
   // biggest positions across accounts
   const l4=id=>{const a=S.accounts.find(x=>x.sf===id),r=(S.sfRaw||[]).find(x=>x.id===id),m=((a&&a.name)||'').match(/••(\d{4})/)||String((r&&r.name)||'').match(/\((\d{4})\)\s*$/)||String((r&&r.name)||'').match(/(\d{4})\s*$/);return m?'••'+m[1]:'';};
   const mode=posMode(),pa=!!UI._posAnim,agg={};UI._posAnim=false;
@@ -2848,7 +2848,7 @@ function viewInvest0(){
 }
 const SETNAV=[['s-sync','Bank sync'],['acctcard','Accounts'],['s-import','Import'],['s-rules','Rules'],['s-data','Backup'],['s-help','Help']];
 function settingsTop(){
-  return '<h1>Settings</h1><div class="snav" role="navigation" aria-label="Jump to a section">'+SETNAV.map(([id,l])=>'<button type="button" data-act="setgo" data-to="'+id+'">'+l+'</button>').join('')+'</div>';
+  return '<div class="snav" role="navigation" aria-label="Jump to a section">'+SETNAV.map(([id,l])=>'<button type="button" data-act="setgo" data-to="'+id+'">'+l+'</button>').join('')+'</div>';
 }
 const RULE_PG=8;
 function rulesCardHTML(){
