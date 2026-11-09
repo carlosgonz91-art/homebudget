@@ -230,7 +230,31 @@ label select,label input{display:block;margin-top:4px;color:var(--ink)}
 .tksg{display:flex;flex-direction:column;gap:2px;margin-top:8px}.tksg button{display:flex;gap:10px;align-items:baseline;text-align:left;border:0;background:var(--soft);border-radius:10px;padding:8px 10px;font:inherit;color:var(--ink);cursor:pointer}.tksg button span{color:var(--mute);font-size:12px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tkre{width:34px;height:34px}
 .bbr u{text-decoration:none;font-weight:800;color:var(--ink);margin-left:2px}
-.bbh{text-align:center;margin-top:4px}.bbh b{font-size:22px;font-weight:900;letter-spacing:.04em}.bbh .sub{margin-top:3px;font-size:13px;line-height:1.4}.bbx{margin-top:12px;padding:10px 12px;border-radius:12px;font-size:13px;line-height:1.45;background:color-mix(in srgb,var(--c) 12%,var(--card));border:1px solid color-mix(in srgb,var(--c) 35%,var(--line))}.bbl{border-color:color-mix(in srgb,var(--lv,var(--line)) 40%,var(--line))}.bbr{display:grid;grid-template-columns:78px minmax(0,1fr);align-items:center;gap:2px 10px;margin:9px 0;font-size:12.5px}.bbr em{grid-column:2;font-style:normal;color:var(--mute)}.bbr span{font-weight:700}.bbr i{height:7px;border-radius:4px;background:var(--track);overflow:hidden}.bbr i b{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,#10b981,#eab308,#e11d48)}.bbr em{font-style:normal;color:var(--mute);white-space:nowrap}
+.bbh{text-align:center;margin-top:4px}
+.bbtop{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:8px 24px;align-items:center}
+@media (max-width:700px){.bbtop{grid-template-columns:minmax(0,1fr)}}
+.bbdw{position:relative;max-width:340px;width:100%;margin:0 auto}.bbd{width:100%;height:auto;display:block}
+.bbsc{text-align:center;line-height:1;margin-top:2px}.bbsc b{font-size:clamp(30px,9vw,40px);font-weight:900;font-variant-numeric:tabular-nums}.bbsc span{font-size:13px;color:var(--mute);font-weight:700;margin-left:2px}
+.bbneedle{transform-origin:150px 150px;transform:rotate(var(--rot));transition:transform 1s cubic-bezier(.3,.7,.2,1);animation:bbjit 2.4s ease-in-out infinite}
+@keyframes bbjit{0%,100%{transform:rotate(var(--rot))}20%{transform:rotate(calc(var(--rot) + var(--j)))}45%{transform:rotate(calc(var(--rot) - var(--j)*.6))}70%{transform:rotate(calc(var(--rot) + var(--j)*.35))}85%{transform:rotate(calc(var(--rot) - var(--j)*.8))}}
+@media (prefers-reduced-motion:reduce){.bbneedle{animation:none}}
+.bbh b{display:block}.bbtag{font-style:italic;color:var(--mute);margin-top:4px;font-size:14px}
+.bbbrk{margin-top:12px;display:flex;gap:8px;align-items:flex-start;text-align:left;font-weight:700;font-size:14px;line-height:1.4;padding:10px 12px;border-radius:12px;background:color-mix(in srgb,var(--lv) 10%,var(--card));border:1px solid color-mix(in srgb,var(--lv) 35%,var(--line))}
+.bbbrk span{flex:none;font-size:10.5px;font-weight:900;letter-spacing:.08em;color:#fff;background:#e11d48;border-radius:6px;padding:2px 6px;margin-top:2px;animation:bblive 1.6s ease-in-out infinite}@keyframes bblive{50%{opacity:.55}}@media (prefers-reduced-motion:reduce){.bbbrk span{animation:none}}
+.bbcats{margin-top:14px;display:grid;gap:8px}
+.bbc{border:1px solid var(--line);border-radius:14px;background:var(--card)}.bbc summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:minmax(0,1fr) minmax(60px,22%) auto;gap:10px;align-items:center;padding:10px 12px}.bbc summary::-webkit-details-marker{display:none}
+.bbc summary:focus-visible{outline:2px solid var(--brand);border-radius:14px}
+.bbcn{min-width:0;display:flex;flex-direction:column;color:var(--ink)}.bbcn b{font-size:14px;color:var(--ink)}.bbc summary{color:var(--ink)}.bbcn small{font-size:11.5px;color:var(--mute)}
+.bbbar{display:block;height:8px;border-radius:99px;background:var(--track);overflow:hidden}.bbbar b{display:block;height:100%;border-radius:99px}
+.bbs{font-style:normal;font-weight:900;font-size:13px;min-width:38px;text-align:center;padding:3px 8px;border-radius:99px;color:color-mix(in srgb,var(--c) 60%,var(--ink));background:color-mix(in srgb,var(--c) 15%,var(--card));font-variant-numeric:tabular-nums}.bbs.na{color:var(--mute);background:var(--track);font-weight:800}
+.bbil{list-style:none;margin:0;padding:0 12px 10px;display:grid;gap:8px}.bbil li{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;border-top:1px solid var(--line);padding-top:8px}
+.bbin{min-width:0;display:flex;flex-direction:column;gap:1px}.bbin b{font-size:13.5px}.bbin small{font-size:12px;color:var(--mute)}.bbin em{font-size:12.5px;font-style:italic}
+.bbna{margin:0;padding:0 12px 12px;font-size:12.5px}
+.bbpp{display:grid;grid-template-columns:1fr 1fr;gap:12px 20px;margin-top:16px}@media (max-width:700px){.bbpp{grid-template-columns:1fr}}
+.bbpp h3{margin:0 0 6px;font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:var(--mute)}.bbpp ol{margin:0;padding-left:20px;display:grid;gap:8px}.bbpp li span{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.bbpp li em{display:block;font-size:12.5px;color:var(--mute)}
+.bbdv{font-weight:800;font-size:11.5px}.bbdv.up{color:var(--bad)}.bbdv.dn{color:var(--good)}
+.bbsl{font-size:13px;line-height:1.5;margin:14px 0 0;padding-top:12px;border-top:1px solid var(--line)}
+.bbft{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}.bbft .sub{font-size:12px;flex:1 1 200px}.bbh b{font-size:22px;font-weight:900;letter-spacing:.04em}.bbh .sub{margin-top:3px;font-size:13px;line-height:1.4}.bbx{margin-top:12px;padding:10px 12px;border-radius:12px;font-size:13px;line-height:1.45;background:color-mix(in srgb,var(--c) 12%,var(--card));border:1px solid color-mix(in srgb,var(--c) 35%,var(--line))}.bbl{border-color:color-mix(in srgb,var(--lv,var(--line)) 40%,var(--line))}.bbr{display:grid;grid-template-columns:78px minmax(0,1fr);align-items:center;gap:2px 10px;margin:9px 0;font-size:12.5px}.bbr em{grid-column:2;font-style:normal;color:var(--mute)}.bbr span{font-weight:700}.bbr i{height:7px;border-radius:4px;background:var(--track);overflow:hidden}.bbr i b{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,#10b981,#eab308,#e11d48)}.bbr em{font-style:normal;color:var(--mute);white-space:nowrap}
 .bbn{transition:all .6s cubic-bezier(.3,.7,.2,1)}
 .pvc{--c:var(--line);margin:10px 0;padding:12px 13px;border-radius:16px;background:var(--soft);border:1px solid var(--line);border-left:4px solid var(--c)}
 .pvc.new{--c:#6366f1}.pvc.ok{--c:#10b981}.pvc.bad{--c:#f97316}.pvc.skip{--c:#94a3b8;opacity:.7}
@@ -1788,7 +1812,7 @@ function merchHTML(ym){
 const WID=[
   {id:'cat',t:'Spending by category',w:'half'},{id:'trend',t:'Last 6 months',w:'half'},{id:'flow',t:'Where the money went',w:'full'},
   {id:'cal',t:'Day by day',w:'half'},{id:'merch',t:'Top spending',w:'half'},{id:'accts',t:'Accounts',w:'full'},{id:'inv',t:'Investments',w:'half'},
-  {id:'usual',t:'Compared with usual',w:'half'},{id:'recur',t:'Recurring charges',w:'half'},{id:'bank',t:'Banks',w:'half'},{id:'mix',t:'Investment mix',w:'full'},{id:'loans',t:'Loans',w:'full'},{id:'tick',t:'Market watch',w:'half'},{id:'bubble',t:'AI crash alarm',w:'half'},{id:'cds',t:'CD maturities',w:'half'}
+  {id:'usual',t:'Compared with usual',w:'half'},{id:'recur',t:'Recurring charges',w:'half'},{id:'bank',t:'Banks',w:'half'},{id:'mix',t:'Investment mix',w:'full'},{id:'loans',t:'Loans',w:'full'},{id:'tick',t:'Market watch',w:'half'},{id:'bubble',t:'AI crash alarm',w:'full'},{id:'cds',t:'CD maturities',w:'half'}
 ];
 function wState(){
   const all=WID.map(x=>x.id),W=S.widgets;
@@ -1845,7 +1869,24 @@ function invWidgetHTML(){
 const fhKey=()=>{try{return localStorage.getItem('hb-fhkey')||'';}catch(e){return '';}};
 const fhSet=k=>{try{if(k)localStorage.setItem('hb-fhkey',k);else localStorage.removeItem('hb-fhkey');}catch(e){}};
 const MK={q:{},at:{},busy:false,open:null,met:{},sug:null,msg:'',err:''};
-const BUBBLE=['NVDA','MSFT','GOOGL','META','AMZN','AVGO','AMD','PLTR'];
+// ---- AI crash alarm model: categories, weights and the tickers that stand in for each indicator ----
+// kinds: eq = valuation + drawdown · canary = drawdown-heavy · credit = drawdown of a credit ETF (lim = drawdown that scores 100)
+//        rate = long-bond ETF drawdown (yields up) · vol = position in 52-week range · pe/run/conc = computed froth gauges
+const BBCATS=[
+  {k:'chips',n:'Chips & big tech',w:20,d:'NVDA, AVGO, AMD, TSM, ASML, the cloud giants, the chip index, memory and AI servers',
+   i:[['NVDA','Nvidia'],['AVGO','Broadcom'],['AMD','AMD'],['TSM','TSMC'],['ASML','ASML'],['MSFT','Microsoft'],['GOOGL','Alphabet'],['AMZN','Amazon'],['META','Meta'],['ORCL','Oracle'],['SOXX','Chip index (SOXX)'],['MU','Micron (memory)'],['SMCI','Super Micro'],['DELL','Dell']].map(([s,n])=>({s,n,kind:'eq'}))},
+  {k:'canary',n:'Neoclouds & credit — the canaries',w:30,d:'CoreWeave, Nebius, IREN, Applied Digital, Cipher, TeraWulf, junk bonds and private credit',
+   i:[...[['CRWV','CoreWeave'],['NBIS','Nebius'],['IREN','IREN'],['APLD','Applied Digital'],['CIFR','Cipher'],['WULF','TeraWulf']].map(([s,n])=>({s,n,kind:'canary'})),
+      {s:'HYG',n:'Junk bonds (HYG)',kind:'credit',lim:.06},{s:'BIZD',n:'Private credit (BIZD)',kind:'credit',lim:.2}]},
+  {k:'demand',n:'GPU economics, AI labs & real demand',w:25,d:'GPU rental prices, lab revenue vs compute bills, capex guidance — no free live source',i:[]},
+  {k:'power',n:'Physical limits',w:5,d:'Power and cooling gear makers',i:[['VRT','Vertiv'],['ETN','Eaton'],['GEV','GE Vernova']].map(([s,n])=>({s,n,kind:'eq'}))},
+  {k:'macro',n:'Macro & rates',w:10,d:'Long bonds (yields) and fear',i:[{s:'TLT',n:'Long bonds (TLT)',kind:'rate'},{s:'VIXY',n:'Fear gauge (VIXY)',kind:'vol'}]},
+  {k:'froth',n:'Sentiment & froth',w:10,d:'How stretched the AI trade is',i:[{s:'*pe',n:'Big-tech P/E',kind:'pe'},{s:'*run',n:'1-year run-up',kind:'run'},{s:'*conc',n:'Nasdaq vs equal-weight S&P',kind:'conc'}]}
+];
+const BUBBLE=[...new Set(BBCATS.flatMap(c=>c.i.map(x=>x.s)).filter(s=>s[0]!=='*').concat(['QQQ','RSP']))];
+const BBGIANTS=['NVDA','AVGO','AMD','MSFT','GOOGL','AMZN','META','ORCL'];
+const BBLV=[[25,'INFLATING','Fresh soap. Everyone\'s blowing. Nothing could go wrong.','#10b981'],[50,'WOBBLING','Surface tension is doing a lot of work right now.','#eab308'],[75,'PAPER-THIN','You can see through it. Someone sneezed in the data center.','#f97316'],[100,'POP','It\'s soap on the ceiling. Sell the wand.','#e11d48']];
+const bbLevel=sc=>BBLV.find(l=>sc<=l[0])||BBLV[3];
 const wOn=id=>{try{return wState().order.includes(id);}catch(e){return false;}};
 async function fhGet(path){
   const k=fhKey();if(!k) throw new Error('nokey');
@@ -1875,14 +1916,15 @@ const metLoad=()=>{try{return JSON.parse(localStorage.getItem('hb-fhmet')||'{}')
 async function ensureQuotes(force){
   if(!fhKey()||MK.busy||MK.err==='key') return;
   if(!force&&MK.retryAt&&Date.now()<MK.retryAt) return;
-  const now=Date.now(),ttl=force?0:90000,need=marketSyms().filter(s=>!MK.at[s]||now-MK.at[s]>ttl);
-  const metNeed=wOn('bubble')?BUBBLE.filter(s=>{const m=metLoad()[s];return (!m||now-m.t>6*3600e3)&&!(MK.mfail&&MK.mfail[s]&&now-MK.mfail[s]<15*60e3);}):[];
+  const now=Date.now(),ttl=force?0:90000,mine=new Set(wOn('tick')?[...tickHeld().map(x=>x.s),...(S.watch||[])]:[]),need=marketSyms().filter(s=>!MK.at[s]||now-MK.at[s]>(mine.has(s)?ttl:force?60000:600000));
+  const metNeed=wOn('bubble')?BUBBLE.filter(s=>{const m=metLoad()[s];return (!m||m.v!==2||now-m.t>6*3600e3)&&!(MK.mfail&&MK.mfail[s]&&now-MK.mfail[s]<15*60e3);}):[];
   if(!need.length&&!metNeed.length&&MK.open!==null&&!force) return;
   MK.busy=true;MK.abort=false;
   try{
     try{const st=await fhGet('/stock/market-status?exchange=US');MK.open=!!st.isOpen;}catch(e){if(MK.err==='key') throw e;if(MK.err==='net') MK.abort=true;}
     const jobs=need.map(s=>async()=>{try{const q=await fhGet('/quote?symbol='+encodeURIComponent(s));MK.q[s]=q&&q.c>0?q:null;MK.at[s]=Date.now();}catch(e){if(MK.err==='key'||MK.err==='rate') throw e;MK.q[s]=null;MK.at[s]=Date.now();if(MK.err==='net') MK.abort=true;}});
-    metNeed.forEach(s=>jobs.push(async()=>{try{const j=await fhGet('/stock/metric?symbol='+s+'&metric=all'),me=j&&j.metric||{},c=metLoad();c[s]={t:Date.now(),pe:me.peTTM||me.peBasicExclExtraTTM||null,hi:me['52WeekHigh']||null};try{localStorage.setItem('hb-fhmet',JSON.stringify(c));}catch(e){}}catch(e){(MK.mfail=MK.mfail||{})[s]=Date.now();if(MK.err==='key'||MK.err==='rate') throw e;}}));
+    metNeed.forEach(s=>jobs.push(async()=>{try{const j=await fhGet('/stock/metric?symbol='+s+'&metric=all'),me=j&&j.metric||{},c=metLoad();c[s]={t:Date.now(),v:2,pe:me.peTTM||me.peBasicExclExtraTTM||null,hi:me['52WeekHigh']||null,lo:me['52WeekLow']||null,r13:me['13WeekPriceReturnDaily']??null,r52:me['52WeekPriceReturnDaily']??null};try{localStorage.setItem('hb-fhmet',JSON.stringify(c));}catch(e){}}catch(e){(MK.mfail=MK.mfail||{})[s]=Date.now();if(MK.err==='key'||MK.err==='rate') throw e;}}));
+    const CAP=50,more=jobs.length>CAP;if(more){jobs.length=CAP;setTimeout(()=>{MK.retryAt=0;ensureQuotes();},63000);}
     let i=0;const pool=Array.from({length:4},async()=>{while(i<jobs.length&&!MK.abort){const j=jobs[i++];await j();}});
     await Promise.all(pool);
   }catch(e){}
@@ -1930,38 +1972,94 @@ function tickHTML(){
    +'<div style="margin-top:12px">'+look+'</div><p class="sub" style="margin:10px 0 0"><button type="button" class="tkx" data-act="fhclear">Change API key</button></p></section>';
 }
 function bubbleCalc(){
-  const met=metLoad(),pes=[],drops=[],dps=[];
-  BUBBLE.forEach(s=>{const q=MK.q[s],m=met[s];if(q){dps.push(q.dp||0);if(m&&m.hi>0) drops.push(Math.max(0,1-q.c/m.hi));}if(m&&m.pe>0) pes.push(Math.min(m.pe,150));});
-  if(pes.length<3||drops.length<3||dps.length<3) return null;
-  pes.sort((a,b)=>a-b);const med=pes[Math.floor(pes.length/2)],drop=drops.reduce((a,b)=>a+b,0)/drops.length,mv=dps.reduce((a,b)=>a+b,0)/dps.length;
-  const cl=x=>Math.max(0,Math.min(100,x)),froth=cl((med-20)/50*100),cracks=cl(drop/0.30*100),jit=cl(-mv/4*100);
-  return {score:Math.round(froth*0.5+cracks*0.35+jit*0.15),froth,cracks,jit,pe:med,drop,mv};
+  const met=metLoad(),cl=x=>Math.max(0,Math.min(100,x)),pct=x=>Math.round(x*100);
+  const rd=s=>{const q=MK.q[s],m=met[s];if(!q||!(q.c>0)) return null;const hi=m&&m.hi>0?Math.max(m.hi,q.c):null,lo=m&&m.lo>0?Math.min(m.lo,q.c):null;return {c:q.c,dp:q.dp||0,hi,lo,dd:hi?Math.max(0,1-q.c/hi):null,pe:m&&m.pe>0?Math.min(m.pe,300):null,r13:m&&m.r13!=null?m.r13/100:null,r52:m&&m.r52!=null?m.r52/100:null};};
+  const med=a=>{a=a.filter(x=>x!=null&&isFinite(x)).sort((x,y)=>x-y);return a.length?a[Math.floor(a.length/2)]:null;};
+  const sgn=x=>(x>=0?'+':'−')+Math.abs(Math.round(x*100))+'%';
+  const scoreOf=x=>{
+    if(x.kind==='pe'){const v=med(BBGIANTS.map(s=>(rd(s)||{}).pe));return v==null?null:{sc:cl((v-20)/40*100),val:Math.round(v)+'× earnings',raw:v};}
+    if(x.kind==='run'){const v=med(BBGIANTS.map(s=>(rd(s)||{}).r52));return v==null?null:{sc:cl(v*100),val:sgn(v)+' in a year (median)',raw:v};}
+    if(x.kind==='conc'){const a=rd('QQQ'),b=rd('RSP');if(!a||!b||a.r13==null||b.r13==null) return null;const g=a.r13-b.r13;return {sc:cl((g+.02)/.12*100),val:'Nasdaq '+sgn(a.r13)+' vs equal-weight '+sgn(b.r13)+' (90d)',raw:g};}
+    const d=rd(x.s);if(!d) return null;
+    const off=d.dd!=null?pct(d.dd)+'% off high':'',r=d.r13!=null?' · 90d '+sgn(d.r13):'';
+    if(x.kind==='eq'){if(d.dd==null) return null;const crack=cl(d.dd/.35*100),froth=d.pe?cl((d.pe-20)/60*100):d.r52!=null?cl(d.r52/1.5*100):crack;return {sc:.55*crack+.45*froth,val:off+r+(d.pe?' · P/E '+Math.round(d.pe):''),d};}
+    if(x.kind==='canary'){if(d.dd==null) return null;return {sc:.8*cl(d.dd/.5*100)+.2*cl(-(d.r13||0)/.5*100),val:off+r,d};}
+    if(x.kind==='credit'){if(d.dd==null) return null;return {sc:cl(d.dd/x.lim*100),val:(d.dd*100).toFixed(1)+'% below its high'+r,d};}
+    if(x.kind==='rate'){if(d.dd==null) return null;return {sc:cl(d.dd/.15*100),val:pct(d.dd)+'% below its high (yields up)',d};}
+    if(x.kind==='vol'){if(d.hi==null||d.lo==null||d.hi<=d.lo) return null;const v=(d.c-d.lo)/(d.hi-d.lo);return {sc:cl(v*100),val:pct(v)+'% of its 1-year range',d};}
+    return null;};
+  let wsum=0,acc=0,nI=0,nOk=0;const cats=BBCATS.map(c=>{const inds=c.i.map(x=>{const r=scoreOf(x);nI++;if(r) nOk++;return Object.assign({},x,r?{sc:Math.round(r.sc),val:r.val,d:r.d}:{sc:null});});
+    const ok=inds.filter(x=>x.sc!=null),sc=ok.length?Math.round(ok.reduce((a,x)=>a+x.sc,0)/ok.length):null;if(sc!=null){wsum+=c.w;acc+=c.w*sc;}return Object.assign({},c,{inds,sc});});
+  if(nOk<5||!wsum) return null;
+  const score=Math.round(acc/wsum),all=cats.flatMap(c=>c.inds.filter(x=>x.sc!=null).map(x=>Object.assign({cat:c.k},x)));
+  const mv=med(BBGIANTS.map(s=>(rd(s)||{}).dp));
+  return {score,cats,all,cover:wsum,nOk,nI,mv:mv||0};
 }
+// one-line quips built only from the numbers above
+function bbQuip(x){
+  const d=x.d,off=d&&d.dd!=null?Math.round(d.dd*100):null,sc=x.sc,n=x.n;
+  if(x.kind==='canary') return off>=50?n+' is '+off+'% off its high. The canary has stopped singing.':off>=30?n+' down '+off+'% from the top. The canary is coughing.':off>=15?n+' '+off+'% off its high. The canary looks nervous.':n+' near its high. The canary is still chirping.';
+  if(x.kind==='credit') return sc>=60?n+': lenders are sweating through their suits.':sc>=30?n+': credit is getting a little itchy.':n+': lenders are still handing out money like candy.';
+  if(x.kind==='rate') return sc>=60?'Bond yields are climbing. Cheap money has left the building.':sc>=30?'Yields creeping up. Somebody check the thermostat.':'Rates calm. The money hose is still on.';
+  if(x.kind==='vol') return sc>=60?'Fear gauge is near the top of its range. Everyone is clutching pearls.':sc>=30?'Fear is waking up and asking questions.':'Fear is asleep. Classic last-scene-before-the-twist energy.';
+  if(x.kind==='pe') return sc>=60?'Big tech costs '+x.val+'. That is a lot of future to pay for today.':sc>=30?'Big tech at '+x.val+'. Pricey, not unhinged. Yet.':'Big tech at '+x.val+'. Shockingly reasonable.';
+  if(x.kind==='run') return sc>=60?'The AI giants are '+x.val+'. Gravity has been put on hold.':sc>=30?'Solid run: '+x.val+'.':'Run-up is modest: '+x.val+'.';
+  if(x.kind==='conc') return sc>=60?'A few giants are carrying the whole market on their backs.':sc>=30?'Big tech is out-running everyone else.':'The rest of the market is keeping up.';
+  return off>=30?n+' is '+off+'% off its high. Something hissed.':sc>=60?n+' is priced for perfection. Perfection rarely shows up.':off>=15?n+' slipped '+off+'% from its high.':n+' is near its high and feeling invincible.';
+}
+function bbSnap(c){
+  let L=null;try{L=JSON.parse(localStorage.getItem('hb-bbsnap')||'null');}catch(e){}
+  const now=Date.now(),cur={t:now,score:c.score,cats:Object.fromEntries(c.cats.map(x=>[x.k,x.sc])),ind:Object.fromEntries(c.all.map(x=>[x.s,x.sc]))};
+  if(!L||!L.cur||now-L.cur.t>6*3600e3){L={prev:L&&L.cur||null,cur};try{localStorage.setItem('hb-bbsnap',JSON.stringify(L));}catch(e){}}
+  return L.prev;
+}
+const BBPROMPT="You are a doomsday weather anchor for the AI Bubble Meter (0-100). You are panicking, but your data is accurate. Jokes go in the commentary, never in the numbers.\nToday's date: [DATE]. Use web search for every indicator below.\nFor each indicator:\n1. Fetch the latest value and its 30/90-day change.\n2. Score 0-100 (0 = fresh soap, 100 = audible pop) using z-scores vs the last 2 years.\n3. Give a one-line reason in alarmist, funny headline style, plus a source link.\nINDICATORS (weight in brackets):\n\n1. Chips and equities [20%]\nNVDA, AVGO, AMD, TSM, ASML; MSFT, GOOGL, AMZN, META, ORCL; SOX index; Nasdaq vs equal-weight S&P; VIX; NVDA put/call ratio\n2. Memory and supply chain [part of 20%]\nDRAM and HBM spot/contract prices; MU, SK Hynix, Samsung; TSMC monthly revenue and CoWoS capacity; Super Micro and Dell AI server backlog; Vertiv and power-equipment orders\n3. Neoclouds, the canaries [30% with Credit]\nCoreWeave, Nebius, Lambda, Crusoe, IREN, Applied Digital, Cipher, TeraWulf: stock drawdown from highs, bond yields, CDS, covenant or delay news, customer concentration, missed data-center delivery dates\n4. GPU economics [25% with Demand]\nH100/B200 hourly rental prices; used GPU resale prices; hyperscaler depreciation/useful-life changes; GPU-backed loan terms\n5. Credit and financing [30% with Neoclouds]\nOracle CDS and bond spreads; off-balance-sheet data-center debt (SPVs); data-center ABS/CMBS spreads; private credit stress (BDC discounts, redemptions); high-yield spreads; hyperscaler bond issuance; circular deals (Nvidia-OpenAI-Oracle-AMD commitments)\n6. AI labs and startups [part of 25%]\nOpenAI/Anthropic revenue run-rate vs compute commitments; secondary-market valuations; down rounds and AI VC funding volume; token price trends; AI startup shutdowns and acqui-hires\n7. Real demand [25% with GPU economics]\nHyperscaler capex guidance; cloud backlog (RPO) growth; capex-to-AI-revenue ratio; OpenRouter token volume; enterprise adoption/churn surveys; Copilot-style seat renewals\n8. Physical limits [5%]\nData-center lease cancellations; power interconnection queues; PJM capacity auction prices; turbine/transformer backlog; local data-center moratoriums\n9. Macro and geopolitics [10%]\n10-year Treasury yield; Fed rate path; export-control changes; Taiwan risk headlines; China efficiency shocks (DeepSeek-style); chip tariff news\n10. Sentiment and froth [10%]\nBofA fund manager survey (\"AI bubble\" tail risk); margin debt; leveraged single-stock ETF flows; AI IPO pops and filings; insider selling at AI names; Google Trends \"AI bubble\"; Polymarket/Kalshi AI bubble or recession odds\n\nLABELS:\n- 0-25 INFLATING: \"Fresh soap. Everyone's blowing. Nothing could go wrong.\"\n- 26-50 WOBBLING: \"Surface tension is doing a lot of work right now.\"\n- 51-75 PAPER-THIN: \"You can see through it. Someone sneezed in the data center.\"\n- 76-100 POP: \"It's soap on the ceiling. Sell the wand.\"\nOUTPUT:\n- Big headline: overall score + label + one dramatic breaking-news sentence\n- Table: category score, indicator scores, one-line quip, source\n- Top 3 \"Sharpest Pins\" (indicators driving the score up)\n- Top 3 \"Soap Holding It Together\" (most improving)\n- \"Since last run\": what got thinner, what got thicker\nRULES: Cover every indicator listed. Be funny, but never invent data. Mark missing data as N/A and exclude it from averages (never treat N/A as zero). Re-normalize weights if a category is missing data.";
 function bubbleHTML(){
   if(!wOn('bubble')) return '';
   if(!fhKey()) return wCard('AI crash alarm','',fhSetupHTML());
   ensureQuotes();
   const c=bubbleCalc();
-  const W=240,cx=120,cy=118,R=92;
-  const pt=(sc,r)=>{const a=Math.PI*(1-sc/100);return [cx+r*Math.cos(a),cy-r*Math.sin(a)];};
-  const seg=(a,b,col)=>{const [x1,y1]=pt(a,R),[x2,y2]=pt(b,R);return '<path d="M'+x1.toFixed(1)+' '+y1.toFixed(1)+' A'+R+' '+R+' 0 0 1 '+x2.toFixed(1)+' '+y2.toFixed(1)+'" fill="none" stroke="'+col+'" stroke-width="16"/>';};
-  const sc=c?c.score:0,[nx,ny]=pt(sc,R-8);
-  const LV=[['ALL CLEAR','Prices look normal. No alarm right now.','#10b981'],['HEADS UP','AI stocks are getting expensive. Keep an eye on them.','#ca8a04'],['WARNING','AI stocks are overpriced. If they drop, your accounts feel it.','#ea580c'],['DANGER','Prices are stretched and cracks are showing. A crash is a real risk.','#e11d48'],['CRASH ALERT','AI stocks are in the danger zone. A sharp drop could be close.','#e11d48']];
-  const lv=!c?(MK.err&&!MK.busy?['Couldn\'t load prices',(MK.err==='key'?'Finnhub rejected the key.':MK.err==='rate'?'Too many requests. Try again in a minute.':'The price service didn\'t answer.'),'var(--mute)']:['Checking prices…','Pulling today\'s prices for the AI giants.','var(--mute)']):LV[sc<20?0:sc<40?1:sc<60?2:sc<80?3:4];
-  const bar=(l,v,t,w)=>'<div class="bbr"><span>'+l+'</span><i><b style="width:'+Math.max(3,Math.round(v))+'%"></b></i><em>'+t+(w?' <u>'+w+'</u>':'')+'</em></div>';
-  const vw=(v,a)=>a[v<25?0:v<50?1:v<75?2:3];
-  // how much of the household's money is in these stocks
-  let mine=0,all=0;const H=S.holdings||{};Object.keys(H).forEach(id=>(H[id]||[]).forEach(h=>{const v=h.value||0;all+=v;{const sy=String(h.sym||'').toUpperCase();if(BUBBLE.includes(sy==='GOOG'?'GOOGL':sy)) mine+=v;}}));
+  if(!c){const err=MK.err&&!MK.busy;return '<section class="card bbl"><h2>AI crash alarm</h2><div class="bbh"><b>'+(err?'Couldn\'t load prices':'Checking prices…')+'</b><div class="sub">'+(err?(MK.err==='key'?'Finnhub rejected the key.':MK.err==='rate'?'Too many requests. Trying again in a minute.':'The price service didn\'t answer.'):'Pulling '+BUBBLE.length+' tickers. The free price feed allows about 50 a minute, so a first load can take a minute or two.')+'</div>'+(err?'<button type="button" class="btn small ghost" style="margin-top:8px" data-act="mkretry">Retry</button>':'')+'</div></section>';}
+  const sc=c.score,lv=bbLevel(sc),prev=bbSnap(c);
+  // the dial: 4 zones, needle jitters more when less of the model has live data (NYT-needle style)
+  const cx=150,cy=150,R=118,W=300,ang=v=>Math.PI*(1-v/100),P=(v,r)=>[cx+r*Math.cos(ang(v)),cy-r*Math.sin(ang(v))];
+  const arc=(a,b,col)=>{const [x1,y1]=P(a,R),[x2,y2]=P(b,R);return '<path d="M'+x1.toFixed(1)+' '+y1.toFixed(1)+' A'+R+' '+R+' 0 0 1 '+x2.toFixed(1)+' '+y2.toFixed(1)+'" fill="none" stroke="'+col+'" stroke-width="26"/>';};
+  const lab=(v,t)=>{const [x,y]=P(v,R+31);return '<text x="'+x.toFixed(1)+'" y="'+(y+4).toFixed(1)+'" text-anchor="middle" font-size="10.5" font-weight="800" letter-spacing=".05em" style="fill:var(--mute)">'+t+'</text>';};
+  const ticks=[0,25,50,75,100].map(v=>{const [x1,y1]=P(v,R-16),[x2,y2]=P(v,R+16);return '<line x1="'+x1.toFixed(1)+'" y1="'+y1.toFixed(1)+'" x2="'+x2.toFixed(1)+'" y2="'+y2.toFixed(1)+'" stroke="var(--card)" stroke-width="3"/>';}).join('');
+  const unc=Math.round(2+(100-c.cover)/100*10+(1-c.nOk/Math.max(1,c.nI))*6);
+  const dial='<svg class="bbd" viewBox="-34 -14 '+(W+68)+' 176" role="img" aria-label="AI crash alarm: '+sc+' out of 100, '+lv[1]+'">'
+    +arc(0,25,'#10b981')+arc(25,50,'#eab308')+arc(50,75,'#f97316')+arc(75,100,'#e11d48')+ticks
+    +lab(12.5,'INFLATING')+lab(37.5,'WOBBLING')+lab(62.5,'PAPER-THIN')+lab(87.5,'POP')
+    +'<g class="bbneedle" style="--rot:'+(sc*1.8-90).toFixed(1)+'deg;--j:'+unc+'deg"><line x1="'+cx+'" y1="'+cy+'" x2="'+cx+'" y2="'+(cy-R+8)+'" stroke="var(--ink)" stroke-width="4" stroke-linecap="round"/></g>'
+    +'<circle cx="'+cx+'" cy="'+cy+'" r="8" fill="var(--ink)"/></svg>';
+  const pins=c.all.slice().sort((a,b)=>b.sc-a.sc).slice(0,3);
+  const prevI=prev&&prev.ind||null,delta=x=>prevI&&prevI[x.s]!=null?x.sc-prevI[x.s]:null;
+  const soap=(prevI?c.all.filter(x=>delta(x)!=null).sort((a,b)=>delta(a)-delta(b)):c.all.slice().sort((a,b)=>a.sc-b.sc)).slice(0,3);
+  const top=pins[0],brk=top?(top.kind==='canary'?'BREAKING: '+bbQuip(top):'BREAKING: '+bbQuip(top)):'';
+  // your exposure
+  let mine=0,all=0;const H=S.holdings||{};Object.keys(H).forEach(id=>(H[id]||[]).forEach(h=>{const v=h.value||0;all+=v;const sy=String(h.sym||'').toUpperCase();if(BBGIANTS.includes(sy==='GOOG'?'GOOGL':sy)||BUBBLE.includes(sy)&&!['HYG','BIZD','TLT','VIXY','QQQ','RSP'].includes(sy)) mine+=v;}));
   const idx=Object.keys(H).some(id=>(H[id]||[]).some(h=>/^(VTI|VOO|SPY|QQQ|FXAIX|VT|IVV|FSKAX|FZROX|ITOT|SCHB|SCHX)$/.test(String(h.sym||'').toUpperCase())));
-  const hit=mine*0.3;
-  const risk=!all?'':mine>=1?'<div class="bbx" style="--c:'+lv[2]+'"><b>You own '+fmt0(mine)+' of these stocks</b> ('+(mine/all*100<1?'<1':Math.round(mine/all*100))+'% of your investments). A 30% crash would cost you about <b>'+fmt0(hit)+'</b>.</div>':idx?'<div class="bbx" style="--c:'+lv[2]+'"><b>You don\'t own these directly,</b> but index funds like VTI hold a lot of them. A crash would still reach you.</div>':'';
-  return '<section class="card bbl" style="--lv:'+lv[2]+';--lvc:'+lv[2]+'"><h2>AI crash alarm</h2><svg viewBox="0 0 '+W+' 132" role="img" aria-label="Crash alarm gauge: '+(c?sc+' out of 100, '+lv[0]:'loading')+'" style="width:100%;height:auto;display:block;max-width:320px;margin:0 auto">'
-   +seg(0,25,'#10b981')+seg(25,50,'#eab308')+seg(50,75,'#f97316')+seg(75,100,'#e11d48')
-   +(c?'<line x1="'+cx+'" y1="'+cy+'" x2="'+nx.toFixed(1)+'" y2="'+ny.toFixed(1)+'" stroke="var(--ink)" stroke-width="4" stroke-linecap="round" class="bbn"/><circle cx="'+cx+'" cy="'+cy+'" r="8" fill="var(--ink)"/>':'')
-   +'<text x="'+cx+'" y="'+(cy-30)+'" text-anchor="middle" font-size="30" font-weight="800" style="fill:var(--ink)">'+(c?sc:'–')+'</text></svg>'
-   +'<div class="bbh"><b>'+lv[0]+'</b><div class="sub">'+lv[1]+'</div>'+(!c&&MK.err&&!MK.busy?'<button type="button" class="btn small ghost" style="margin-top:8px" data-act="mkretry">Retry</button>':'')+'</div>'
-   +(c?'<div style="margin-top:12px">'+bar('Too pricey?',c.froth,'costs '+Math.round(c.pe)+'× yearly profit',vw(c.froth,['Fair','High','Very high','Extreme']))+bar('Falling?',c.cracks,Math.round(c.drop*100)+'% off their highs',vw(c.cracks,['Steady','Slipping','Sliding','Crashing']))+bar('Today',c.jit,(c.mv<0?'down ':'up ')+Math.abs(c.mv).toFixed(1)+'%',vw(c.jit,['Calm','Shaky','Rough','Ugly']))+'</div>'+risk:'')
-   +'<p class="sub" style="margin:10px 0 0;font-size:11.5px">Watches '+BUBBLE.join(', ')+'. A normal stock costs about 20× yearly profit. A rough guide, not a prediction or advice.</p></section>';
+  const risk=!all?'':mine>=1?'<div class="bbx" style="--c:'+lv[3]+'"><b>You own '+fmt0(mine)+' of these stocks</b> ('+(mine/all*100<1?'<1':Math.round(mine/all*100))+'% of your investments). A 30% drop would cost about <b>'+fmt0(mine*.3)+'</b>.'+(idx?' Your index funds hold plenty of them too.':'')+'</div>':idx?'<div class="bbx" style="--c:'+lv[3]+'"><b>You don\'t own these directly,</b> but index funds like VTI hold a lot of them.</div>':'';
+  const chip=v=>v==null?'<span class="bbs na">N/A</span>':'<span class="bbs" style="--c:'+bbLevel(v)[3]+'">'+v+'</span>';
+  const bar=v=>v==null?'<i class="bbbar"></i>':'<i class="bbbar"><b style="width:'+Math.max(3,v)+'%;background:'+bbLevel(v)[3]+'"></b></i>';
+  const cats=c.cats.map(k=>'<details class="bbc"><summary><span class="bbcn"><b>'+esc(k.n)+'</b><small>'+k.w+'% weight'+(k.sc==null?' · not counted':'')+'</small></span>'+bar(k.sc)+chip(k.sc)+'</summary>'
+    +(k.inds.length?'<ul class="bbil">'+k.inds.map(x=>'<li><span class="bbin"><b>'+esc(x.n)+'</b><small>'+(x.sc!=null?esc(x.val||''):'No data yet')+'</small>'+(x.sc!=null?'<em>'+esc(bbQuip(x))+'</em>':'')+'</span>'+chip(x.sc)+'</li>').join('')+'</ul>'
+      :'<p class="sub bbna">'+esc(k.d)+'. Marked N/A and left out of the score; the weights of the other groups are scaled up. Use <b>Full doomsday report</b> below to have Claude look these up.</p>')+'</details>').join('');
+  const li=(x,dv)=>'<li><span><b>'+esc(x.n)+'</b> '+chip(x.sc)+(dv!=null&&dv!==0?' <small class="bbdv '+(dv>0?'up':'dn')+'">'+(dv>0?'+':'')+dv+'</small>':'')+'</span><em>'+esc(bbQuip(x))+'</em></li>';
+  let since='';
+  if(prev){const ch=c.cats.filter(k=>k.sc!=null&&prev.cats&&prev.cats[k.k]!=null).map(k=>({n:k.n,d:k.sc-prev.cats[k.k]})),th=ch.filter(x=>x.d>=3).sort((a,b)=>b.d-a.d),tk=ch.filter(x=>x.d<=-3).sort((a,b)=>a.d-b.d),ds=sc-prev.score;
+    since='<p class="bbsl"><b>Since last run</b> ('+new Date(prev.t).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})+', '+prev.score+' → '+sc+(ds?' '+(ds>0?'▲'+ds:'▼'+(-ds)):'')+'): '
+      +(th.length?'thinner: '+th.map(x=>esc(x.n)+' +'+x.d).join(', '):'nothing got thinner')+' · '+(tk.length?'thicker: '+tk.map(x=>esc(x.n)+' '+x.d).join(', '):'nothing got thicker')+'.</p>';}
+  else since='<p class="bbsl"><b>Since last run:</b> first reading saved. Check back later to see what got thinner or thicker.</p>';
+  return '<section class="card bbl" style="--lv:'+lv[3]+';--lvc:'+lv[3]+'"><h2>AI crash alarm</h2>'
+   +'<div class="bbtop"><div class="bbdw">'+dial+'<div class="bbsc"><b>'+sc+'</b><span>/100</span></div></div>'
+   +'<div class="bbh"><b>'+lv[1]+'</b><div class="bbtag">“'+esc(lv[2])+'”</div>'+(brk?'<div class="bbbrk"><span>LIVE</span>'+esc(brk)+'</div>':'')+'</div></div>'
+   +risk
+   +'<div class="bbcats">'+cats+'</div>'
+   +'<div class="bbpp"><div><h3>Sharpest pins</h3><ol>'+pins.map(x=>li(x,delta(x))).join('')+'</ol></div><div><h3>Soap holding it together</h3><ol>'+soap.map(x=>li(x,delta(x))).join('')+'</ol></div></div>'
+   +since
+   +'<div class="bbft"><button type="button" class="btn small" data-act="bbprompt">Full doomsday report</button><span class="sub">Copies the full prompt for Claude, with today\'s date, to cover what the app can\'t see.</span></div>'
+   +'<p class="sub" style="margin:10px 0 0;font-size:11.5px">Live data for '+c.nOk+' of '+c.nI+' indicators ('+c.cover+'% of the weight). Scores use distance from 1-year highs, valuations and 90-day moves, not 2-year z-scores. For fun, not a prediction or advice.</p></section>';
 }
 // ---- loans: owed, payment, payoff, graph ----
 const _liC=new Map();let _liV=-1;
@@ -2618,7 +2716,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · last synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="row"><button class="btn" data-act="sfsync">Sync now</button><a class="btn ghost" href="https://bridge.simplefin.org" target="_blank" rel="noopener">Manage on SimpleFIN</a><button class="btn danger" data-act="sfdisconnect">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.39.1';
+const APP_VERSION='1.40.0';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -3379,6 +3477,7 @@ const ACT={
   fhsave:async()=>{const k=([...document.querySelectorAll('input[id=fhKey]')].find(x=>x.value.trim())||{}).value;const key=String(k||'').trim();if(!key) return;fhSet(key);MK.err='';MK.msg='';try{const q=await fhGet('/quote?symbol=AAPL');if(!(q&&q.c>0)) throw new Error('bad');MK.at={};ensureQuotes(true);toast('Key saved');}catch(e){fhSet('');MK.msg=MK.err==='rate'?'Finnhub says too many requests. Try again in a minute.':(e&&e.name==='TypeError'||!navigator.onLine)?"Couldn't reach Finnhub. Check your connection and try again.":'That key did not work. Check it and try again.';}marketRefresh();},
   tabreload(){location.reload();},
   startfresh(){SAVE_BLOCK=false;MY_AT=Math.max(MY_AT,otherAt());saveWarn(false);save();toast('Saving is back on. The unreadable copy is kept.');},
+  async bbprompt(){const t=BBPROMPT.replace('[DATE]',new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'}));try{await navigator.clipboard.writeText(t);toast('Prompt copied. Paste it into Claude.');}catch(e){dialog({msg:'Copy this prompt into Claude (select all, copy):',input:true,value:t,ok:'Done'});}},
   dlunread(){if(window._unreadRaw) saveFile('homebudget-unreadable-'+todayISO()+'.txt',window._unreadRaw);},
   mkretry(){MK.err='';MK.retryAt=0;MK.mfail={};MK.at={};ensureQuotes(true);render();},
   fhclear(){fhSet('');MK.q={};MK.at={};MK.err='';MK.msg='';MK.open=null;marketRefresh();},
