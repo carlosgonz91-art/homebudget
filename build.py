@@ -31,7 +31,7 @@ _body = frag.replace(_csp.group(0), '', 1) if _csp else frag
 standalone = (
     '<!doctype html><html lang="en"><head><meta charset="utf-8">'
     + _csph +
-    '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
+    '<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">'
     "</head><body>\n" + _body + "\n</body></html>"
 )
 pathlib.Path("/home/claude/homebudget.html").write_text(standalone, encoding="utf-8")

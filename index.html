@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; script-src 'self' 'unsafe-inline' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; worker-src 'self' blob:; connect-src 'self' data: blob: https://finnhub.io https://*.simplefin.org http://127.0.0.1:* http://localhost:*; object-src 'none'; base-uri 'none'; form-action 'none'"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; script-src 'self' 'unsafe-inline' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; worker-src 'self' blob:; connect-src 'self' data: blob: https://finnhub.io https://*.simplefin.org http://127.0.0.1:* http://localhost:*; object-src 'none'; base-uri 'none'; form-action 'none'"><meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"></head><body>
 <title>HomeBudget</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="theme-color" content="#4f46e5">
@@ -514,6 +514,9 @@ html{scroll-padding-top:76px;scroll-padding-bottom:calc(104px + env(safe-area-in
 .ivc small,.ivc em{color:color-mix(in srgb,var(--c) 58%,var(--ink))}.lnwn em{color:var(--good)}.lnwn em.bad{color:var(--bad)}
 .rdue.soon{color:color-mix(in srgb,#b45309 70%,var(--ink))!important;background:color-mix(in srgb,var(--warn) 9%,var(--card))}
 :root[data-theme="dark"] .rdue.soon{color:#fbbf24!important}@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .rdue.soon{color:#fbbf24!important}}.bkp.bad em{color:color-mix(in srgb,var(--warn) 62%,var(--ink))}
+/* no pinch / double-tap zoom on phones */
+html,body{touch-action:pan-x pan-y}
+@media (pointer:coarse){input,select,textarea{font-size:max(16px,1em)}}
 /* QA round 1: compat fixes */
 .dbgrow{flex-wrap:nowrap}.dbgrow [data-act=dbgdl]{flex:1 1 auto;min-width:0}.dbgrow [data-act=dbgdl] span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 @media (pointer:fine){.banner>.bx{width:30px;height:30px;line-height:27px}}
@@ -2716,7 +2719,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · last synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="row"><button class="btn" data-act="sfsync">Sync now</button><a class="btn ghost" href="https://bridge.simplefin.org" target="_blank" rel="noopener">Manage on SimpleFIN</a><button class="btn danger" data-act="sfdisconnect">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.40.0';
+const APP_VERSION='1.40.1';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -3158,6 +3161,8 @@ function icoBtns(root){
 }
 try{new MutationObserver(()=>icoBtns()).observe(document.body,{childList:true,subtree:true});}catch(e){}
 document.addEventListener('DOMContentLoaded',()=>icoBtns());icoBtns();
+['gesturestart','gesturechange','gestureend'].forEach(t=>document.addEventListener(t,e=>e.preventDefault(),{passive:false}));
+document.addEventListener('touchmove',e=>{if(e.touches&&e.touches.length>1) e.preventDefault();},{passive:false});
 applyTheme();setInterval(()=>{if(themeMode()==='schedule')applyTheme();},60000);
 try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{if(themeMode()==='auto')applyTheme();});}catch(e){}
 // ---------- debug log ----------
