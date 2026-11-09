@@ -191,7 +191,7 @@ label select,label input{display:block;margin-top:4px;color:var(--ink)}
 .trend+.legend{margin-top:30px}
 .tbars{display:flex;gap:4px;align-items:flex-end;height:100%;width:100%;justify-content:center}
 .tb{width:38%;max-width:24px;border-radius:7px 7px 3px 3px;min-height:3px;transition:height .5s cubic-bezier(.2,.8,.2,1),filter .15s}
-.agtop{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+.agtop{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:6px}
 .agnet{text-align:right;display:flex;flex-direction:column;line-height:1.2}
 .agbig{font-size:26px;font-weight:800;letter-spacing:-.03em}
 .agv{font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:650}
@@ -373,7 +373,7 @@ td.ds{max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ip.rcr{gap:12px}.ip.rcr .r span.rdue{font-size:12.5px;color:var(--mute)}.ip.rcr .r span.rdue.soon{display:inline-block;justify-self:end;margin-left:auto;font-weight:700;color:var(--warn);background:color-mix(in srgb,var(--warn) 14%,var(--card));border-radius:999px;padding:1px 8px}
 .ip .l b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.crh.pr>span:last-child{flex:none;white-space:nowrap;text-align:right}.atags{display:flex;flex-wrap:wrap;gap:2px 14px;margin-top:3px;font-size:11.5px;color:var(--mute);font-weight:500;font-variant-numeric:tabular-nums}.at{white-space:nowrap}.at b{margin-left:6px;font-weight:600;color:color-mix(in srgb,var(--ink) 62%,var(--mute))}
 .mixbar{display:flex;height:14px;border-radius:99px;overflow:hidden;background:var(--track);margin:2px 0 12px;gap:2px}.mixbar i{display:block;height:100%;min-width:3px}.mixr{display:flex;justify-content:space-between;gap:10px;padding:6px 0;font-size:14px}.mixr>span:first-child{display:flex;align-items:center;gap:8px}
-.bkw .bkh{font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}.bkw .bks{padding:4px 12px}.bkc{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.bkp{display:inline-flex;align-items:center;gap:7px;font:inherit;font-size:12.5px;font-weight:650;color:var(--ink);background:var(--soft);border:1px solid var(--line);border-radius:99px;padding:5px 11px 5px 9px;max-width:100%}.bkp .bkd{margin:0;width:8px;height:8px}.bkp{min-width:0}.bkp em{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;font-style:normal;font-weight:700;color:var(--warn);font-size:11.5px}.bkp.bad{background:color-mix(in srgb,var(--warn) 13%,var(--card));border-color:color-mix(in srgb,var(--warn) 45%,var(--line));cursor:pointer}.bkp.bad:focus-visible{outline:2px solid var(--brand)}
+.bkw .bkh{font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}.bkw .bks{padding:4px 12px}.bkw .bks.bo{width:34px;height:34px;min-height:34px;padding:0;flex:none;align-self:center}.bkc{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.bkp{display:inline-flex;align-items:center;gap:7px;font:inherit;font-size:12.5px;font-weight:650;color:var(--ink);background:var(--soft);border:1px solid var(--line);border-radius:99px;padding:5px 11px 5px 9px;max-width:100%}.bkp .bkd{margin:0;width:8px;height:8px}a.bkp{text-decoration:none;cursor:pointer}a.bkp:hover{border-color:var(--brand)}a.bkp:focus-visible{outline:2px solid var(--brand)}.bkx{display:inline-flex;color:var(--mute)}.bkx svg{width:12px;height:12px}.bkp{min-width:0}.bkp em{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;font-style:normal;font-weight:700;color:var(--warn);font-size:11.5px}.bkp.bad{background:color-mix(in srgb,var(--warn) 13%,var(--card));border-color:color-mix(in srgb,var(--warn) 45%,var(--line));cursor:pointer}.bkp.bad:focus-visible{outline:2px solid var(--brand)}
 .lnw{cursor:pointer}.lnw:hover{background:color-mix(in srgb,var(--soft) 40%,var(--card))}.lnw:focus-visible{outline:2px solid var(--brand);outline-offset:-2px}.lnwt{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums}.lnwr{margin:10px 0 0}.lnwn{display:flex;justify-content:space-between;gap:10px;font-size:14px;font-weight:650;margin-bottom:5px}.lnwn span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lnwn em{font-style:normal;color:#059669;font-weight:700;font-size:12.5px;white-space:nowrap}.lnwp{font-size:12px;color:var(--mute);margin-top:4px}.ivsw{margin:0 0 14px}
 .tx.pa,.mr.pa{animation:posin .34s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i)*30ms)}
 @media (prefers-reduced-motion:reduce){.tx.pa,.mr.pa{animation:none}}
@@ -423,7 +423,7 @@ td.ds{max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .fnd.bad .ic{background:var(--bad)}.fnd.warn .ic{background:var(--warnic)}.fnd.ok .ic{background:var(--good)}.fnd.info .ic{background:var(--mute)}
 .fnd>div{min-width:0}
 .fnd ul{margin:6px 0 0;font-size:13px;color:var(--mute)}
-.stp{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 0;font-size:13px}
+.stp{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 0;font-size:13px}.stpa{flex:none;white-space:nowrap;font-variant-numeric:tabular-nums}
 @media (min-width:720px){
   nav{position:static;display:flex;gap:2px;background:var(--track);border:0;border-radius:99px;padding:4px;box-shadow:none;backdrop-filter:none}
   nav button{flex-direction:row;font-size:14px;padding:7px 16px;gap:0;border-radius:99px}
@@ -441,7 +441,7 @@ td.ds{max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .ov2{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:stretch}.ov2 .trend{height:230px}
   .ov2>.card{margin-bottom:0}
   .wgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px;grid-auto-flow:row dense;align-items:stretch}.w-full{grid-column:1/-1}.w .wbody{height:100%}.wgrid .wbody>.card{margin-bottom:0;height:100%}.wgrid .trend{height:230px}
-  .mp{max-width:420px}
+  .mp{max-width:none}
   .mprow .mp{max-width:none}
 }
 @media (min-width:720px) and (max-width:879px){nav button{padding:7px 11px;font-size:13.5px}.bar{gap:8px}#ver{display:none}}
@@ -480,7 +480,7 @@ td.ds{max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dlgbox.sheet{max-height:88vh;overflow:auto}
 .t1[data-act]{cursor:pointer;-webkit-user-select:none;user-select:none}
 .brow{display:block;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:14px 0;color:inherit;font:inherit;cursor:pointer}
-.brow:last-child{border-bottom:0}
+.brow:last-child,.bwrap:last-child>.brow{border-bottom:0}.bwrap{position:relative}.bwrap>.brow .b1{padding-right:46px}.bwrap>.btn.bed{position:absolute!important;top:7px;right:-4px;margin:0}
 .b1,.b2{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
 .b1{margin-bottom:8px;font-weight:650}
 .b2{margin-top:6px}
@@ -1832,7 +1832,7 @@ function merchHTML(ym){
 const WID=[
   {id:'cat',t:'Spending by category',w:'half'},{id:'trend',t:'Last 6 months',w:'half'},{id:'flow',t:'Where the money went',w:'full'},
   {id:'cal',t:'Day by day',w:'half'},{id:'merch',t:'Top spending',w:'half'},{id:'accts',t:'Accounts',w:'full'},{id:'inv',t:'Investments',w:'half'},
-  {id:'usual',t:'Compared with usual',w:'half'},{id:'recur',t:'Recurring charges',w:'half'},{id:'bank',t:'Banks',w:'half'},{id:'mix',t:'Investment mix',w:'full'},{id:'loans',t:'Loans',w:'full'},{id:'tick',t:'Market watch',w:'half'},{id:'bubble',t:'AI crash alarm',w:'full'},{id:'cds',t:'CD maturities',w:'half'}
+  {id:'usual',t:'Compared with usual',w:'half'},{id:'recur',t:'Recurring charges',w:'half'},{id:'bank',t:'Bank connections',w:'half'},{id:'mix',t:'Investment mix',w:'full'},{id:'loans',t:'Loans',w:'full'},{id:'tick',t:'Market watch',w:'half'},{id:'bubble',t:'AI crash alarm',w:'full'},{id:'cds',t:'CD maturities',w:'half'}
 ];
 function wState(){
   const all=WID.map(x=>x.id),W=S.widgets;
@@ -2238,8 +2238,15 @@ function invMixHTML(){
     if(!hs.length) return '<div class="mxd flat"><div class="mxsum">'+head+'</div></div>';
     return '<details class="mxd"><summary class="mxsum">'+head+'</summary><div class="mxh">'+hs.slice(0,8).map(x=>'<div class="mxp"><span class="mxn" title="'+esc(x.name)+'"><b>'+esc(x.k)+'</b>'+(x.name&&x.name!==x.k?' <span class="mute">'+esc(x.name)+'</span>':'')+'</span><span class="mxa">'+fmt0(x.v)+'</span><em>'+pc(x.v)+'</em></div>').join('')+(hs.length>8?'<div class="sub" style="padding:4px 0">…and '+(hs.length-8)+' more</div>':'')+'</div></details>';}).join('');
   // facts about concentration
-  const eq=pos.filter(x=>x.cls!=='Cash & CDs'),top=eq[0],top5=eq.slice(0,5).reduce((t,x)=>t+x.v,0);
-  const tiles=top?stiles([{k:'Largest',v:esc(top.k),s:pc(top.v)+' of total',c:'#f59e0b'},{k:'Top 5',v:pc(top5),s:'stocks & funds',c:'#6366f1'},{k:'Holdings',v:String(pos.length),s:L.length+' type'+(L.length===1?'':'s'),c:'#0ea5e9'}]):'';
+  const eq=pos.filter(x=>x.cls!=='Cash & CDs'),top=eq[0];
+  const wc=pos.filter(x=>x.cost>0),gc=wc.reduce((t,x)=>t+x.cost,0),gv=wc.reduce((t,x)=>t+x.cv,0),gT=gc>0?gv-gc:null;
+  const byG=wc.map(x=>({k:x.k,g:x.cv-x.cost,p:(x.cv-x.cost)/x.cost})).sort((a,b)=>b.g-a.g),best=byG[0],worst=byG.length>1?byG[byG.length-1]:null;
+  const cnt=c=>pos.filter(x=>x.cls===c).length,parts=[['Stocks','stock'],['Funds & ETFs','fund'],['Cash & CDs','cash/CD']].map(([c,w])=>[cnt(c),w]).filter(x=>x[0]).map(([n,w])=>n+' '+w+(n===1?'':'s'));
+  const T=[];
+  if(gT!=null) T.push({k:'Total gain',v:'<span class="'+(gT<0?'neg':'pos')+'">'+sg(gT)+'</span>',s:pf(gT/gc*100)+' on what you paid',c:gT<0?'#ef4444':'#10b981'});
+  if(best&&best.g>0) T.push({k:'Best · worst',v:esc(best.k)+' <span class="pos">'+sg(best.g)+'</span>',s:worst&&worst.g<0?esc(worst.k)+' <span class="neg">'+sg(worst.g)+'</span>':'Nothing is down',c:'#6366f1'});
+  T.push({k:'Holdings',v:String(pos.length),s:parts.join(' · ')||L.length+' types',c:'#0ea5e9'});
+  const tiles=top||T.length>1?stiles(T):'';
   const note=top&&top.v/tot>=0.15?'<p class="sub mxnote">'+esc(top.k)+' alone is '+pc(top.v)+' of your investments.</p>':'';
   return '<section class="card"><h2>Investment mix</h2><div class="mxw">'+donut+'<div class="mxl">'+rows+'</div></div>'+tiles+note+'<p class="sub mxnote">Types are guessed from fund and holding names, so a few may land in the wrong slice.</p></section>';
 }
@@ -2320,23 +2327,23 @@ function topSpendHTML(ym){
 // 7. bank connection status (one row per bank)
 function bankConnHTML(){
   const H=sfHealth();
-  if(!SF.access) return wCard('Banks','',wEmpty('No bank link yet. Connect SimpleFIN in Settings to see the status of each bank here.')+'<p style="margin:10px 0 0"><button class="btn ghost small" data-act="setgo" data-to="s-sync">Open Settings</button></p>');
-  if(!H.on) return wCard('Banks','',wEmpty('Waiting for the first sync.')+'<p style="margin:10px 0 0"><button class="btn small" data-act="sfsync">Sync now</button></p>');
+  if(!SF.access) return wCard('Bank connections','',wEmpty('No bank link yet. Connect SimpleFIN in Settings to see the status of each bank here.')+'<p style="margin:10px 0 0"><button class="btn ghost small" data-act="setgo" data-to="s-sync">Open Settings</button></p>');
+  if(!H.on) return wCard('Bank connections','',wEmpty('Waiting for the first sync.')+'<p style="margin:10px 0 0"><button class="btn small" data-act="sfsync">Sync now</button></p>');
   const by={};
   for(const a of S.accounts){
     if(!a.sf) continue;
     const r=(S.sfRaw||[]).find(x=>x.id===a.sf),h=H.by[a.id];if(!h) continue;
     let nm=NICEBANK(String((r&&r.org&&(r.org.name||r.org.domain))||(S.sfOrgOf||{})[a.sf]||'Other bank').replace(/\.(com|org|net)$/i,''));
-    const o=by[nm]=by[nm]||{nm,n:0,bad:null,at:0};
+    const o=by[nm]=by[nm]||{nm,n:0,bad:null,at:0,url:bankUrl(r&&r.org)};
     o.n++;const bal=(S.balSf||{})[a.sf];if(bal&&bal.at>o.at) o.at=bal.at;
     if(!h.ok&&(!o.bad||(h.err&&!o.bad.err))) o.bad=h;
   }
   const L=Object.values(by).sort((a,b)=>(b.bad?1:0)-(a.bad?1:0)||a.nm.localeCompare(b.nm));
-  if(!L.length) return wCard('Banks','',wEmpty('No linked accounts yet. Press Sync now.')+'<p style="margin:10px 0 0"><button class="btn small" data-act="sfsync">Sync now</button></p>');
+  if(!L.length) return wCard('Bank connections','',wEmpty('No linked accounts yet. Press Sync now.')+'<p style="margin:10px 0 0"><button class="btn small" data-act="sfsync">Sync now</button></p>');
   const nBad=L.filter(x=>x.bad).length,gen=H.general;
   const head=nBad?'<span class="neg"><i class="wi"></i>'+nBad+' of '+L.length+' need'+(nBad===1?'s':'')+' attention</span>':gen.length?'<span class="neg"><i class="wi"></i>Check your connection</span>':'<span class="pos">● All '+L.length+' connected</span>';
-  return '<section class="card bkw"><div class="row" style="align-items:center;gap:8px"><h2 style="margin:0">Banks</h2><span class="sub bkh">'+head+(H.last?' · '+agoTxt(H.last):'')+'</span><span class="spacer"></span><button class="btn ghost small bks" data-act="sfsync" aria-label="Sync now">Sync</button></div>'
-   +'<div class="bkc">'+L.map(x=>x.bad?'<button type="button" class="bkp bad" data-act="goaccts" title="'+esc(x.bad.msg||x.bad.short||x.bad.label)+'"><i class="bkd warn"></i>'+esc(x.nm)+'<em>'+esc(String(x.bad.why||x.bad.label).slice(0,30))+'</em><span class="vh"> – open Settings to fix it</span></button>':'<span class="bkp ok" title="'+esc(x.nm+' · '+x.n+' account'+(x.n===1?'':'s')+(x.at?' · updated '+agoTxt(x.at):''))+'"><i class="bkd ok"></i>'+esc(x.nm)+'</span>').join('')+'</div>'
+  return '<section class="card bkw"><div class="row" style="align-items:center;gap:8px"><h2 style="margin:0">Bank connections</h2><span class="sub bkh">'+head+(H.last?' · '+agoTxt(H.last):'')+'</span><span class="spacer"></span><button class="btn ghost small bks" data-act="sfsync" aria-label="Sync now">Sync</button></div>'
+   +'<div class="bkc">'+L.map(x=>x.bad?'<button type="button" class="bkp bad" data-act="goaccts" title="'+esc(x.bad.msg||x.bad.short||x.bad.label)+'"><i class="bkd warn"></i>'+esc(x.nm)+'<em>'+esc(String(x.bad.why||x.bad.label).slice(0,30))+'</em><span class="vh"> – open Settings to fix it</span></button>':(x.url?'<a class="bkp ok go" href="'+esc(x.url)+'" target="_blank" rel="noopener noreferrer" title="'+esc('Open '+x.nm+' sign-in · '+x.n+' account'+(x.n===1?'':'s')+(x.at?' · updated '+agoTxt(x.at):''))+'"><i class="bkd ok"></i>'+esc(x.nm)+'<span class="bkx">'+EXTI+'</span><span class="vh"> (opens sign-in page in a new tab)</span></a>':'<span class="bkp ok" title="'+esc(x.nm+' · '+x.n+' account'+(x.n===1?'':'s')+(x.at?' · updated '+agoTxt(x.at):''))+'"><i class="bkd ok"></i>'+esc(x.nm)+'</span>')).join('')+'</div>'
    +gen.map(m=>'<div class="hnote" title="'+esc(m)+'">'+esc(shortNote(m))+'</div>').join('')+'</section>';
 }
 function widgetsHTML(H,anim){
@@ -2662,7 +2669,7 @@ function plannedExpenses(ym){return expenseCats().reduce((a,c)=>a+budgetOf(c,ym)
 function barHTML(spent,avail,col){const max=Math.max(avail,spent,1);return '<div class="track"><div class="fill '+(avail&&spent>avail?'over':'')+(avail?'':' nob')+'" style="width:'+Math.max(0,spent)/max*100+'%'+(col&&!(avail&&spent>avail)?';background:'+col:'')+'"></div>'+(avail?'<i class="mark" style="left:'+avail/max*100+'%"></i>':'')+'</div>';}
 function catRowHTML(c,ym){
   const d=md(ym),b=budgetOf(c,ym),carry=rolloverIn(c,ym),spent=d.byCat[c]||0,avail=b+carry,left=avail-spent,has=b||carry;
-  return '<button class="brow" data-act="openbud" data-cat="'+esc(c)+'"><div class="b1"><span style="display:flex;align-items:center;gap:8px"><i class="cdot" style="background:'+catColor(c)+'"></i>'+esc(c)+(S.rollover[c]?' ↻':'')+'</span><span class="bl '+(has?(left<0?'neg':'pos'):'mute')+'">'+(has?(left<0?fmt0(-left)+' over':fmt0(left)+' left'):'')+'</span></div>'+barHTML(spent,avail,catColor(c))+'<div class="b2 sub"><span>'+fmt0(spent)+' spent</span><span>'+(has?'of '+fmt0(avail)+(carry?' (incl. '+fmt0(carry)+' rolled over)':''):'No budget')+'</span></div></button>';
+  return '<div class="bwrap"><button class="brow" data-act="budgo" data-cat="'+esc(c)+'" aria-label="See '+esc(c)+' transactions"><div class="b1"><span style="display:flex;align-items:center;gap:8px"><i class="cdot" style="background:'+catColor(c)+'"></i>'+esc(c)+(S.rollover[c]?' ↻':'')+'</span><span class="bl '+(has?(left<0?'neg':'pos'):'mute')+'">'+(has?(left<0?fmt0(-left)+' over':fmt0(left)+' left'):'')+'</span></div>'+barHTML(spent,avail,catColor(c))+'<div class="b2 sub"><span>'+fmt0(spent)+' spent</span><span>'+(has?'of '+fmt0(avail)+(carry?' (incl. '+fmt0(carry)+' rolled over)':''):'No budget')+'</span></div></button><button class="btn ghost small bed" data-act="budedit" data-cat="'+esc(c)+'" aria-label="Edit '+esc(c)+' budget">Edit budget</button></div>';
 }
 function typicalHTML(){
   const ym=UI.month,first=S.txns.reduce((a,t)=>t.date&&t.date<a?t.date:a,'9999'),prev=months().filter(m=>m<ym&&!(m===first.slice(0,7)&&first.slice(8,10)>'05')&&S.txns.some(t=>t.date.slice(0,7)===m)).slice(0,3);
@@ -2719,7 +2726,7 @@ function openSheet(cat){
    +'<label>'+(inc?'Expected monthly income':'Monthly budget')+'<input id="bdAmt" type="number" inputmode="decimal" min="0" step="10" value="'+(b||'')+'" placeholder="0"></label>'
    +'<label class="chk"><input type="checkbox" id="bdOnce">Only for '+esc(monthLabel(ym))+'</label>'
    +(inc?'':'<label class="chk"><input type="checkbox" id="bdRoll" '+(cat&&S.rollover[cat]?'checked':'')+'>Roll unused money over to next month</label>')
-   +(txs.length?'<div><div class="sub" style="margin-bottom:4px">This month</div>'+txs.slice(0,6).map(t=>'<div class="stp"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+t.date.slice(5)+' · '+esc(t.nick||t.desc)+'</span><span>'+fmt(t.amount)+'</span></div>').join('')+(txs.length>6?'<button class="btn ghost small" data-act="bdsee" data-cat="'+esc(cat)+'">See all '+txs.length+'</button>':'')+'</div>':'')
+   +(txs.length?'<div><div class="sub" style="margin-bottom:4px">This month</div>'+txs.slice(0,6).map(t=>'<div class="stp"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+t.date.slice(5)+' · '+esc(t.nick||t.desc)+'</span><span class="stpa">'+fmt(t.amount)+'</span></div>').join('')+(txs.length>6?'<button class="btn ghost small" data-act="bdsee" data-cat="'+esc(cat)+'">See all '+txs.length+'</button>':'')+'</div>':'')
    +'<div class="row"><button class="btn" data-act="bdsave" data-cat="'+esc(cat||'')+'">Save</button><button class="btn ghost" data-act="bdclose">Close</button>'+(b?'<button class="btn danger small" data-act="bdclear" data-cat="'+esc(cat)+'">Remove</button>':'')+'</div></div>';
   el.classList.add('show');
   const i=$('#bdAmt');if(i){i.focus();i.select();}
@@ -2747,7 +2754,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" aria-label="Disconnect bank sync" title="Disconnect">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.41.1';
+const APP_VERSION='1.42.0';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -3174,7 +3181,7 @@ function setTheme(v){try{localStorage.setItem('hb-theme',v);}catch(e){}applyThem
 // ---- icon buttons: swap well-known text buttons for standard icons (label kept for screen readers) ----
 const EXTI='<svg class="bi" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4"/></svg>';
 const BIC={unlink:'<path d="M9 15l-2 2a3 3 0 0 1-4-4l3-3a3 3 0 0 1 4 0M15 9l2-2a3 3 0 0 1 4 4l-3 3a3 3 0 0 1-4 0M4 4l16 16"/>',download:'<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>',upload:'<path d="M12 16V5M7 10l5-5 5 5M5 20h14"/>',share:'<path d="M12 15V3M8 7l4-4 4 4M7 11H6a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-1"/>',refresh:'<path d="M20 11a8 8 0 0 0-14.5-4M4 4v4h4M4 13a8 8 0 0 0 14.5 4M20 20v-4h-4"/>',trash:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',pencil:'<path d="M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4"/>',plus:'<path d="M12 5v14M5 12h14"/>',copy:'<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/>',x:'<path d="M6 6l12 12M18 6L6 18"/>'};
-const BMAP={sfdisconnect:['unlink','Disconnect',1],flowsave:['download','Save picture',1],flowshare:['share','Share',1],getfile:['download','Download',1],dbgdl:['download',0,0],dbgcopy:['copy','Copy',1],dbgclear:['trash','Clear',1],sfsync:['refresh',0,0],delrule:['trash','Remove',1],tkdel:['trash','Remove',1],delacct:['trash','Delete',1],bdclear:['trash','Remove',1],renacct:['pencil','Rename',1],tkadd:['plus','Add',1],backup:['download',0,0],sharebackup:['share',0,0],exportcsv:['download',0,0],goimport:['upload',0,0],addacct:['plus',0,0],addbud:['plus',0,0],clearall:['trash',0,0],bdclose:['x',0,0]};
+const BMAP={budedit:['pencil','Edit budget',1],sfdisconnect:['unlink','Disconnect',1],flowsave:['download','Save picture',1],flowshare:['share','Share',1],getfile:['download','Download',1],dbgdl:['download',0,0],dbgcopy:['copy','Copy',1],dbgclear:['trash','Clear',1],sfsync:['refresh',0,0],delrule:['trash','Remove',1],tkdel:['trash','Remove',1],delacct:['trash','Delete',1],bdclear:['trash','Remove',1],renacct:['pencil','Rename',1],tkadd:['plus','Add',1],backup:['download',0,0],sharebackup:['share',0,0],exportcsv:['download',0,0],goimport:['upload',0,0],addacct:['plus',0,0],addbud:['plus',0,0],clearall:['trash',0,0],bdclose:['x',0,0]};
 function icoBtns(root){
   (root||document).querySelectorAll('button[data-act]:not([data-bi]),span.pick:not([data-bi])').forEach(b=>{
     b.dataset.bi='1';const raw=(b.textContent||'').trim(),a=b.dataset.act;let ic,only=0;
@@ -3263,6 +3270,13 @@ async function sfFetch(access,startSec){
 const STALE_DAYS=4,ageDays=ms=>Math.floor((Date.now()-ms)/864e5);
 const agoTxt=ms=>{const d=ageDays(ms);return d<=0?'today':d===1?'yesterday':d+' days ago';};
 // SimpleFIN's own wording ("Connection to X may need attention. Auth required. Fix it at SimpleFIN...") boiled down to a bank and a short reason
+// sign-in pages for banks SimpleFIN knows; anything else falls back to the bank's own site (https only)
+const BANKLOGIN={'chase.com':'https://secure.chase.com/web/auth/dashboard','americanexpress.com':'https://www.americanexpress.com/en-us/account/login','fidelity.com':'https://digital.fidelity.com/prgw/digital/login/full-page','discoverbank.com':'https://portal.discover.com/customersvcs/universalLogin/ac_main','discover.com':'https://portal.discover.com/customersvcs/universalLogin/ac_main','sofi.com':'https://www.sofi.com/login/','marcus.com':'https://www.marcus.com/us/en/login','optumbank.com':'https://www.optumbank.com/','mytargetcirclecard.target.com':'https://mytargetcirclecard.target.com/ecs/auth/','capitalone.com':'https://verified.capitalone.com/auth/signin','wellsfargo.com':'https://connect.secure.wellsfargo.com/auth/login/present','bankofamerica.com':'https://secure.bankofamerica.com/login/sign-in/signOnV2Screen.go','citi.com':'https://online.citi.com/US/login.do','usbank.com':'https://onlinebanking.usbank.com/auth/login/','ally.com':'https://secure.ally.com/','schwab.com':'https://client.schwab.com/Login/SignOn/CustomerCenterLogin.aspx','vanguard.com':'https://logon.vanguard.com/'};
+function bankUrl(o){
+  if(!o) return '';const d=String(o.domain||o.id||'').toLowerCase().replace(/^www\./,'');
+  if(BANKLOGIN[d]) return BANKLOGIN[d];
+  const u=String(o.url||(d?'https://'+d:''));return /^https:\/\/[a-z0-9.-]+(\/[^\s"'<>]*)?$/i.test(u)?u:'';
+}
 const NICEBANK=b=>String(b||'').trim().replace(/\b[A-Z][A-Z&.']+\b/g,w=>{if(['BY','OF','AND','THE','FOR'].includes(w))return w.toLowerCase();if(w.length<=3||['USAA','HSBC','BECU','NFCU','PNC','SOFI'].includes(w))return w;return w.charAt(0)+w.slice(1).toLowerCase();}).replace(/^by /,'By ');
 function plainSfMsg(m){
   m=String(m||'').replace(/\s+/g,' ').trim();let bank='',why=m;
@@ -3678,6 +3692,8 @@ const ACT={
   },
   sfdisconnect(){dialog({msg:'Disconnect SimpleFIN? Your transactions stay. You can reconnect with a new setup token.',word:'disconnect',ok:'Disconnect',bad:true,onOk:async()=>{dlog('simplefin','Disconnected by user');await kvDel('simplefin');await kvDel('simplefin-last');SF.access=null;SF.last=null;S.pendingTx=[];save();render();toast('Disconnected');}});},
   openbud(el){openSheet(el.dataset.cat);},
+  budedit(el){openSheet(el.dataset.cat);},
+  budgo(el){jmp();UI.filters={q:'',acct:'',cat:el.dataset.cat,month:UI.month};UI.limit=200;UI.tab='txns';render();window.scrollTo(0,0);},
   addbud(){if(!expenseCats().some(c=>!budgetOf(c,UI.month))){toast('Every category already has a budget.');return;}openSheet('');},
   bdclose(){const d=$('#dlg');d.classList.remove('show');d.innerHTML='';},
   bdsave(el){
