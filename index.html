@@ -2572,7 +2572,7 @@ function yearlyInterest(a){
   const b=a.sf&&S.balSf&&S.balSf[a.sf];return b&&b.v>0&&b.v*a.rate/100>=1?b.v*a.rate/100:null;
 }
 function accountsCardHTML(HL){
-  let av='compact';try{av=localStorage.getItem('hb-acctview')||'compact';}catch(e){}
+  let av='min';try{av=FOLD.get('hb-acctview')||'min';}catch(e){}
   const n=S.accounts.length,mn=av==='min'&&n;
   let h='<section class="card" id="acctcard">'+(n?'<div class="row ach"><button type="button" class="ivh" data-act="acctview" data-v="'+(mn?'compact':'min')+'" aria-expanded="'+!mn+'"><i class="chv2">›</i><h2 style="margin:0">Accounts <span class="sub">'+n+(mn&&HL.on&&!HL.issues.length?' · <span class="okg">✓ all healthy</span>':'')+'</span></h2></button>'+(mn?'':'<button type="button" class="btn ghost small" data-act="acctview" data-v="'+(av==='full'?'compact':'full')+'">'+(av==='full'?'Compact':'Details')+'</button>')+'</div>':'<h2>Accounts</h2>')+(mn&&HL.on&&!HL.issues.length?'':healthCardHTML(HL));
   if(mn){}
@@ -2757,7 +2757,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" aria-label="Disconnect bank sync" title="Disconnect">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.42.4';
+const APP_VERSION='1.42.5';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -2779,7 +2779,9 @@ function normHolding(h){
 }
 const hasInv=()=>Object.values(S.holdings||{}).some(l=>l&&l.length);
 function invSummary(){const H=S.holdings||{},ids=Object.keys(H).filter(i=>H[i]&&H[i].length);let n=0,wv=0,wc=0,ws=0;ids.forEach(i=>H[i].forEach(h=>{n++;if(h.value!=null)wv++;if(h.cost!=null)wc++;if(h.sym)ws++;}));return {accounts:ids.length,positions:n,withValue:wv,withCost:wc,withSymbol:ws,asOf:S.holdingsAt?new Date(S.holdingsAt).toISOString().slice(0,10):null};}
-const invOpen=()=>{try{return JSON.parse(localStorage.getItem('hb-invopen3')||'[]');}catch(e){return [];}};
+// open/closed state of foldable cards lives only in memory, so every app launch starts with them folded
+const FOLD=new Map();
+const invOpen=()=>{try{return JSON.parse(FOLD.get('hb-invopen3')||'[]');}catch(e){return [];}};
 // small grey account tags: one account -> "••8750"; several -> "••8240 $1,000 · ••8918 $3,000"
 function acctTags(x,l4){
   const ids=Object.keys(x.by).filter(i=>x.by[i]>0).sort((a,b)=>x.by[b]-x.by[a]);if(!ids.length) return '';
@@ -3549,7 +3551,7 @@ const ACT={
       if(ex){MK.sug=null;ACT.tkpick({dataset:{s:ex.symbol}});}else{MK.sug=L.slice(0,5).map(x=>({s:x.symbol,n:x.description||''}));marketRefresh();}
     }catch(e){MK.sug=[];marketRefresh();}},
   gocds(){const e=document.querySelector('[data-w="cds"]');if(e){e.scrollIntoView({behavior:'instant',block:'start'});}else{UI.tab='invest';render();}},
-  acctview(el){try{localStorage.setItem('hb-acctview',el.dataset.v);}catch(e){}render();},
+  acctview(el){try{FOLD.set('hb-acctview',el.dataset.v);}catch(e){}render();},
   goaccts(){UI.tab='settings';render();setTimeout(()=>{const e=document.getElementById('acctcard');if(e)e.scrollIntoView({behavior:'smooth',block:'start'});},50);},
   herogo(el){
     const k=el.dataset.k;
@@ -3584,8 +3586,8 @@ const ACT={
   mergo(el){const k=el.dataset.k,ym=el.dataset.m||'';const ids=S.txns.filter(t=>(merchantKey(t.desc)||'other')===k&&(!ym||t.date.startsWith(ym))).map(t=>t.id);jmp();UI.filters={q:'',acct:'',cat:'',month:'',ids,label:titleCase(k)+(ym?' · '+monthLabel(ym):' · all')};UI.limit=200;UI.tab='txns';render();window.scrollTo(0,0);},
   rcall(){UI.rcAll=!UI.rcAll;render();},
   gouncat(){jmp();UI.filters={q:'',acct:'',cat:'Uncategorized',month:''};UI.limit=200;UI.tab='txns';render();},
-  invtoggle(el){const id=el.dataset.id,open=el.getAttribute('aria-expanded')!=='true';let o=invOpen().filter(x=>x!==id);if(open)o.push(id);try{localStorage.setItem('hb-invopen3',JSON.stringify(o));}catch(e){}el.setAttribute('aria-expanded',open);const b=el.closest('section').querySelector('.ipl');if(b)b.hidden=!open;},
-  invgo(el){const id=el.dataset.id;UI.tab='invest';UI.iv='inv';if(id){const o=invOpen().filter(x=>x!==id);o.push(id);try{localStorage.setItem('hb-invopen3',JSON.stringify(o));}catch(e){}}render();window.scrollTo(0,0);setTimeout(()=>{const e=id&&document.getElementById('iv-'+id);if(e) e.scrollIntoView({behavior:'smooth',block:'start'});},80);},
+  invtoggle(el){const id=el.dataset.id,open=el.getAttribute('aria-expanded')!=='true';let o=invOpen().filter(x=>x!==id);if(open)o.push(id);try{FOLD.set('hb-invopen3',JSON.stringify(o));}catch(e){}el.setAttribute('aria-expanded',open);const b=el.closest('section').querySelector('.ipl');if(b)b.hidden=!open;},
+  invgo(el){const id=el.dataset.id;UI.tab='invest';UI.iv='inv';if(id){const o=invOpen().filter(x=>x!==id);o.push(id);try{FOLD.set('hb-invopen3',JSON.stringify(o));}catch(e){}}render();window.scrollTo(0,0);setTimeout(()=>{const e=id&&document.getElementById('iv-'+id);if(e) e.scrollIntoView({behavior:'smooth',block:'start'});},80);},
   goloans(){UI.tab='invest';UI.iv='loans';render();window.scrollTo(0,0);},
   ivmode(el){UI.iv=el.dataset.m;render();const b=document.querySelector('[data-act=ivmode][data-m="'+UI.iv+'"]');if(b)b.focus({preventScroll:true});},
   mpmode(el){UI._mpAnim=true;UI.mpm=el.dataset.m;try{localStorage.setItem('hb-mpm',UI.mpm);}catch(e){}render();const b=document.querySelector('[data-act=mpmode][data-m="'+UI.mpm+'"]');if(b)b.focus({preventScroll:true});},
