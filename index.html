@@ -78,7 +78,9 @@ h1{font-size:28px;font-weight:800;letter-spacing:-.03em;margin:2px 0 12px}h2{fon
 .cardh{display:flex;align-items:center;gap:8px;margin-bottom:6px}.cardh h2{margin:0;flex:1;min-width:0}.cardha{display:flex;gap:6px;flex:none}
 .skn>span{display:flex;flex-direction:column;gap:1px}.skt{font-size:15px;font-weight:800}.skd{font-variant-numeric:tabular-nums;color:var(--ink)}.skm{color:var(--mute);font-size:12.5px;font-weight:500}
 .jmp{display:flex;align-items:center;gap:12px;margin:0 0 12px;padding:8px 14px 8px 8px;border-radius:16px;background:color-mix(in srgb,var(--brand) 10%,var(--card));border:1px solid color-mix(in srgb,var(--brand) 32%,var(--line))}.jb{display:inline-flex;align-items:center;gap:2px;border:0;background:var(--card);color:var(--brand);font:inherit;font-weight:750;font-size:14px;padding:8px 12px 8px 8px;border-radius:12px;cursor:pointer;box-shadow:var(--sh)}.jb .bi{width:18px;height:18px}.jt{min-width:0;display:flex;flex-direction:column;line-height:1.25}.jt small{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}.jt b{font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#app.jin{animation:jslide .45s cubic-bezier(.2,.8,.2,1)}#app.jin .jmp{animation:jflash 1.1s ease .2s 1}@keyframes jslide{from{opacity:0;transform:translateX(28px)}}@keyframes jflash{0%,100%{box-shadow:0 0 0 0 transparent}35%{box-shadow:0 0 0 5px color-mix(in srgb,var(--brand) 35%,transparent)}}@media (prefers-reduced-motion:reduce){#app.jin,#app.jin .jmp{animation:none}}
+#app.jin{animation:jslide .45s cubic-bezier(.2,.8,.2,1)}#app.jin .jmp{animation:jflash 1.1s ease .2s 1}html,body{overflow-x:clip}
+@media(pointer:coarse){.btn.bndis,[data-act=bndis]{min-width:36px!important;min-height:36px!important}[data-act=fhclear]{min-height:36px!important;display:inline-flex;align-items:center}#acctcard .ivh,.card>.ivh,[data-act=rulestoggle]{min-height:40px}.btn.small:not(.bo){min-height:34px}}
+@keyframes jslide{from{opacity:0;transform:translateX(28px)}}@keyframes jflash{0%,100%{box-shadow:0 0 0 0 transparent}35%{box-shadow:0 0 0 5px color-mix(in srgb,var(--brand) 35%,transparent)}}@media (prefers-reduced-motion:reduce){#app.jin,#app.jin .jmp{animation:none}}
 .pnd summary{display:grid;grid-template-columns:1fr auto auto;grid-template-areas:"t a c" "s s s";align-items:center;gap:2px 10px;cursor:pointer;list-style:none}.pnd summary::-webkit-details-marker{display:none}.pnd .pt{grid-area:t;display:flex;align-items:center;gap:8px}.pnd .pt b{font-size:17px}.pnd .pc{font-style:normal;font-size:12px;font-weight:800;min-width:22px;height:22px;padding:0 7px;border-radius:999px;display:inline-grid;place-items:center;background:color-mix(in srgb,var(--brand) 14%,var(--card));color:var(--brand)}.pnd .pa2{grid-area:a;font-weight:800;font-variant-numeric:tabular-nums}.pnd .ps{grid-area:s;font-size:12.5px}.pnd .pch{grid-area:c;width:18px;height:18px;color:var(--mute);transition:transform .2s}.pnd[open] .pch{transform:rotate(180deg)}.pnd[open] summary{margin-bottom:8px}
 .mph2{margin:8px 2px 4px;font-size:12px;color:var(--mute)}.mpq{display:flex;gap:8px;flex-wrap:wrap}.mpq .mpall{flex:1}
 .fchip{border:0;font:inherit;font-size:13px;font-weight:700;cursor:pointer;color:var(--brand);background:color-mix(in srgb,var(--brand) 12%,var(--card));border-radius:999px;padding:4px 12px}
@@ -2211,6 +2213,7 @@ function cdWidgetHTML(){
     return '<div class="cdx" style="--c:'+CDSC(x.days)+'"><div class="cdn"><b>'+esc(x.issuer)+'</b><span class="cdv">'+fmt0(x.value)+'</span></div><div class="cdm"><span><i class="cdrate">'+(+x.rate)+'%</i> '+nice(x.mat)+'</span><span class="cdw">'+(x.days<=30?'<i class="wi" aria-hidden="true"></i>':'')+left(x)+'</span></div><div class="cdbar" title="Time left"><i style="width:'+w.toFixed(1)+'%"></i></div></div>';}).join(''));
 }
 // ---- more widgets ----
+const niceDay=d=>{const y=new Date().getFullYear(),x=new Date(d+'T12:00:00');return isNaN(x)?d:x.toLocaleDateString('en-US',+d.slice(0,4)===y?{month:'short',day:'numeric'}:{month:'short',day:'numeric',year:'numeric'});};
 const shortDate=d=>new Date(d+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
 const wEmpty=m=>'<p class="mute" style="margin:0">'+m+'</p>';
 const wCard=(t,sub,body)=>'<section class="card"><h2>'+t+'</h2>'+(sub?'<p class="sub" style="margin:-4px 0 10px">'+sub+'</p>':'')+body+'</section>';
@@ -2248,12 +2251,13 @@ function invMixHTML(){
   const byG=wc.map(x=>({k:x.k,g:x.cv-x.cost,p:(x.cv-x.cost)/x.cost})).sort((a,b)=>b.g-a.g),best=byG[0],worst=byG.length>1?byG[byG.length-1]:null;
   const cnt=c=>pos.filter(x=>x.cls===c).length,parts=[['Stocks','stock'],['Funds & ETFs','fund'],['Cash & CDs','cash/CD']].map(([c,w])=>[cnt(c),w]).filter(x=>x[0]).map(([n,w])=>n+' '+w+(n===1?'':'s'));
   const T=[];
-  if(gT!=null) T.push({k:'Total gain',v:'<span class="'+(gT<0?'neg':'pos')+'">'+sg(gT)+'</span>',s:pf(gT/gc*100)+' on what you paid',c:gT<0?'#ef4444':'#10b981'});
-  if(best&&best.g>0) T.push({k:'Best · worst',v:esc(best.k)+' <span class="pos">'+sg(best.g)+'</span>',s:worst&&worst.g<0?esc(worst.k)+' <span class="neg">'+sg(worst.g)+'</span>':'Nothing is down',c:'#6366f1'});
-  T.push({k:'Holdings',v:String(pos.length),s:parts.join(' · ')||L.length+' types',c:'#0ea5e9'});
+  if(gT!=null) T.push({k:'Total gain',v:'<span class="'+(gT<0?'neg':'pos')+'">'+sg(gT)+'</span>',s:pf(gT/gc*100),c:gT<0?'#ef4444':'#10b981'});
+  if(best&&best.g>0) T.push({k:'Best',v:esc(best.k),s:'<span class="pos">'+sg(best.g)+'</span>',c:'#10b981'});
+  if(worst&&worst.g<0) T.push({k:'Worst',v:esc(worst.k),s:'<span class="neg">'+sg(worst.g)+'</span>',c:'#ef4444'});
+  if(T.length<3) T.push({k:'Holdings',v:String(pos.length),s:L.length+' types',c:'#0ea5e9'});
   const tiles=top||T.length>1?stiles(T):'';
   const note=top&&top.v/tot>=0.15?'<p class="sub mxnote">'+esc(top.k)+' alone is '+pc(top.v)+' of your investments.</p>':'';
-  return '<section class="card"><h2>Investment mix</h2><div class="mxw">'+donut+'<div class="mxl">'+rows+'</div></div>'+tiles+note+'<p class="sub mxnote">Types are guessed from fund and holding names, so a few may land in the wrong slice.</p></section>';
+  return '<section class="card"><h2>Investment mix</h2><div class="mxw">'+donut+'<div class="mxl">'+rows+'</div></div>'+tiles+note+(parts.length?'<p class="sub mxnote">'+pos.length+' holdings: '+parts.join(' · ')+'.</p>':'')+'<p class="sub mxnote">Types are guessed from fund and holding names, so a few may land in the wrong slice.</p></section>';
 }
 // 2. net worth
 function acctTv(a){
@@ -2559,7 +2563,7 @@ function renderTxnList(){
   const from=UI.page*PAGE,shown=list.slice(from,from+PAGE);
   if(!list.length){el.innerHTML='<p class="mute" style="padding:12px">Nothing matches.</p>';return;}
   const total=list.reduce((a,t)=>a+t.amount,0);
-  el.innerHTML=shown.map(t=>'<div class="tx ta">'+avHTML(t.cat)+'<div class="txb"><div class="t1" role="button" tabindex="0" data-act="txedit" data-id="'+esc(t.id)+'"><span class="ds" title="'+esc(t.desc)+'">'+esc(t.desc)+'</span><span class="amt '+(t.amount<0?'neg':'pos')+'">'+fmt(t.amount)+'</span></div><div class="t2"><span class="sub">'+t.date+' · '+esc(acctName(t.acct))+(t.sub?' · '+esc(t.sub):'')+(t.inc?' · from '+esc(t.inc):'')+'</span><select data-chg="setcat" data-id="'+esc(t.id)+'" aria-label="Category">'+catOpts(t.cat)+'<option value="__new__">＋ New category…</option></select></div></div></div>').join('')
+  el.innerHTML=shown.map(t=>'<div class="tx ta">'+avHTML(t.cat)+'<div class="txb"><div class="t1" role="button" tabindex="0" data-act="txedit" data-id="'+esc(t.id)+'"><span class="ds" title="'+esc(t.desc)+'">'+esc(t.desc)+'</span><span class="amt '+(t.amount<0?'neg':'pos')+'">'+fmt(t.amount)+'</span></div><div class="t2"><span class="sub"><time datetime="'+t.date+'" title="'+t.date+'">'+niceDay(t.date)+'</time> · '+esc(acctName(t.acct))+(t.sub?' · '+esc(t.sub):'')+(t.inc?' · from '+esc(t.inc):'')+'</span><select data-chg="setcat" data-id="'+esc(t.id)+'" aria-label="Category">'+catOpts(t.cat)+'<option value="__new__">＋ New category…</option></select></div></div></div>').join('')
    +'<div class="pager"><span class="mute pgs">'+(from+1)+'–'+(from+shown.length)+' of '+list.length+' · net '+fmt(total)+'</span>'+(pages>1?'<div class="pgc"><button class="btn ghost small" data-act="pgprev"'+(UI.page===0?' disabled':'')+'>‹ Prev</button><span class="pgn">'+(UI.page+1)+' / '+pages+'</span><button class="btn ghost small" data-act="pgnext"'+(UI.page>=pages-1?' disabled':'')+' aria-label="Next page">Next ›</button></div>':'')+'</div>';
 }
 const isCD=a=>/certificate|\bcd\b/i.test(a.name||'');
@@ -2686,7 +2690,7 @@ function typicalHTML(){
   const groups=Object.entries(G).map(([g,l])=>[g,l.reduce((a,e)=>a+e[1],0),l.sort((a,b)=>b[1]-a[1])]).sort((a,b)=>(a[0]==='Not categorized yet')-(b[0]==='Not categorized yet')||b[1]-a[1]);
   if(!groups.length) return '';
   const tot=groups.reduce((a,g)=>a+g[1],0),inc=use.reduce((a,m)=>a+md(m).income,0)/use.length;
-  const when=use.length===1&&use[0]===ym?'This month so far':'Average of the last '+use.length+' months';
+  const when=use.length===1&&use[0]===ym?'This month so far':(use.length===1?'Based on last month':'Average of the last '+use.length+' months');
   return '<section class="card"><h2>Typical month</h2><p class="sub" style="margin:-6px 0 10px">'+when+'</p>'
    +'<div class="agtop"><div><div class="sub">Spending</div><div class="agbig">'+fmt0(tot)+'</div></div><div class="agnet"><span class="sub">Income</span><span class="agv">'+fmt0(inc)+'</span></div></div>'
    +groups.map(([g,v,l])=>'<details class="ag"><summary><i class="agd" style="background:'+catColor(l[0][0])+'"></i><span>'+esc(g)+'</span><span class="agsp"></span><span class="agv agsum">'+fmt0(v)+'</span></summary>'
@@ -2759,7 +2763,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" aria-label="Disconnect bank sync" title="Disconnect">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.42.14';
+const APP_VERSION='1.43.0';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -3241,7 +3245,7 @@ async function debugReport(){
 function diagCardHTML(){
   const L=DL.buf,errs=L.filter(x=>x.l==='error'),last=errs[errs.length-1],tm=x=>new Date(x).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit',second:'2-digit'});
   return '<h3 style="margin:0 0 6px">Debug log</h3><p class="mute" style="margin-top:0">Syncs, imports and errors. Send it to Claude if something breaks. It has no bank link or transaction details.</p>'
-   +'<p class="sub">'+L.length+' entries · '+errs.length+' error'+(errs.length===1?'':'s')+(last?' · last: '+esc(last.m)+' ('+tm(last.t)+')':'')+'</p>'
+   +'<p class="sub">'+L.length+(L.length===1?' entry · ':' entries · ')+errs.length+' error'+(errs.length===1?'':'s')+(last?' · last: '+esc(last.m)+' ('+tm(last.t)+')':'')+'</p>'
    +'<div class="row dbgrow"><button class="btn" data-act="dbgdl">Download debug log</button><button class="btn ghost" data-act="dbgcopy">Copy</button><button class="btn ghost" data-act="dbgclear">Clear</button></div>'
    +'<div class="dgroup"><details class="drow"><summary><span>Recent activity<small>Last 40 syncs, imports and errors</small></span></summary><div class="dbg">'+(L.length?L.slice(-40).reverse().map(x=>'<div class="'+x.l+'"><span class="dt">'+tm(x.t)+'</span> <b>'+esc(x.a)+'</b> '+esc(x.m)+'</div>').join(''):'<div>Nothing yet.</div>')+'</div></details>';
 }
