@@ -1,6 +1,6 @@
 // HomeBudget service worker: network first (so new versions arrive as soon as you're online), cached copy when offline.
-const CACHE = 'homebudget-shell-7';
-const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'icon6-192.png', 'icon6-512.png', 'icon6-maskable-512.png', 'apple-touch-icon6.png'];
+const CACHE = 'homebudget-shell-8';
+const SHELL = ['./', 'index.html', 'manifest.webmanifest?v=6', 'icon6-192.png', 'icon6-512.png', 'icon6-maskable-512.png', 'apple-touch-icon6.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
 });
@@ -13,7 +13,7 @@ self.addEventListener('fetch', e => {
   const u = new URL(r.url);
   if (u.origin !== location.origin) return; // bank requests etc. go straight to the network
   e.respondWith(
-    fetch(r).then(res => {
+    fetch(r, { cache: 'no-cache' }).then(res => {
       if (res && res.ok) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(r, copy)); }
       return res;
     }).catch(() => caches.match(r).then(m => m || caches.match('index.html')))
