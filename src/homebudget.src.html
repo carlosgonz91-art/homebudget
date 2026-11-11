@@ -124,6 +124,7 @@ h1{font-size:28px;font-weight:800;letter-spacing:-.03em;margin:2px 0 12px}h2{fon
 .insr>span{display:flex;align-items:center;gap:8px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.insr>span small{color:var(--mute);font-size:11.5px}.insr>b{font-weight:650;font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}.insr>em{font-style:normal;font-size:12px;color:var(--mute);text-align:right;white-space:nowrap}.insr>em.pos{color:var(--good);font-weight:700}.insr>em.neg{color:var(--bad);font-weight:700}
 .insr .dot{width:8px;height:8px;border-radius:50%;flex:none}
 .inss>summary,.insmore>summary{cursor:pointer;list-style:none}.inss>summary::-webkit-details-marker,.insmore>summary::-webkit-details-marker{display:none}.inss>summary:hover{background:color-mix(in srgb,var(--brand) 6%,transparent)}.inss>summary>span::after{content:'›';color:var(--mute);font-weight:700;transition:transform .15s}.inss[open]>summary>span::after{transform:rotate(90deg)}.inss>summary small{background:var(--soft);border-radius:99px;padding:0 6px}.inssb{margin:0 0 6px 16px;padding-left:10px;border-left:2px solid var(--line)}.inssb .insr{padding:5px 0;font-size:12.5px}.inssb .insr>span small{overflow:hidden;text-overflow:ellipsis}.inss{border-bottom:1px solid var(--line)}.inss>summary.insr{border-bottom:0}.insmore>summary{padding:9px 0;font-size:13px;font-weight:700;color:var(--brand);min-height:36px}.insmore>summary::before{content:'+ '}.insmore[open]>summary::before{content:'− '}
+.secch{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 2px}.secc{font:inherit;font-size:13px;font-weight:650;min-height:36px;padding:6px 12px;border-radius:99px;border:1px solid var(--line);background:var(--soft);color:var(--ink);cursor:pointer;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.secc.on{background:color-mix(in srgb,var(--brand) 22%,var(--card));border-color:color-mix(in srgb,var(--brand) 60%,var(--line));color:var(--brand)}
 .insrb{display:flex;gap:1px;height:5px;width:64px;margin:3px 0 2px auto;border-radius:99px;overflow:hidden}.insrb u{display:block;text-decoration:none;min-width:0}.insr>em small{display:block;font-size:10.5px;font-weight:500;color:var(--mute)}
 .insd{margin-top:12px;border-top:1px solid var(--line);padding-top:8px}.insd>summary{cursor:pointer;font-size:13px;font-weight:700;padding:6px 0;min-height:36px}
 .insn{display:flex;flex-direction:column}.insn a{display:block;padding:9px 0;border-bottom:1px solid var(--line);color:var(--ink);text-decoration:none;font-size:13px;line-height:1.4}.insn a:last-child{border-bottom:0}.insn a:hover{color:var(--brand)}.insn a b{color:var(--brand)}.insn svg{width:11px;height:11px;vertical-align:-1px}
@@ -2047,6 +2048,34 @@ async function ensureInsights(force){
 }
 function insPaint(){const el=document.getElementById('inscard');if(!el) return;const t=document.createElement('div');t.innerHTML=insightsHTML(true);const n=t.firstElementChild;if(n){const op=[...el.querySelectorAll('details[open]')].map(d=>d.dataset.k);el.replaceWith(n);op.forEach(k=>{const d=n.querySelector('details[data-k="'+k+'"]');if(d)d.open=true;});}}
 const COMMOD=/^(GLD|GLDM|IAU|IAUM|PHYS|PSLV|CEF|SLV|SIVR|SGOL|BAR|AAAU|OUNZ|PPLT|PALL|GLTR|DBC|PDBC|GSG|COMT|USO|BNO|UNG|DBA|CPER|BCI|FTGC)$/,COMMODN=/\b(gold|silver|platinum|palladium|bullion|precious metals?|commodit)/i;
+// Sector breakdown of EVERY holding (stocks, ETFs, funds, CDs, cash), for one account or all of them.
+function secData(c,acct){
+  const H=S.holdings||{},M={},A=[];let tot=0,pend=0;
+  const add=(k,s,nm,v,ac)=>{if(!(v>0)) return;tot+=v;(M[k]||(M[k]=[])).push({s,nm,v,ac});};
+  invIds().forEach(id=>{
+    const ac=ivNm(id);A.push([id,ac]);
+    if(acct&&acct!==id) return;
+    let pos=0;
+    (H[id]||[]).forEach(h=>{
+      const v=+h.value||0;if(!(v>0)) return;pos+=v;
+      const s=String(h.sym||'').toUpperCase().trim(),nm=String(h.desc||s),p=c.prof[s];
+      let k;
+      if(fixedInc(h)) k='CDs & bonds';
+      else if(isCashPos(h)||(h.shares>0&&Math.abs(v/h.shares-1)<0.03)) k='Cash';
+      else if(COMMOD.test(s)||COMMODN.test(((p&&p.nm)||'')+' '+nm)) k='Commodities';
+      else if(isFundSym(s)) k='Mutual funds';
+      else if(p){const raw=String(p.sec||'').trim();k=(!raw||/^n\/?a$/i.test(raw))?'Funds & ETFs':raw;}
+      else if(/^[A-Z]{1,5}$/.test(s)){k='Not loaded yet';pend++;}
+      else k='Other';
+      add(k,s||nm.slice(0,12),(p&&p.nm)||nm,v,ac);
+    });
+    const b=S.balSf&&S.balSf[id];if(b&&b.v-pos>=1) add('Cash','Cash','Uninvested cash',b.v-pos,ac);
+  });
+  // merge the same ticker held in several accounts into one row (the account list shows where)
+  Object.keys(M).forEach(k=>{const m={};M[k].forEach(x=>{const o=m[x.s]||(m[x.s]={s:x.s,nm:x.nm,v:0,ac:new Set()});o.v+=x.v;o.ac.add(x.ac);});M[k]=Object.values(m).map(o=>({s:o.s,nm:o.nm,v:o.v,ac:acct?'':(o.ac.size>1?o.ac.size+' accounts':[...o.ac][0])}));});
+  const L=Object.keys(M).map(k=>[k,M[k].reduce((t,x)=>t+x.v,0)]).sort((a,b)=>b[1]-a[1]);
+  return {L,M,tot,accts:A,pend};
+}
 function insightsHTML(noFetch){
   const H=insSyms();if(!H.length) return '';
   if(!fhKey()) return '<section class="card" id="inscard"><h2>Stock insights</h2><p class="sub" style="margin:0 0 8px">Dividends, sectors, earnings dates, analyst ratings and news for the stocks you own.</p>'+fhSetupHTML()+'</section>';
@@ -2060,8 +2089,8 @@ function insightsHTML(noFetch){
   // earnings
   const today=todayISO(),E=((c.earn&&c.earn.list)||[]).filter(e=>own.has(e.s)&&e.d>=today).sort((a,b)=>a.d<b.d?-1:1),wd=d=>new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
   // sectors
-  const SEC={},SECM={};H.forEach(x=>{const p=c.prof[x.s];if(!p) return;const raw=String(p.sec||'').trim(),k=COMMOD.test(x.s)||COMMODN.test((p.nm||'')+' '+(x.d||''))?'Commodities':(!raw||/^n\/?a$/i.test(raw))?'Funds & ETFs':raw;SEC[k]=(SEC[k]||0)+x.v;(SECM[k]||(SECM[k]=[])).push({s:x.s,v:x.v,nm:p.nm||x.d||''});});
-  const secL=Object.entries(SEC).sort((a,b)=>b[1]-a[1]),secT=secL.reduce((t,x)=>t+x[1],0),PAL=['#6366f1','#0ea5e9','#10b981','#f59e0b','#ec4899','#8b5cf6','#14b8a6','#f97316','#64748b'];
+  const SD=secData(c,UI.secAcct||'');
+  const secL=SD.L,secT=SD.tot,SECM=SD.M,PAL=['#6366f1','#0ea5e9','#10b981','#f59e0b','#ec4899','#8b5cf6','#14b8a6','#f97316','#64748b'];
   const T=[];
   T.push({k:'Dividends',v:dvBase>0?'≈'+fmt0(dv)+'<span class="insu">/yr</span>':'…',s:dvBase>0?(dvN?pf(dv/dvBase*100).replace('+','')+' yield':'None pay dividends'):'Loading',c:'#10b981'});
   T.push({k:'Earnings',v:E.length?esc(E[0].s):(c.earn?'None':'…'),s:E.length?wd(E[0].d):(c.earn?(c.earn.na?'Not on the free plan':'In the next 45 days'):'Loading'),c:'#f59e0b'});
@@ -2070,8 +2099,8 @@ function insightsHTML(noFetch){
   let h='<section class="card" id="inscard"><div class="row" style="align-items:center;gap:8px;margin-bottom:8px"><h2 style="margin:0">Stock insights</h2><span class="spacer"></span><button class="btn ghost small'+(INS.busy?' spin':'')+'" data-act="insrefresh" aria-label="Refresh stock insights"'+(INS.busy?' disabled':'')+'>Refresh</button></div>'+stiles(T);
   if(INS.busy) h+='<p class="sub insp" role="status">Loading '+INS.done+' of '+INS.total+'… this is paced to stay inside the free plan.</p>';
   else if(INS.err) h+='<p class="sub insp" role="status">'+(INS.err==='rate'?'Finnhub asked us to slow down. The rest loads in about a minute.':INS.err==='deny'?'Finnhub refused the key. Check it under Market watch.':'Could not reach Finnhub. Showing what was saved.')+'</p>';
-  if(secL.length){const srow=([k,v],i)=>{const M=(SECM[k]||[]).sort((a,b)=>b.v-a.v);return '<details class="inss" data-tg="insS_'+esc(k)+'"'+(UI['insS_'+k]?' open':'')+'><summary class="insr"><span><i class="dot" style="background:'+PAL[i%PAL.length]+'"></i>'+esc(k)+'<small>'+M.length+'</small></span><b>'+fmt0(v)+'</b><em>'+(v/secT<.01?'<1':Math.round(v/secT*100))+'%</em></summary><div class="inssb">'+M.map(m=>'<div class="insr"><span><b>'+esc(m.s)+'</b><small>'+esc(m.nm)+'</small></span><b>'+fmt0(m.v)+'</b><em>'+Math.round(m.v/v*100)+'%</em></div>').join('')+'</div></details>';};
-    h+='<h3 class="insh">Sectors</h3><div class="insbar" aria-hidden="true">'+secL.map(([k,v],i)=>'<i style="width:'+(v/secT*100).toFixed(2)+'%;background:'+PAL[i%PAL.length]+'"></i>').join('')+'</div><p class="sub" style="margin:0 0 2px">Tap a sector to see the stocks in it.</p><div class="insl">'+secL.slice(0,8).map(srow).join('')+(secL.length>8?'<details class="insmore" data-tg="insSecAll"'+(UI.insSecAll?' open':'')+'><summary>'+(secL.length-8)+' smaller sectors</summary>'+secL.slice(8).map((x,i)=>srow(x,i+8)).join('')+'</details>':'')+'</div>';}
+  if(secL.length){const srow=([k,v],i)=>{const M=(SECM[k]||[]).sort((a,b)=>b.v-a.v);return '<details class="inss" data-tg="insS_'+esc(k)+'"'+(UI['insS_'+k]?' open':'')+'><summary class="insr"><span><i class="dot" style="background:'+PAL[i%PAL.length]+'"></i>'+esc(k)+'<small>'+M.length+'</small></span><b>'+fmt0(v)+'</b><em>'+(v/secT<.01?'<1':Math.round(v/secT*100))+'%</em></summary><div class="inssb">'+M.map(m=>'<div class="insr"><span><b>'+esc(m.s)+'</b><small>'+esc(m.nm)+(m.ac?' · '+esc(m.ac):'')+'</small></span><b>'+fmt0(m.v)+'</b><em>'+Math.round(m.v/v*100)+'%</em></div>').join('')+'</div></details>';};
+    h+='<h3 class="insh">Sectors</h3><div class="secch" role="group" aria-label="Show sectors for">'+[['','All accounts']].concat(SD.accts).map(([id,nm])=>'<button type="button" class="secc'+((UI.secAcct||'')===id?' on':'')+'" aria-pressed="'+((UI.secAcct||'')===id)+'" data-act="secacct" data-id="'+esc(id)+'">'+esc(nm)+'</button>').join('')+'</div><p class="sub" style="margin:6px 0 8px"><b>'+fmt0(secT)+'</b> across '+secL.length+' groups. Tap a group to see what is in it.</p><div class="insbar" aria-hidden="true">'+secL.map(([k,v],i)=>'<i style="width:'+(v/secT*100).toFixed(2)+'%;background:'+PAL[i%PAL.length]+'"></i>').join('')+'</div><div class="insl">'+secL.slice(0,8).map(srow).join('')+(secL.length>8?'<details class="insmore" data-tg="insSecAll"'+(UI.insSecAll?' open':'')+'><summary>'+(secL.length-8)+' smaller groups</summary>'+secL.slice(8).map((x,i)=>srow(x,i+8)).join('')+'</details>':'')+'</div><p class="sub" style="margin:8px 0 0">Your amounts are your synced positions. Sector names for stocks and ETFs come from Finnhub, looked up by ticker. Mutual funds, CDs and cash are grouped by type.'+(SD.pend?' '+SD.pend+' holdings are still waiting for a sector.':'')+'</p>';}
   if(E.length) h+='<h3 class="insh">Upcoming earnings</h3><div class="insl">'+E.slice(0,6).map(e=>'<div class="insr"><span><b>'+esc(e.s)+'</b></span><b>'+wd(e.d)+'</b><em>'+esc(e.h)+'</em></div>').join('')+'</div>';
   const rows=H.filter(x=>{const d=c.div[x.s],r=c.rec[x.s];return (d&&d.dy>0)||(r&&lab(r));});
   if(rows.length) h+='<details class="insd" data-k="st"><summary>Dividends and ratings by stock <span class="sub">· '+rows.length+'</span></summary><div class="insl">'+rows.map(x=>{const d=c.div[x.s],r=c.rec[x.s],l=r&&lab(r),n=r?r.b+r.h+r.s:0;return '<div class="insr"><span><b>'+esc(x.s)+'</b><small>'+fmt0(x.v)+'</small></span><b>'+(d&&d.dy>0?d.dy.toFixed(1)+'% · ≈'+fmt0(x.v*d.dy/100)+'/yr':'<span class="mute">No dividend</span>')+'</b><em'+(l&&l[1]?' class="'+l[1]+'"':'')+(l?' title="'+r.b+' buy · '+r.h+' hold · '+r.s+' sell"':'')+'>'+(l?l[0]+'<i class="insrb" role="img" aria-label="'+r.b+' buy, '+r.h+' hold, '+r.s+' sell"><u style="flex:'+r.b+';background:var(--good)"></u><u style="flex:'+r.h+';background:var(--mute)"></u><u style="flex:'+r.s+';background:var(--bad)"></u></i><small>'+n+' analysts</small>':'Not rated')+'</em></div>';}).join('')+'</div><p class="sub" style="margin:8px 0 0">Only stocks that pay a dividend or have analyst coverage are listed'+(H.length>rows.length?' ('+(H.length-rows.length)+' hidden)':'')+'. Ratings count the latest buy, hold and sell calls from Wall Street brokerage analysts, as collected by Finnhub: green is buy, grey is hold, red is sell. <b>Buy</b> means most say buy; <b>Lean buy</b> means more buys than sells; <b>Hold</b> means they are split.'+(ANn?' Across your stocks: '+AN.b+' buy, '+AN.h+' hold, '+AN.s+' sell.':'')+'</p></details>';
@@ -3001,7 +3030,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" aria-label="Disconnect bank sync" title="Disconnect">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.48.0';
+const APP_VERSION='1.49.0';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -3987,6 +4016,7 @@ const ACT={
     ACT.bdclose();save();render();toast('Saved'+(targets.length>1?' · '+targets.length+' transactions':''));
   },
   sfdisconnect(){dialog({msg:'Disconnect SimpleFIN? Your transactions stay. You can reconnect with a new setup token.',word:'disconnect',ok:'Disconnect',bad:true,onOk:async()=>{dlog('simplefin','Disconnected by user');await kvDel('simplefin');await kvDel('simplefin-last');SF.access=null;SF.last=null;S.pendingTx=[];save();render();toast('Disconnected');}});},
+  secacct(el){UI.secAcct=el.dataset.id||'';insPaint();},
   insrefresh(){INS.retryAt=0;ensureInsights(true);},
   openbud(el){openSheet(el.dataset.cat);},
   budedit(el){openSheet(el.dataset.cat);},
