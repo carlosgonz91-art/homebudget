@@ -1,16 +1,20 @@
-"""Build from homebudget.src.html (a page fragment: <title>, <style>, markup, <script>).
+"""Build index.html (the whole app in one file) from the source in src/.
 
-  homebudget.html           standalone file (adds doctype/head) with pdf.js inlined
-  homebudget.artifact.html  fragment for the Artifact tool (the host adds doctype/head) with pdf.js inlined
+Run from anywhere:  python build.py        (Python 3, standard library only; works on Windows)
 
-pdf.js is Apache-2.0 (Mozilla); its license header is preserved inside the inlined file.
+  src/homebudget.src.html      the app source: <title>, <style>, markup, <script>. EDIT THIS FILE.
+  vendor/pdfjs/                pdf.js 3.11.174 (Apache-2.0, license header kept inside), inlined into the build
+  index.html                   the built file that GitHub Pages serves. Never edit it by hand; it is overwritten.
 """
 import base64, pathlib
 
-SP = pathlib.Path("/tmp/claude-0/-home-claude/a78b219c-6266-510d-9126-22aef69b49b9/scratchpad/pdfjs/node_modules/pdfjs-dist/build")
-src = pathlib.Path("/home/claude/homebudget.src.html").read_text(encoding="utf-8")
-lib = (SP / "pdf.min.js").read_text(encoding="utf-8")
-worker = (SP / "pdf.worker.min.js").read_bytes()
+ROOT = pathlib.Path(__file__).resolve().parent
+SRC = ROOT / "src" / "homebudget.src.html"
+VENDOR = ROOT / "vendor" / "pdfjs"
+
+src = SRC.read_text(encoding="utf-8")
+lib = (VENDOR / "pdf.min.js").read_text(encoding="utf-8")
+worker = (VENDOR / "pdf.worker.min.js").read_bytes()
 
 if "</script" in lib.lower():
     lib = lib.replace("</script", "<\\/script")
@@ -21,8 +25,6 @@ frag = frag.replace(
     "<!--PDFJS_WORKER-->",
     '<script id="pdfjs-worker-b64" type="text/plain">' + base64.b64encode(worker).decode("ascii") + "</script>",
 )
-
-pathlib.Path("/home/claude/homebudget.artifact.html").write_text(frag, encoding="utf-8")
 
 import re as _re
 _csp = _re.search(r'<meta http-equiv="Content-Security-Policy"[^>]*>\n?', frag)
@@ -38,5 +40,5 @@ standalone = (
     '<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">'
     + "\n" + _headx + "\n</head><body>\n" + _body + "\n</body></html>"
 )
-pathlib.Path("/home/claude/homebudget.html").write_text(standalone, encoding="utf-8")
+(ROOT / "index.html").write_text(standalone, encoding="utf-8", newline="\n")
 print("built", round(len(standalone) / 1e6, 2), "MB")
