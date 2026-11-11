@@ -90,7 +90,11 @@ h1{font-size:28px;font-weight:800;letter-spacing:-.03em;margin:2px 0 12px}h2{fon
 .sk .skn .skb>span{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1 1 180px;width:auto}
 .sk .skn .skcta{flex:none;font-style:normal;font-size:13px;font-weight:800;color:var(--brand);white-space:nowrap;padding:7px 13px;border-radius:99px;background:color-mix(in srgb,var(--brand) 14%,transparent);border:1px solid color-mix(in srgb,var(--brand) 30%,transparent)}.sk .skn .skcta[hidden]{display:none}
 .sk .skn .skx{position:relative;top:auto;right:auto;flex:none;width:44px;min-height:44px;display:grid;place-items:center;font-size:22px;padding:0;align-self:stretch}
-.mpd{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line);font-size:13px;font-weight:600;color:var(--mute)}.mpd input{flex:none;width:auto;min-width:0;max-width:60%;padding:7px 10px;font-size:13px;border-radius:10px}.mpd.on input{border-color:var(--brand);color:var(--brand)}
+.mpop .mpq{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}.mpop .mpq .mpall{flex:none;margin:0;width:auto;min-height:42px;padding:9px;font-size:14px;font-weight:600;line-height:1.2;color:var(--brand)}
+.mpq .mpday{grid-column:1/-1;position:relative;display:flex;align-items:center;justify-content:center;margin:0;cursor:pointer;overflow:hidden}
+.mpq .mpday input{position:absolute;inset:0;width:100%;height:100%;margin:0;padding:0;border:0;opacity:0;cursor:pointer;font:inherit}
+.mpq .mpday input::-webkit-calendar-picker-indicator{position:absolute;inset:0;width:100%;height:100%;margin:0;padding:0;cursor:pointer;opacity:0}
+.mpq .mpday:focus-within{outline:2px solid var(--brand);outline-offset:2px}
 .cdgo{margin:8px 0 2px}
 .t1 .ds{flex:0 1 auto}.t1 .amt{margin-left:auto;flex:none}
 .t1 .nt{flex:0 2 auto;min-width:64px;max-width:50%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11.5px;font-weight:700;line-height:1.5;color:var(--brand);background:color-mix(in srgb,var(--brand) 13%,transparent);border:1px solid color-mix(in srgb,var(--brand) 26%,transparent);padding:1px 8px;border-radius:99px}
@@ -1523,7 +1527,7 @@ function mpFill(box,y){
   const curA=k==='f'?fMonths():[UI.month],cur=curA[0];
   box.querySelector('.mpop').innerHTML='<div class="mph"><button type="button" class="mpy" data-act="mpyear" data-n="-1" aria-label="Previous year"'+(y<=lo?' disabled':'')+'>‹</button><b>'+y+'</b><button type="button" class="mpy" data-act="mpyear" data-n="1" aria-label="Next year"'+(y>=hi?' disabled':'')+'>›</button></div>'
    +'<div class="mpg">'+MPN.map((n,i)=>{const m=y+'-'+String(i+1).padStart(2,'0');return '<button type="button" class="mpm'+(curA.includes(m)?' on':'')+'" aria-pressed="'+curA.includes(m)+'" data-act="mppick" data-m="'+m+'"'+(ms.has(m)?'':' disabled')+'>'+n+'</button>';}).join('')+'</div>'
-   +(k==='f'?'<p class="mph2">Tap several months to combine them.</p><div class="mpq"><button type="button" class="mpall'+(!cur&&!UI.filters.day?' on':'')+'" data-act="mppick" data-m="">All months</button><button type="button" class="mpall" data-act="mp3">Last 3 months</button></div><label class="mpd'+(UI.filters.day?' on':'')+'"><span>Or one day</span><input type="date" data-chg="fday" value="'+esc(UI.filters.day||'')+'" aria-label="Show one day"></label>':'');
+   +(k==='f'?'<p class="mph2">Tap several months to combine them.</p><div class="mpq"><button type="button" class="mpall'+(!cur&&!UI.filters.day?' on':'')+'" data-act="mppick" data-m="">All months</button><button type="button" class="mpall" data-act="mp3">Last 3 months</button><label class="mpall mpday'+(UI.filters.day?' on':'')+'"><span>'+(UI.filters.day?esc(dayLabel(UI.filters.day)):'Pick one day')+'</span><input type="date" data-chg="fday" data-act="dayopen" value="'+esc(UI.filters.day||'')+'" aria-label="Show one day"></label></div>':'');
 }
 function mpSync(box){const fa=document.activeElement,fk=fa&&box.contains(fa)?(fa.dataset.m!=null?'[data-m="'+fa.dataset.m+'"]':fa.dataset.act?'[data-act="'+fa.dataset.act+'"]':''):'';setTimeout(()=>{if(fk){const e=box.querySelector('.mpop '+fk);if(e) e.focus({preventScroll:true});}},0);const l=box.querySelector('.mpb span');if(l) l.textContent=mpLabel('f');mpFill(box,+box.dataset.y);renderTxnList();const jb=document.querySelector('.jmp .jt b');if(jb) jb.textContent=jumpText();}
 function mpClose(){document.querySelectorAll('.mpop').forEach(p=>{const had=!p.hidden&&p.contains(document.activeElement);p.hidden=true;const b=p.parentNode.querySelector('.mpb');if(b){b.setAttribute('aria-expanded','false');if(had) b.focus({preventScroll:true});}});}
@@ -2919,7 +2923,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" aria-label="Disconnect bank sync" title="Disconnect">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.45.1';
+const APP_VERSION='1.45.2';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -3778,6 +3782,7 @@ const ACT={
     if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f],title:'Where the money went'});}catch(e){if(e&&e.name!=='AbortError') toast('Could not open sharing');}}
     else toast('Sharing is not available here. Use Save picture.');
   },
+  dayopen(el){try{if(el.showPicker) el.showPicker();}catch(e){}},
   daygo(el){jmp();UI.filters={q:'',acct:'',cat:'',month:'',day:el.dataset.d};UI.limit=200;UI.tab='txns';render();window.scrollTo(0,0);},
   skgo(el){const box=el.closest('.skn'),c=box&&box.dataset.go;if(!c) return;jmp();UI.filters={q:'',acct:'',cat:c,month:UI.month};UI.limit=200;UI.tab='txns';render();window.scrollTo(0,0);},
   clearflow(){UI.filters.flow='';render();},
