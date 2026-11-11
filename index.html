@@ -92,6 +92,10 @@ h1{font-size:28px;font-weight:800;letter-spacing:-.03em;margin:2px 0 12px}h2{fon
 .sk .skn .skx{position:relative;top:auto;right:auto;flex:none;width:44px;min-height:44px;display:grid;place-items:center;font-size:22px;padding:0;align-self:stretch}
 .mpd{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line);font-size:13px;font-weight:600;color:var(--mute)}.mpd input{flex:none;width:auto;min-width:0;max-width:60%;padding:7px 10px;font-size:13px;border-radius:10px}.mpd.on input{border-color:var(--brand);color:var(--brand)}
 .cdgo{margin:8px 0 2px}
+.t1 .ds{flex:0 1 auto}.t1 .amt{margin-left:auto;flex:none}
+.t1 .nt{flex:0 2 auto;min-width:64px;max-width:50%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11.5px;font-weight:700;line-height:1.5;color:var(--brand);background:color-mix(in srgb,var(--brand) 13%,transparent);border:1px solid color-mix(in srgb,var(--brand) 26%,transparent);padding:1px 8px;border-radius:99px}
+.stp .nk{font-style:normal}
+@media(max-width:640px){.t1{flex-wrap:wrap;row-gap:2px}.t1 .ds{flex:1 1 0}.t1 .nt{order:3;flex:0 0 100%;max-width:100%;min-width:0;background:none;border:0;padding:0;border-radius:0;font-size:12px;font-weight:650}.t1 .nt::before{content:"✎ ";opacity:.8}}
 .possort{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin:2px 2px 12px;font-size:13px;color:var(--mute);font-weight:600}.possort select{width:auto;min-width:150px;padding:8px 30px 8px 12px;font-size:13.5px;border-radius:12px}
 .mxgain{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:2px 0 12px;padding:11px 14px;border-radius:14px;background:var(--soft);font-size:13px;font-weight:600;color:var(--mute)}.mxgain b{font-size:17px;font-variant-numeric:tabular-nums;white-space:nowrap}.mxgain small{font-size:12.5px;font-weight:700;opacity:.85}
 .lnpt{margin:8px 0 4px}
@@ -1361,6 +1365,7 @@ async function loadState(){
   migrateBudgets(S);
   if(addCdWidget()) save();
   try{if(seedRules()) save();}catch(e){}
+  try{if(!S.nv1){S.nv1=1;let n=0;Object.values(S.auditOk||{}).forEach(v=>{const k=String(v).lastIndexOf(' — ');if(k<0) return;const note=String(v).slice(k+3).trim(),p=String(v).slice(0,k).split(' · ');if(!note||p.length<4) return;const d=p[0],amt=p[2],desc=p.slice(3).join(' · ');S.txns.forEach(t=>{if(!t.nick&&t.date===d&&fmt(t.amount)===amt&&(t.desc===desc||(desc.length>=100&&t.desc.startsWith(desc)))&&acctName(t.acct)===p[1]){t.nick=note.slice(0,140);n++;}});});if(n) save();}}catch(e){}
   try{if(!S.rv3){S.rv3=1;S.rules=S.rules||[];if(!S.rules.some(r=>r.match==='emc')){S.rules.push({match:'emc',cat:'Shopping'});const n=applyRulesAll();save();if(n) setTimeout(()=>toast('EMC purchases set to Shopping ('+n+')'),1200);}}}catch(e){}
   try{if(!S.rv2){S.rv2=1;const n=applyRulesAll();save();if(n) setTimeout(()=>toast('Your saved rules were applied to '+n+' existing transaction'+(n>1?'s':'')),900);}}catch(e){}
   // the household's mortgage terms, from the statement (applied once; edit them any time on the Loans page)
@@ -1816,7 +1821,7 @@ function dayTxHTML(dt){
   const wd=new Date(dt+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'}),net=-L.reduce((t,x)=>t+x.amount,0);
   return '<div class="cdl"><div class="cdh"><div><b>'+esc(wd)+'</b><span class="sub">'+(L.length?fmt(net)+' · '+L.length+' transaction'+(L.length>1?'s':''):'Nothing spent')+'</span></div><button type="button" class="bx2" data-act="calday" data-d="'+dt+'" aria-label="Close">×</button></div>'
    +'<button type="button" class="btn ghost small cdgo" data-act="daygo" data-d="'+dt+'">See this day in Activity ›</button>'
-   +(L.length?L.map(t=>'<div class="tx ta">'+avHTML(t.cat)+'<div class="txb"><div class="t1" role="button" tabindex="0" data-act="txedit" data-id="'+esc(t.id)+'"><span class="ds" title="'+esc(t.desc)+'">'+esc(t.nick||t.desc)+'</span><span class="amt '+(t.amount<0?'neg':'pos')+'">'+fmt(t.amount)+'</span></div><div class="t2"><span class="sub">'+esc(t.cat)+' · '+esc(acctName(t.acct))+'</span></div></div></div>').join(''):'<p class="mute" style="margin:6px 0 0">Nothing spent on this day.</p>')+'</div>';
+   +(L.length?L.map(t=>'<div class="tx ta">'+avHTML(t.cat)+'<div class="txb"><div class="t1" role="button" tabindex="0" data-act="txedit" data-id="'+esc(t.id)+'"><span class="ds" title="'+esc(t.desc)+'">'+esc(t.desc)+'</span>'+(t.nick?'<span class="nt" title="Note: '+esc(t.nick)+'">'+esc(t.nick)+'</span>':'')+'<span class="amt '+(t.amount<0?'neg':'pos')+'">'+fmt(t.amount)+'</span></div><div class="t2"><span class="sub">'+esc(t.cat)+' · '+esc(acctName(t.acct))+'</span></div></div></div>').join(''):'<p class="mute" style="margin:6px 0 0">Nothing spent on this day.</p>')+'</div>';
 }
 // one row layout for both "Top spending" views (Merchants / Purchases)
 function topRow(i,cat,name,full,amt,sub,pct,act){
@@ -2694,7 +2699,7 @@ function pendingHTML(){
   const P=S.pendingTx||[];if(!P.length) return '';
   const tot=P.reduce((a,t)=>a+t.amount,0),nm=t=>{const a=S.accounts.find(x=>x.sf===t.sf);return a?a.name:t.label;};
   return '<section class="card"><details class="pnd"><summary><span class="pt"><b>Pending</b><i class="pc">'+P.length+'</i></span><span class="pa2">'+fmt(tot)+'</span><span class="ps sub">Not counted in budgets yet</span><svg class="bi pch" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>'
-   +P.map(t=>'<div class="tx"><div class="t1"><span class="ds" title="'+esc(t.desc)+'">'+(t.nick?esc(t.nick)+' <span class="nk">'+esc(t.desc)+'</span>':esc(t.desc))+'</span><span class="amt '+(t.amount<0?'neg':'pos')+'">'+fmt(t.amount)+'</span></div><div class="t2"><span class="sub">'+t.date+' · '+esc(nm(t))+'</span></div></div>').join('')
+   +P.map(t=>'<div class="tx"><div class="t1"><span class="ds" title="'+esc(t.desc)+'">'+esc(t.desc)+'</span>'+(t.nick?'<span class="nt" title="Note: '+esc(t.nick)+'">'+esc(t.nick)+'</span>':'')+'<span class="amt '+(t.amount<0?'neg':'pos')+'">'+fmt(t.amount)+'</span></div><div class="t2"><span class="sub">'+t.date+' · '+esc(nm(t))+'</span></div></div>').join('')
    +'<p class="sub" style="margin:8px 0 0">As of '+new Date(S.pendingAt||Date.now()).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})+'. Updates on every sync and clears once the bank posts them.</p></details></section>';
 }
 function filtered(){
@@ -2713,7 +2718,7 @@ function renderTxnList(){
   const from=UI.page*PAGE,shown=list.slice(from,from+PAGE);
   if(!list.length){el.innerHTML='<p class="mute" style="padding:12px">Nothing matches.</p>';return;}
   const total=list.reduce((a,t)=>a+t.amount,0);
-  el.innerHTML=shown.map(t=>'<div class="tx ta">'+avHTML(t.cat)+'<div class="txb"><div class="t1" role="button" tabindex="0" data-act="txedit" data-id="'+esc(t.id)+'"><span class="ds" title="'+esc(t.desc)+'">'+esc(t.desc)+'</span><span class="amt '+(t.amount<0?'neg':'pos')+'">'+fmt(t.amount)+'</span></div><div class="t2"><span class="sub"><time datetime="'+t.date+'" title="'+t.date+'">'+niceDay(t.date)+'</time> · '+esc(acctName(t.acct))+(t.sub?' · '+esc(t.sub):'')+(t.inc?' · from '+esc(t.inc):'')+'</span><select data-chg="setcat" data-id="'+esc(t.id)+'" aria-label="Category">'+catOpts(t.cat)+'<option value="__new__">＋ New category…</option></select></div></div></div>').join('')
+  el.innerHTML=shown.map(t=>'<div class="tx ta">'+avHTML(t.cat)+'<div class="txb"><div class="t1" role="button" tabindex="0" data-act="txedit" data-id="'+esc(t.id)+'"><span class="ds" title="'+esc(t.desc)+'">'+esc(t.desc)+'</span>'+(t.nick?'<span class="nt" title="Note: '+esc(t.nick)+'">'+esc(t.nick)+'</span>':'')+'<span class="amt '+(t.amount<0?'neg':'pos')+'">'+fmt(t.amount)+'</span></div><div class="t2"><span class="sub"><time datetime="'+t.date+'" title="'+t.date+'">'+niceDay(t.date)+'</time> · '+esc(acctName(t.acct))+(t.sub?' · '+esc(t.sub):'')+(t.inc?' · from '+esc(t.inc):'')+'</span><select data-chg="setcat" data-id="'+esc(t.id)+'" aria-label="Category">'+catOpts(t.cat)+'<option value="__new__">＋ New category…</option></select></div></div></div>').join('')
    +'<div class="pager"><span class="mute pgs">'+(from+1)+'–'+(from+shown.length)+' of '+list.length+' · net '+fmt(total)+'</span>'+(pages>1?'<div class="pgc"><button class="btn ghost small" data-act="pgprev"'+(UI.page===0?' disabled':'')+'>‹ Prev</button><span class="pgn">'+(UI.page+1)+' / '+pages+'</span><button class="btn ghost small" data-act="pgnext"'+(UI.page>=pages-1?' disabled':'')+' aria-label="Next page">Next ›</button></div>':'')+'</div>';
 }
 const isCD=a=>/certificate|\bcd\b/i.test(a.name||'');
@@ -2885,7 +2890,7 @@ function openSheet(cat){
    +'<label>'+(inc?'Expected monthly income':'Monthly budget')+'<input id="bdAmt" type="number" inputmode="decimal" min="0" step="10" value="'+(b||'')+'" placeholder="0"></label>'
    +'<label class="chk"><input type="checkbox" id="bdOnce">Only for '+esc(monthLabel(ym))+'</label>'
    +(inc?'':'<label class="chk"><input type="checkbox" id="bdRoll" '+(cat&&S.rollover[cat]?'checked':'')+'>Roll unused money over to next month</label>')
-   +(txs.length?'<div><div class="sub" style="margin-bottom:4px">This month</div>'+txs.slice(0,6).map(t=>'<div class="stp"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+t.date.slice(5)+' · '+esc(t.nick||t.desc)+'</span><span class="stpa">'+fmt(t.amount)+'</span></div>').join('')+(txs.length>6?'<button class="btn ghost small" data-act="bdsee" data-cat="'+esc(cat)+'">See all '+txs.length+'</button>':'')+'</div>':'')
+   +(txs.length?'<div><div class="sub" style="margin-bottom:4px">This month</div>'+txs.slice(0,6).map(t=>'<div class="stp"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+t.date.slice(5)+' · '+esc(t.desc)+(t.nick?' <em class="nk">'+esc(t.nick)+'</em>':'')+'</span><span class="stpa">'+fmt(t.amount)+'</span></div>').join('')+(txs.length>6?'<button class="btn ghost small" data-act="bdsee" data-cat="'+esc(cat)+'">See all '+txs.length+'</button>':'')+'</div>':'')
    +'<div class="row"><button class="btn" data-act="bdsave" data-cat="'+esc(cat||'')+'">Save</button><button class="btn ghost" data-act="bdclose">Close</button>'+(b?'<button class="btn danger small" data-act="bdclear" data-cat="'+esc(cat)+'">Remove</button>':'')+'</div></div>';
   el.classList.add('show');
   const i=$('#bdAmt');if(i){i.focus();i.select();}
@@ -2897,9 +2902,9 @@ function openTx(id){
   const t=S.txns.find(x=>x.id===id);if(!t) return;
   const mk=merchantKey(t.desc),sim=mk.length>=3?S.txns.filter(x=>x.id!==id&&merchantKey(x.desc)===mk&&(x.amount>0)===(t.amount>0)).length:0;
   const el=$('#dlg'),custom=!['Uncategorized','Income','Interest','Transfer','Investing'].includes(t.cat)&&groupOf(t.cat)==='Other';
-  el.innerHTML='<div class="dlgbox sheet" role="dialog" aria-modal="true"><h3>'+esc(t.nick||t.desc)+'</h3><p class="sub">'+(t.nick?esc(t.desc)+' · ':'')+niceDay(t.date)+' · '+esc(acctName(t.acct))+' · '+fmt(t.amount)+'</p>'
+  el.innerHTML='<div class="dlgbox sheet" role="dialog" aria-modal="true"><h3>'+esc(t.desc)+'</h3><p class="sub">'+niceDay(t.date)+' · '+esc(acctName(t.acct))+' · '+fmt(t.amount)+'</p>'
    +(t.payee||t.memo||t.td?'<p class="sub txx">'+[t.td?'Bought '+niceDay(t.td)+' · posted '+niceDay(t.date):'',t.payee?'Payee: '+esc(t.payee):'',t.memo?'Memo: '+esc(t.memo):''].filter(Boolean).join('<br>')+'</p>':'')
-   +'<label>Rename or add a note<input id="txNick" type="text" value="'+esc(t.nick||'')+'" placeholder="e.g. Spa day with Hannah (paid separately)" maxlength="140" autocomplete="off"></label>'
+   +'<label>Note<input id="txNick" type="text" value="'+esc(t.nick||'')+'" placeholder="e.g. Split with Hannah, she paid me back" maxlength="140" autocomplete="off"><small class="sub" style="display:block;margin-top:4px;font-weight:500">Shows next to this transaction in Activity. The bank\'s name for it stays the same.</small></label>'
    +'<label>Category<select id="txCat" data-chg="txcat">'+catOpts(t.cat)+'</select></label>'
    +'<label>Subcategory (optional)<input id="txSub" type="text" list="subList" value="'+esc(t.sub||'')+'" placeholder="e.g. Air travel" autocomplete="off"></label><datalist id="subList">'+subOpts(t.cat)+'</datalist>'
    +'<div id="txGrpBox"'+(custom?'':' hidden')+'><label>Group for this category<select id="txGrp">'+GROUP_NAMES().map(g=>'<option'+(g===groupOf(t.cat)?' selected':'')+'>'+esc(g)+'</option>').join('')+'</select></label></div>'
@@ -2914,7 +2919,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" aria-label="Disconnect bank sync" title="Disconnect">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.45.0';
+const APP_VERSION='1.45.1';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -3804,7 +3809,7 @@ const ACT={
     const t=el.dataset.id?S.txns.find(x=>x.id===el.dataset.id):null;
     if(!t){done('');return;}
     // a transaction: let the user leave themselves a note (it is saved on the transaction, in the same field as its name)
-    dialog({msg:'Mark this as OK. Add a note so you remember why (optional). It is saved on the transaction.',input:true,value:t.nick||'',placeholder:'e.g. Two spa visits, the casino would not split the bill',ok:'Mark as OK',onOk:v=>{const n=String(v||'').trim().replace(/\s+/g,' ').slice(0,140);if(n) t.nick=n;done(n);}});
+    dialog({msg:'Mark this as OK. Add a note so you remember why (optional). It shows next to the transaction in Activity.',input:true,value:t.nick||'',placeholder:'e.g. Two separate purchases, both are real',ok:'Mark as OK',onOk:v=>{const n=String(v||'').trim().replace(/\s+/g,' ').slice(0,140);if(n) S.txns.forEach(x=>{if(x===t||(x.acct===t.acct&&x.date===t.date&&x.amount===t.amount&&x.desc===t.desc&&!x.nick)) x.nick=n;});done(n);}});
   },
   audoff(el){delete (S.auditOk||{})[el.dataset.k];save();render();},
   audxfer(el){const t=S.txns.find(x=>x.id===el.dataset.id);if(!t) return;const old=[t.cat,t.sub,t.inc];t.cat='Transfer';delete t.sub;delete t.inc;t.man=1;save();render();toast('Set to Transfer',{label:'Undo',fn:()=>{t.cat=old[0];if(old[1]) t.sub=old[1];if(old[2]) t.inc=old[2];save();render();}});},
