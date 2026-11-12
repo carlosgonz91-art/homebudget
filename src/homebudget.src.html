@@ -894,7 +894,8 @@ function resolveDate(mm,dd,endISO){
   return d;
 }
 function rec(expected,got){return {expected:r2(expected),got:r2(got),ok:Math.abs(expected-got)<0.025};}
-function money(text,label){const m=text.match(new RegExp(label+'[\\s.]*\\$?\\s*(-?[\\d,]+\\.\\d\\d)'));return m?parseAmount(m[1]):null;}
+// Reads the amount printed after a label. A credit balance is printed as "-$6.33" (minus before the dollar sign), which used to be missed.
+function money(text,label){const m=text.match(new RegExp(label+'[\\s.]*(-?)\\$?\\s*(-?[\\d,]+\\.\\d\\d)'));if(!m) return null;const v=parseAmount(m[2]);return m[1]&&v>0?-v:v;}
 function mkRes(o){return Object.assign({issuer:'',name:'',type:'other',last4:'',ref:null,start:null,end:null,txns:[],warnings:[],reconcile:null,beginBal:null,endBal:null,noLedger:false,generic:false},o);}
 function finish(res){if(res.last4&&res.issuer) res.ref=res.issuer.toLowerCase()+':'+res.last4;return res;}
 const sumAmts=t=>t.reduce((a,x)=>a+x.amount,0);
@@ -927,7 +928,9 @@ function parseChaseCard(lines,text){
   if(!pm) return null;
   const start=iso(2000+ +pm[3],+pm[1],+pm[2]),end=iso(2000+ +pm[6],+pm[4],+pm[5]);
   const last4=(text.match(/Account Number:\s*X{4}\s+X{4}\s+X{4}\s+(\d{4})/)||[])[1]||'';
-  const prod=(text.match(/Prime Visa|Sapphire [A-Za-z]+|Freedom [A-Za-z]+|Slate|Southwest|Marriott|United/)||[])[0];
+  let prod=(text.match(/Prime Visa|Sapphire [A-Za-z]+|Freedom [A-Za-z]+|Slate|Southwest|Marriott|United/)||[])[0];
+  // some statements print the card name in capitals ("CHASE FREEDOM UNLIMITED")
+  if(!prod){const u=(text.match(/CHASE (FREEDOM [A-Z]+|SAPPHIRE [A-Z]+)/)||[])[1];if(u) prod=u.toLowerCase().replace(/\b[a-z]/g,c=>c.toUpperCase());}
   const res=mkRes({issuer:'Chase',name:'Chase '+(prod||'Credit Card'),type:'credit',last4,start,end});
   let inA=false;
   for(const l of lines){
@@ -1259,12 +1262,12 @@ function auditCore(S0,today){
   if(gaps.length) add('warn',gaps.length+' gap'+(gaps.length>1?'s':'')+' between statements (a month may be missing)',gaps,null,'gap');
   if(ovl.length) add('info',ovl.length+' overlapping/repeated statement period'+(ovl.length>1?'s':'')+' (duplicate rows were skipped)',ovl,null,'ovl');
   // 3. does the ledger still add up to each statement?
-  const mism=[],perKey=f=>f.acct+'|'+f.start+'|'+f.end,stmIds=new Map(stm.map(f=>[f.id,perKey(f)]));let nm=0;
+  const mism=[],stmById=new Map(stm.map(f=>[f.id,f])),strayOf=t=>{const o=t.src&&stmById.get(t.src);return !!o&&(t.date<o.start||t.date>o.end);};let nm=0;
   for(const f of stm){
     if(f.beginBal==null||f.endBal==null||f.noLedger) continue;nm++;
     // Rows read from this statement count for it even when dated outside its period (card statements list the purchase date,
-    // which can fall a day or two before the period starts). Rows from another statement never count here, unless it is a second copy of the same statement.
-    const net=S.txns.filter(t=>t.acct===f.acct&&(t.src===f.id||stmIds.get(t.src)===perKey(f)||(!(t.src&&stmIds.has(t.src))&&t.date>=f.start&&t.date<=f.end))).reduce((x,t)=>x+t.amount,0),want=f.endBal-f.beginBal;
+    // which can fall a day or two before the period starts). A row that another statement lists outside that statement's own period belongs to that one, not this one.
+    const net=S.txns.filter(t=>t.acct===f.acct&&(t.src===f.id||(t.date>=f.start&&t.date<=f.end&&!strayOf(t)))).reduce((x,t)=>x+t.amount,0),want=f.endBal-f.beginBal;
     if(Math.abs(net-want)>0.025) mism.push(A(f.acct)+' '+per(f)+': statement net '+usd(want)+', your ledger '+usd(net));
   }
   if(mism.length) add('bad','Ledger no longer adds up to '+mism.length+' statement'+(mism.length>1?'s':''),mism,null,'ledger');
@@ -3118,7 +3121,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" aria-label="Disconnect bank sync" title="Disconnect">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.50.0';
+const APP_VERSION='1.50.1';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
