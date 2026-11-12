@@ -3054,7 +3054,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" aria-label="Disconnect bank sync" title="Disconnect">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.49.1';
+const APP_VERSION='1.49.2';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -3648,7 +3648,7 @@ function sfHealth(){
     const e=errs.find(x=>(x.acct&&x.acct===a.sf)||(x.conn&&cn&&x.conn===cn))||errs.find(x=>org.length>=4&&String(x.msg).toLowerCase().includes(org));
     if(e){const pl=plainSfMsg(e.msg);h={err:e,ok:false,label:'Needs attention',msg:pl.why+'. Fix it at SimpleFIN, then press Sync now.',short:pl.why+'.',bank:pl.bank,why:pl.why};}
     else if(!r){h={ok:false,label:'Not reported',msg:'SimpleFIN no longer lists this account. It may have been unlinked or closed. Re-link it at SimpleFIN, or ignore this if it was closed.',short:'Not listed by SimpleFIN. Re-link, or ignore if closed.'};}
-    else if(at&&ageDays(at)>=STALE_DAYS){h={ok:false,label:'Stale · '+agoTxt(at),msg:'The bank has not updated this account since '+new Date(at).toLocaleDateString([], {month:'short',day:'numeric'})+'. It may need to be re-linked at SimpleFIN.',short:'No bank update since '+new Date(at).toLocaleDateString([], {month:'short',day:'numeric'})+'.'};}
+    else if(at&&ageDays(at)>=STALE_DAYS&&!(out.last&&ageDays(out.last)>=STALE_DAYS)){h={ok:false,label:'Stale · '+agoTxt(at),msg:'The bank has not updated this account since '+new Date(at).toLocaleDateString([], {month:'short',day:'numeric'})+'. It may need to be re-linked at SimpleFIN.',short:'No bank update since '+new Date(at).toLocaleDateString([], {month:'short',day:'numeric'})+'.'};}
     out.by[a.id]=h;
     if(!h.ok){out.bad++;
       const orgNice=NICEBANK(String((r&&r.org&&(r.org.name||r.org.domain))||(S.sfOrgOf||{})[a.sf]||'').replace(/\.(com|org|net)$/i,''))||'Bank';
@@ -3665,11 +3665,11 @@ const acctChip=(h,id)=>{const x=h.by[id];return x?'<span class="hchipx '+(x.ok?'
 const acctNote=(h,id)=>'';
 function healthCardHTML(h){
   if(!h.on) return '';
-  const n=h.issues.length,last=h.last?'Last checked '+new Date(h.last).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'Not synced yet';
-  const title=n?(h.bad?h.bad+' of '+h.linked+' accounts '+(h.bad===1?'needs':'need')+' attention':'Bank connection needs attention'):'All '+h.linked+' linked accounts look healthy';
+  const n=h.issues.length,onlyOld=n===1&&h.issues[0].key==='old',last=h.last?'Last checked '+new Date(h.last).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'Not synced yet';
+  const title=onlyOld?'Not synced in '+ageDays(h.last)+' days':n?(h.bad?h.bad+' of '+h.linked+' accounts '+(h.bad===1?'needs':'need')+' attention':'Bank connection needs attention'):'All '+h.linked+' linked accounts look healthy';
   return '<div class="hcard hc2 '+(n?'warn':'ok')+'"><div class="hch"><span class="hci" aria-hidden="true">'+(n?'!':'✓')+'</span><div><b>'+esc(title)+'</b><div class="sub">'+esc(last)+'</div></div></div>'
-   +(n?'<ul class="hcl">'+h.issues.map(x=>'<li><span class="hcn"><b>'+esc(x.bank)+'</b>'+(x.n>1?' <span class="mute">· '+x.n+' accounts</span>':'')+'</span><span class="hchipx warn">'+esc(x.why)+'</span></li>').join('')+'</ul>'
-     +'<div class="row hca"><a class="btn small" href="https://bridge.simplefin.org" target="_blank" rel="noopener">Fix at SimpleFIN '+EXTI+'</a><button type="button" class="btn ghost small" data-act="sfsync">Sync now</button></div>':'')+'</div>';
+   +(n?(onlyOld?'':'<ul class="hcl">'+h.issues.map(x=>'<li><span class="hcn"><b>'+esc(x.bank)+'</b>'+(x.n>1?' <span class="mute">· '+x.n+' accounts</span>':'')+'</span><span class="hchipx warn">'+esc(x.why)+'</span></li>').join('')+'</ul>')
+     +'<div class="row hca">'+(onlyOld?'<button type="button" class="btn small" data-act="sfsync">Sync now</button><span class="sub">Your banks have not been checked from this device since then.</span>':'<a class="btn small" href="https://bridge.simplefin.org" target="_blank" rel="noopener">Fix at SimpleFIN '+EXTI+'</a><button type="button" class="btn ghost small" data-act="sfsync">Sync now</button>')+'</div>':'')+'</div>';
 }
 const sfType=s=>{s=String(s).replace(/credit union/ig,'cu');return LOANRE.test(s)?'loan':/saving|money market|\bcd\b|certificate/i.test(s)?'savings':/check|debit/i.test(s)?'checking':/credit|card|visa|mastercard|amex|freedom|sapphire/i.test(s)?'credit':/\b(ira|401k?|403b?|roth|brokerage|invest\w*|retire\w*|stock)\b/i.test(s)?'brokerage':'other';};
 // A bank timestamp in seconds (milliseconds are tolerated). Anything that is not a real date between 1990 and a month from now is rejected.
