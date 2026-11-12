@@ -3036,7 +3036,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" aria-label="Disconnect bank sync" title="Disconnect">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.49.5';
+const APP_VERSION='1.49.6';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -3948,6 +3948,9 @@ const ACT={
   posmode(el){UI._posAnim=true;try{localStorage.setItem('hb-posmode',el.dataset.m);}catch(e){}UI.posAll=false;UI._pm=el.dataset.m;render();const b=document.querySelector('[data-act=posmode][data-m="'+el.dataset.m+'"]');if(b)b.focus({preventScroll:true});},
   bndis(el){UI._dis=Object.assign({},dismissed(),{[el.dataset.id]:el.dataset.sig});render();},
   calday(el){UI.calDay=UI.calDay===el.dataset.d?null:el.dataset.d;render();},
+  pdfskip(el){UI.pdf.items[+el.dataset.i].choice='';recomputePdf();render();toast('Skipped. Pick an account on it to bring it back.');},
+  pdfflipgo(el){const it=UI.pdf.items[+el.dataset.i];it.flip=!it.flip;recomputePdf();render();},
+  pdfrows(el){const c=el.closest('.pvchk').parentElement.querySelector('details');if(c){c.open=true;c.scrollIntoView({block:'nearest',behavior:'smooth'});}},
   posall(){UI.posN=8;render();},posmore(){const y=scrollY;UI.posN=Math.max(8,UI.posN||8)+10;render();scrollTo(0,y);},
   pgprev(){UI.page=Math.max(0,(UI.page||0)-1);renderTxnList();window.scrollTo(0,0);},
   pgnext(){UI.page=(UI.page||0)+1;renderTxnList();window.scrollTo(0,0);},
@@ -4124,9 +4127,6 @@ const CHG={
   },
   impAcct(el){if(el.value==='__new__'){newAcctDialog(UI.import&&UI.import.fileName,a=>{if(UI.import){UI.import.acct=a.id;recomputeImport();}render();},()=>render());return;}UI.impAcct=el.value;if(UI.import){UI.import.acct=el.value;recomputeImport();render();}},
   file(el){const fl=[...el.files];el.value='';handleFiles(fl);},
-  pdfskip(el){UI.pdf.items[+el.dataset.i].choice='';recomputePdf();render();toast('Skipped. Pick an account on it to bring it back.');},
-  pdfflipgo(el){const it=UI.pdf.items[+el.dataset.i];it.flip=!it.flip;recomputePdf();render();},
-  pdfrows(el){const d=el.closest('.pv,.pvc,section,div[class]');const c=el.closest('.pvchk').parentElement.querySelector('details');if(c){c.open=true;c.scrollIntoView({block:'nearest',behavior:'smooth'});}},
   pdfacct(el){UI.pdf.items[+el.dataset.i].choice=el.value;recomputePdf();render();},
   pdfflip(el){UI.pdf.items[+el.dataset.i].flip=el.checked;recomputePdf();render();},
   mapfield(el){const I=UI.import;I.map[el.dataset.field]=+el.value;if(el.dataset.field==='amount'&&+el.value>=0){I.map.debit=-1;I.map.credit=-1;}recomputeImport();render();},
