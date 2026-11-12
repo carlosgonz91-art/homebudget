@@ -3054,7 +3054,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" aria-label="Disconnect bank sync" title="Disconnect">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.49.2';
+const APP_VERSION='1.49.3';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -3647,6 +3647,7 @@ function sfHealth(){
     const cn=(r&&r.conn_id)||(S.sfOwn||{})[a.sf],org=String((r&&r.org&&(r.org.name||r.org.domain))||(S.sfOrgOf||{})[a.sf]||'').toLowerCase().replace(/\.(com|org|net)$/,'').trim();
     const e=errs.find(x=>(x.acct&&x.acct===a.sf)||(x.conn&&cn&&x.conn===cn))||errs.find(x=>org.length>=4&&String(x.msg).toLowerCase().includes(org));
     if(e){const pl=plainSfMsg(e.msg);h={err:e,ok:false,label:'Needs attention',msg:pl.why+'. Fix it at SimpleFIN, then press Sync now.',short:pl.why+'.',bank:pl.bank,why:pl.why};}
+    else if(!r&&!((S.sfMiss||{})[a.sf]&&S.sfMiss[a.sf].n>=3)){h={ok:true,label:at?'Updated '+agoTxt(at):'Linked',msg:'SimpleFIN left this account out of the latest update. That usually fixes itself. Your last balance is kept.'};}
     else if(!r){h={ok:false,label:'Not reported',msg:'SimpleFIN no longer lists this account. It may have been unlinked or closed. Re-link it at SimpleFIN, or ignore this if it was closed.',short:'Not listed by SimpleFIN. Re-link, or ignore if closed.'};}
     else if(at&&ageDays(at)>=STALE_DAYS&&!(out.last&&ageDays(out.last)>=STALE_DAYS)){h={ok:false,label:'Stale · '+agoTxt(at),msg:'The bank has not updated this account since '+new Date(at).toLocaleDateString([], {month:'short',day:'numeric'})+'. It may need to be re-linked at SimpleFIN.',short:'No bank update since '+new Date(at).toLocaleDateString([], {month:'short',day:'numeric'})+'.'};}
     out.by[a.id]=h;
@@ -3736,6 +3737,8 @@ async function sfSync(){
     dlog('simplefin','Accounts received',(j.accounts||[]).map(a=>{const tx=a.transactions||[],ds=tx.filter(t=>!t.pending).map(t=>+(t.posted||t.transacted_at||0)).filter(Boolean).sort();return {id:a.id,name:a.name,org:a.org&&(a.org.name||a.org.domain),balance:a.balance,available:a['available-balance'],balanceDate:a['balance-date']?new Date((+a['balance-date'])*1000).toISOString().slice(0,10):null,currency:a.currency,tx:tx.length,pending:tx.filter(t=>t.pending).length,first:ds[0]?new Date(ds[0]*1000).toISOString().slice(0,10):null,last:ds.length?new Date(ds[ds.length-1]*1000).toISOString().slice(0,10):null,holdings:(a.holdings||[]).length||undefined,holdingFields:Array.isArray(a.holdings)&&a.holdings[0]?Object.keys(a.holdings[0]):undefined,txFields:tx[0]?Object.keys(tx[0]):undefined};}));
     SF.prevLast=SF.last;SF.last=Math.floor(Date.now()/1000);await kvSet('simplefin-last',SF.last);UI._okAt=Date.now();
     S.sfRaw=(j.accounts||[]).map(a=>{const o=Object.assign({},a);delete o.transactions;o.txCount=(a.transactions||[]).length;if(o.holdings){o.holdings=o.holdings.length;}return o;});
+    // remember how many syncs in a row SimpleFIN left an account out (it sometimes drops a bank for one update, then brings it back)
+    {const here=new Set((j.accounts||[]).map(a=>String(a.id)));S.sfMiss=S.sfMiss||{};S.accounts.forEach(a=>{if(!a.sf) return;if(here.has(String(a.sf))) delete S.sfMiss[a.sf];else{const m=S.sfMiss[a.sf]||(S.sfMiss[a.sf]={n:0,since:Date.now()});m.n++;}});}
     S.holdings=S.holdings||{};{let any=false;(j.accounts||[]).forEach(a=>{if(a&&a.id!=null&&a.id!==''&&Array.isArray(a.holdings)){S.holdings[a.id]=a.holdings.map(normHolding).filter(Boolean);any=true;}});if(any)S.holdingsAt=Date.now();}
     S.balSf=S.balSf||{};fixSfNames();
     S.balHist=S.balHist||{};(j.accounts||[]).forEach(a=>{const v=parseFloat(a.balance);if(isNaN(v)) return;const h=S.balHist[a.id]=S.balHist[a.id]||[],d=todayISO(),l=h[h.length-1];if(!l||l[0]!==d){if(!l||l[1]!==v) h.push([d,v]);}else l[1]=v;if(h.length>500) h.splice(0,h.length-500);});
