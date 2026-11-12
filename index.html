@@ -333,6 +333,7 @@ label select,label input{display:block;margin-top:4px;color:var(--ink)}
 .pvs.new{--c:#6366f1}.pvs.ok{--c:#10b981}.pvs.bad{--c:#f97316}.pvs.skip{--c:#94a3b8}
 .pvn{display:flex;flex-wrap:wrap;gap:4px 16px;margin-top:8px;font-size:13px;color:var(--mute)}.pvn b{color:var(--ink);font-size:15px;font-variant-numeric:tabular-nums}.pvn .pvb{margin-left:auto}
 .pvm{margin-top:6px;font-size:13px}
+.pvchk{margin-top:10px;padding:12px 14px;border-radius:14px;border:1px solid color-mix(in srgb,var(--bad) 40%,var(--line));background:color-mix(in srgb,var(--bad) 7%,var(--card));font-size:13.5px;line-height:1.5}.pvchk>b{display:block;font-size:14.5px;margin-bottom:8px}.pvchk p{margin:8px 0 4px}.pvchk ul{margin:0 0 10px;padding-left:18px}.pvchk li{margin:3px 0}.pvck{display:grid;grid-template-columns:1fr auto;gap:4px 14px;padding:8px 10px;border-radius:10px;background:var(--soft);font-variant-numeric:tabular-nums}.pvck b{text-align:right}.pvchk .row{gap:8px;flex-wrap:wrap;margin:0}.pvchk .sub{margin:10px 0 0}
 .pvq{margin:10px 0;border:1px solid var(--line);border-radius:14px;padding:2px 12px;background:var(--soft)}.pvq summary{display:flex;align-items:baseline;gap:10px;padding:10px 0;color:var(--ink)}.pvq summary b{font-weight:750}
 .pvr{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px solid var(--line);font-size:14px}.pvr span{min-width:0;overflow-wrap:anywhere}.pvr b{font-variant-numeric:tabular-nums;white-space:nowrap}.pvr .pvs{margin-left:6px;padding:2px 7px}
 .aga{margin:3px 0;background:var(--soft);border-radius:14px;overflow:hidden}
@@ -2918,7 +2919,7 @@ function pdfPreviewHTML(){
     const org=P.sync?(it.fileName.split(' · ')[0]!==it.fileName?it.fileName.split(' · ')[0]:''):it.fileName.replace(/^[0-9a-f]{8}-/,'');
     h+='<div class="pvc '+st[1]+'"><div class="pvh"><div style="min-width:0"><b>'+esc(nm)+'</b>'+(org?'<div class="sub pvo">'+esc(org)+'</div>':'')+'</div><span class="pvs '+st[1]+'">'+st[0]+'</span></div>'
      +'<div class="pvn"><span><b>'+it.fresh.length+'</b> new</span>'+(it.dup?'<span><b>'+it.dup+'</b> already in</span>':'')+(bal(it)!==''?'<span class="pvb">Balance <b class="'+(bal(it)<0?'neg':'')+'">'+fmt(bal(it))+'</b></span>':'')+(r.start?'<span class="pvd">'+r.start+' → '+r.end+'</span>':'')+(it.kind&&it.kind!=='pdf'&&it.kind!=='sync'?'<span class="pill">'+it.kind.toUpperCase()+'</span>':'')+'</div>';
-    if(r.reconcile) h+=r.reconcile.ok?'<div class="pos pvm">✓ Matches the totals printed on the statement</div>':'<div class="neg pvm"><i class="wi"></i>Statement says '+fmt(r.reconcile.expected)+' net, I read '+fmt(r.reconcile.got)+' — check before importing</div>';
+    if(r.reconcile) h+=r.reconcile.ok?'<div class="pos pvm">✓ Matches the totals printed on the statement</div>':pdfCheckHTML(r,it,i);
     r.warnings.slice(0,3).forEach(w=>{h+='<div class="neg pvm"><i class="wi"></i>'+esc(w)+'</div>';});
     if(r.vaultNote&&r.txns.length) h+='<div class="sub pvm">Moves to and from vaults are filed as Transfers; vault interest is counted as income.</div>';
     h+='<div class="row" style="margin-top:10px"><select data-chg="pdfacct" data-i="'+i+'" aria-label="Account for this file"><option value="">— Skip this one —</option>'
@@ -3059,7 +3060,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" aria-label="Disconnect bank sync" title="Disconnect">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.49.4';
+const APP_VERSION='1.49.5';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -3461,6 +3462,21 @@ async function processBatch(files){
 }
 const pdfAcctId=it=>it.choice==='new'?('new:'+(it.res.ref||it.fileName)):it.choice;
 const pdfTxns=it=>it.res.txns.map(t=>{const o={date:t.date,desc:t.desc,amount:it.flip?-t.amount:t.amount};if(t.sid)o.sid=t.sid;if(t.payee)o.payee=t.payee;if(t.memo)o.memo=t.memo;if(t.td)o.td=t.td;return o;});
+// The "Check" box on an import card: says in plain words what does not add up, what probably caused it, and what to do.
+function pdfCheckHTML(r,it,i){
+  const R=r.reconcile,sg=it.flip?-1:1,ex=R.expected,got=sg*R.got,off=ex-got,rev=Math.abs(ex+got)<0.01&&Math.abs(ex)>0.01;
+  const why=rev?'The amounts look reversed: money in is showing as money out. Tick <b>Flip signs</b> and this should clear.'
+    :Math.abs(got)<Math.abs(ex)?'I probably <b>missed some rows</b> worth about '+fmt(Math.abs(off))+'. This usually means the statement has a layout I do not fully read yet.'
+    :'I may have <b>read a row twice</b> or picked up a line that is not a transaction (about '+fmt(Math.abs(off))+' too much).';
+  return '<div class="pvchk"><b><i class="wi"></i>The numbers do not add up yet</b>'
+   +'<div class="pvck"><span>Balance change printed on the statement</span><b>'+fmt(ex)+'</b><span>The '+r.txns.length+' rows I read add up to</span><b>'+fmt(got)+'</b><span>Difference</span><b class="neg">'+fmt(Math.abs(off))+'</b></div>'
+   +'<p>'+why+'</p><p><b>What you can do</b></p><ul>'
+   +(rev?'':'<li><b>Compare:</b> open the rows below and look for anything missing or doubled against your statement.</li>')
+   +'<li><b>Import anyway:</b> the rows I did read are still correct. Audit will keep this statement flagged, and you can add a missing row by hand in Activity.</li>'
+   +'<li><b>Skip it:</b> nothing from this file is added.</li></ul>'
+   +'<div class="row">'+(rev?'<button type="button" class="btn small" data-act="pdfflipgo" data-i="'+i+'">Flip signs</button>':'<button type="button" class="btn small" data-act="pdfrows" data-i="'+i+'">Show the rows</button>')+'<button type="button" class="btn ghost small" data-act="pdfskip" data-i="'+i+'">Skip this file</button></div>'
+   +'<p class="sub">If a statement from this bank keeps doing this, share the file with Claude so the app can be taught its layout.</p></div>';
+}
 function recomputePdf(){
   const keys=new Set(S.txns.map(t=>t.key)),sids=new Set(S.txns.filter(t=>t.sid).map(t=>t.sid));
   for(const it of UI.pdf.items){
@@ -4132,6 +4148,9 @@ const CHG={
   },
   impAcct(el){if(el.value==='__new__'){newAcctDialog(UI.import&&UI.import.fileName,a=>{if(UI.import){UI.import.acct=a.id;recomputeImport();}render();},()=>render());return;}UI.impAcct=el.value;if(UI.import){UI.import.acct=el.value;recomputeImport();render();}},
   file(el){const fl=[...el.files];el.value='';handleFiles(fl);},
+  pdfskip(el){UI.pdf.items[+el.dataset.i].choice='';recomputePdf();render();toast('Skipped. Pick an account on it to bring it back.');},
+  pdfflipgo(el){const it=UI.pdf.items[+el.dataset.i];it.flip=!it.flip;recomputePdf();render();},
+  pdfrows(el){const d=el.closest('.pv,.pvc,section,div[class]');const c=el.closest('.pvchk').parentElement.querySelector('details');if(c){c.open=true;c.scrollIntoView({block:'nearest',behavior:'smooth'});}},
   pdfacct(el){UI.pdf.items[+el.dataset.i].choice=el.value;recomputePdf();render();},
   pdfflip(el){UI.pdf.items[+el.dataset.i].flip=el.checked;recomputePdf();render();},
   mapfield(el){const I=UI.import;I.map[el.dataset.field]=+el.value;if(el.dataset.field==='amount'&&+el.value>=0){I.map.debit=-1;I.map.credit=-1;}recomputeImport();render();},
