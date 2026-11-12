@@ -1422,11 +1422,11 @@ async function saveFile(name,text,type){
 }
 function dialog(o){
   const d=$('#dlg');{const op=document.activeElement;d._op=op&&op!==document.body&&!d.contains(op)?op:null;}
-  d.innerHTML='<div class="dlgbox" role="dialog" aria-modal="true"><p>'+esc(o.msg)+'</p>'+(o.word?'<p class="mute" style="margin:0 0 8px">Type <b>'+esc(o.word)+'</b> to confirm.</p>':'')+(o.input||o.word?'<input type="text" id="dlgInput" autocomplete="off" value="'+esc(o.value||'')+'" placeholder="'+esc(o.placeholder||'')+'">':'')+'<div class="row"><button class="btn '+(o.bad?'bad':'')+'" id="dlgOk">'+esc(o.ok||'OK')+'</button><button class="btn ghost" id="dlgNo">Cancel</button></div></div>';
+  d.innerHTML='<div class="dlgbox" role="dialog" aria-modal="true"><p>'+esc(o.msg)+'</p>'+(o.word?'<p class="mute" style="margin:0 0 8px">Type <b>'+esc(o.word)+'</b> to confirm.</p>':'')+(o.input||o.word?'<input type="text" id="dlgInput" autocomplete="off" value="'+esc(o.value||'')+'" placeholder="'+esc(o.placeholder||'')+'">':'')+(o.select?'<select id="dlgSel" aria-label="'+esc(o.selectLabel||'Choose')+'" style="margin:0 0 8px;width:100%">'+o.select.map(([k,l])=>'<option value="'+esc(k)+'"'+(k===o.selected?' selected':'')+'>'+esc(l)+'</option>').join('')+'</select>':'')+'<div class="row"><button class="btn '+(o.bad?'bad':'')+'" id="dlgOk">'+esc(o.ok||'OK')+'</button><button class="btn ghost" id="dlgNo">Cancel</button></div></div>';
   d.classList.add('show');
   const close=()=>{d.classList.remove('show');d.innerHTML='';};
   $('#dlgNo').onclick=()=>{close();if(o.onCancel)o.onCancel();};
-  $('#dlgOk').onclick=()=>{if(o.word&&$('#dlgInput').value.trim().toLowerCase()!==o.word.toLowerCase())return;const v=o.input?$('#dlgInput').value.trim():true;close();if(o.onOk)o.onOk(v);};
+  $('#dlgOk').onclick=()=>{if(o.word&&$('#dlgInput').value.trim().toLowerCase()!==o.word.toLowerCase())return;const v=o.input?$('#dlgInput').value.trim():true,sv=o.select?$('#dlgSel').value:null;close();if(o.onOk)o.onOk(v,sv);};
   const inp=$('#dlgInput');if(o.word){const ok=$('#dlgOk'),chk=()=>{ok.disabled=inp.value.trim().toLowerCase()!==o.word.toLowerCase();};ok.disabled=true;inp.addEventListener('input',chk);}
   if(inp){inp.focus();inp.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();$('#dlgOk').click();}};}
 }
@@ -2887,7 +2887,7 @@ function importCardHTML(){
   if(!UI.impAcct&&S.accounts[0]) UI.impAcct=S.accounts[0].id;
   return '<section class="card" id="s-import"><h2>Import files</h2>'
    +'<div class="drop"><b>Add PDF statements, CSV or OFX/QFX files</b><br><span class="sub">Pick as many as you like, mixed types are fine · or drag them here</span><br><span class="btn pick">Choose files</span><input type="file" multiple data-chg="file" aria-label="Choose files"></div>'
-   +(S.accounts.length?'<label>A single CSV / OFX file goes into<select id="impAcct" data-chg="impAcct">'+sortedAccts().map(a=>'<option value="'+esc(a.id)+'" '+(a.id===UI.impAcct?'selected':'')+'>'+esc(a.name)+'</option>').join('')+'</select></label>':'')
+   +'<label>A single CSV / OFX file goes into<select id="impAcct" data-chg="impAcct">'+sortedAccts().map(a=>'<option value="'+esc(a.id)+'" '+(a.id===UI.impAcct?'selected':'')+'>'+esc(a.name)+'</option>').join('')+'<option value="__new__">+ New account…</option></select></label>'
    +'<details style="margin-top:8px"><summary>How does this work?</summary><p class="mute"><b>PDF statements:</b> Chase (checking, savings, card), Discover savings, Marcus and Fidelity are read automatically. Each statement is matched to its account by account number — new accounts are created for you. Every statement is checked against the totals printed on it. Other banks get a best-guess read you can review.</p><p class="mute"><b>CSV / OFX:</b> log in → open the account → Activity / Transactions → Download or Export. Choose the account above first.</p><p class="mute">Duplicate files and overlapping dates are skipped automatically. The original file is kept in this browser so the Audit tab can re-check it later.</p></details>'
    +(UI.pdf?pdfPreviewHTML():'')+(UI.import?previewHTML():'')+'</section>';
 }
@@ -2929,7 +2929,7 @@ function pdfPreviewHTML(){
 }
 function previewHTML(){
   const I=UI.import;
-  let h='<div class="pv"><h3>'+esc(I.fileName)+' <span class="pill">'+(I.kind==='ofx'?'OFX/QFX':'CSV')+'</span></h3>';
+  let h='<div class="pv"><h3>'+esc(I.fileName)+' <span class="pill">'+(I.kind==='ofx'?'OFX/QFX':'CSV')+'</span></h3><p class="sub" style="margin:0 0 8px">Going into <b>'+esc((S.accounts.find(a=>a.id===I.acct)||{name:'?'}).name)+'</b>. Not the right account? Pick another above, or choose <b>+ New account…</b>.</p>';
   if(I.kind==='csv'){
     const opt=sel=>'<option value="-1">— none —</option>'+I.headers.map((x,i)=>'<option value="'+i+'" '+(sel===i?'selected':'')+'>'+esc(x||'(column '+(i+1)+')')+'</option>').join('');
     const f=[['date','Date'],['desc','Description'],['amount','Amount'],['debit','Debit (if separate)'],['credit','Credit (if separate)']];
@@ -3054,7 +3054,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" aria-label="Disconnect bank sync" title="Disconnect">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.49.0';
+const APP_VERSION='1.49.1';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -3253,8 +3253,16 @@ async function recheckOriginals(){
 }
 
 // ---------- import flow ----------
+// Ask for a name and type, make the account, then carry on with `then(account)`. Used when a file does not belong to any account yet.
+function newAcctDialog(fileName,then,onCancel){
+  const base=String(fileName||'').replace(/\.[a-z0-9]+$/i,'').replace(/[_\-]+/g,' ').replace(/\b(19|20)\d{2}\b|\b\d{6,}\b|\b(transactions?|export|download|statement|history|activity|ofx|qfx|csv)\b/gi,' ').replace(/\s+/g,' ').trim();
+  const guess=n=>/card|visa|mastercard|amex|discover|credit/i.test(n)?'credit':/saving/i.test(n)?'savings':/loan|mortgage/i.test(n)?'loan':/brokerage|invest|\bira\b|401/i.test(n)?'brokerage':'checking';
+  dialog({msg:'Add a new account for this file. What is it called?',input:true,value:base,placeholder:'e.g. Chase Checking',select:Object.entries(TYPES),selected:guess(base),selectLabel:'Account type',ok:'Add account',onCancel,onOk:(n,t)=>{
+    if(!n){toast('Give the account a name');if(onCancel)onCancel();return;}
+    const a={id:uid(),name:n,type:t||'checking'};S.accounts.push(a);UI.impAcct=a.id;save();toast('Added "'+n+'" as '+(TYPES[a.type]||'Other').toLowerCase());then(a);}});
+}
 async function processFile(file){
-  const acct=UI.impAcct;if(!acct){toast('Add an account first (PDF statements create accounts automatically)');return;}
+  let acct=UI.impAcct;if(!acct){newAcctDialog(file.name,()=>processFile(file));return;}
   UI.pdf=null;
   const text=await file.text(),hash=await sha256(file);
   if(/OFXHEADER|<OFX>/i.test(text)){
@@ -4108,7 +4116,7 @@ const CHG={
     const c=el.value,dl=$('#subList');if(dl) dl.innerHTML=subOpts(c);
     const box=$('#txGrpBox');if(box){const custom=!['Uncategorized','Income','Interest','Transfer','Investing'].includes(c)&&groupOf(c)==='Other';box.hidden=!custom;const g=$('#txGrp');if(g) g.value=groupOf(c);}
   },
-  impAcct(el){UI.impAcct=el.value;if(UI.import){UI.import.acct=el.value;recomputeImport();render();}},
+  impAcct(el){if(el.value==='__new__'){newAcctDialog(UI.import&&UI.import.fileName,a=>{if(UI.import){UI.import.acct=a.id;recomputeImport();}render();},()=>render());return;}UI.impAcct=el.value;if(UI.import){UI.import.acct=el.value;recomputeImport();render();}},
   file(el){const fl=[...el.files];el.value='';handleFiles(fl);},
   pdfacct(el){UI.pdf.items[+el.dataset.i].choice=el.value;recomputePdf();render();},
   pdfflip(el){UI.pdf.items[+el.dataset.i].flip=el.checked;recomputePdf();render();},
