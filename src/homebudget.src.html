@@ -999,22 +999,35 @@ function parseMarcus(lines,text){
   if(b!=null&&e!=null){res.reconcile=rec(e-b,sumAmts(res.txns));res.beginBal=b;res.endBal=e;}
   return finish(res);
 }
-function parseFidelity(lines,text){
+// A Fidelity report can hold several accounts (for example a Cash Management account and an IRA). Every page of an
+// account starts with "Account # ...", so the pages are grouped by that number and each account is read on its own.
+// Before, all rows went to one account and the totals could not match.
+function parseFidelityAll(lines,text){
+  const order=[],by={};let cur=null;
+  for(const l of lines){const m=l.match(/^Account # ([\w-]{6,})\s*$/);if(m){cur=m[1];if(!by[cur]){by[cur]=[];order.push(cur);}continue;}if(cur) by[cur].push(l);}
+  if(order.length<2){const one=parseFidelity(lines,text);return one?[one]:null;}
+  const out=order.map(a=>parseFidelity(by[a],text,a)).filter(Boolean);
+  return out.length?out:null;
+}
+function parseFidelity(lines,text,acct0){
   const pm=text.match(new RegExp('INVESTMENT REPORT\\s+('+MONW+') (\\d{1,2}), (\\d{4}) - ('+MONW+') (\\d{1,2}), (\\d{4})'));
   if(!pm) return null;
   const start=iso(+pm[3],monNum(pm[1]),+pm[2]),end=iso(+pm[6],monNum(pm[4]),+pm[5]);
-  const acct=(text.match(/Account (?:Number:|#)\s*([\d-]{6,})/)||[])[1]||'';
-  const pt=(text.match(/FIDELITY\s+((?:TRADITIONAL |ROTH |ROLLOVER |SEP |SIMPLE )?IRA|INDIVIDUAL|JOINT[A-Z ]*|BROKERAGE|HEALTH SAVINGS|HSA|CASH MANAGEMENT)/)||[])[1];
+  const acct=acct0||(text.match(/Account (?:Number:|#)\s*([\w-]{6,})/)||[])[1]||'';
+  // with several accounts, take the account type from the summary line that carries this account's number
+  const own=acct0?(text.split('\n').find(l=>l.includes(acct0)&&/FIDELITY/.test(l))||''):text;
+  const pt=(own.match(/FIDELITY®?\s+((?:TRADITIONAL |ROTH |ROLLOVER |SEP |SIMPLE )?IRA|INDIVIDUAL|JOINT[A-Z ]*|BROKERAGE|HEALTH SAVINGS|HSA|CASH MANAGEMENT)/)||[])[1];
   const nice=pt?pt.toLowerCase().replace(/\b[a-z]/g,c=>c.toUpperCase()).replace(/\bIra\b/,'IRA').replace(/\bHsa\b/,'HSA'):'Account';
   const res=mkRes({issuer:'Fidelity',name:'Fidelity '+nice,type:'brokerage',last4:acct.replace(/\D/g,'').slice(-4),start,end});
   let sec=false,last=null,printed=null;const rows=[];
-  for(const l of lines){
+  for(let l of lines){
+    l=l.replace(/\s+[A-Z]{2}_[A-Z]{2} _\S+(?: \d{8})?$/,''); // page footer code that sometimes lands on the end of a row
     if(/^Dividends, Interest & Other Income/.test(l)){sec=true;last=null;continue;}
     if(/^Other Activity In or Out\s*$/.test(l)){sec=true;last=null;res.warnings.push('"Other Activity" rows (contributions, transfers) were read best-effort — please check them.');continue;}
     if(!sec) continue;
     if(/^Core Fund Activity|^Securities (Bought|Sold)/.test(l)){sec=false;continue;}
     const tm=l.match(/^Total (?:Dividends, Interest & Other Income|Other Activity In or Out)\s+\$?\s*(-?[\d,]*\.\d\d)/);
-    if(tm){if(/Dividends/.test(l)) printed=parseAmount(tm[1]);sec=false;continue;}
+    if(tm){if(/Dividends/.test(l)) printed=(printed||0)+parseAmount(tm[1]);sec=false;continue;}
     const m=l.match(/^(\d\d)\/(\d\d)\s+(.*)$/);
     if(!m){
       if(last&&!/^(Settlement|Date |\(Includes|Total|Security|For more)/.test(l)&&/^[A-Z0-9 &.'\/-]+$/.test(l)) last.name+=' '+l;
@@ -1032,6 +1045,54 @@ function parseFidelity(lines,text){
     res.txns.push({date,desc:(r.typ+': '+r.name).replace(/\s+/g,' ').trim(),amount:r.amount});
   }
   if(printed!=null) res.reconcile=rec(printed,rows.reduce((a,r)=>a+r.amount,0));
+  return finish(res);
+}
+// Target Circle Card (TD Bank). Rows look like "3/4 TARGET 00013680 EULESS TX $121.45"; credits carry a minus sign.
+function parseTarget(lines,text){
+  const cm=text.match(/Statement Closing Date:?\s*(\d{1,2})\/(\d{1,2})\/(\d{4})/);if(!cm) return null;
+  const end=iso(+cm[3],+cm[1],+cm[2]);if(!end) return null;
+  const pm=text.match(/Period:\s*(\d{1,2})\/(\d{1,2})\/(\d{2})\s+to\s+/),start=pm?iso(2000+ +pm[3],+pm[1],+pm[2]):null;
+  const last4=(text.match(/(?:Card|Number) Ending in:?\s*(\d{4})/)||[])[1]||'';
+  const res=mkRes({issuer:'Target',name:'Target Circle Card',type:'credit',last4,start,end});
+  let inA=false;
+  for(const l of lines){
+    if(/^TRANSACTIONS$/.test(l)){inA=true;continue;}
+    if(/Totals Year-to-Date|^INTEREST CHARGE/i.test(l)){inA=false;continue;}
+    if(!inA) continue;
+    const m=l.match(/^(\d{1,2})\/(\d{1,2})\s+(.*)$/);if(!m) continue;
+    const {head,amts}=trailAmts(m[3]);if(!amts.length) continue;
+    const date=resolveDate(+m[1],+m[2],end);if(!date) continue;
+    res.txns.push({date,desc:head||'(no description)',amount:-amts[amts.length-1]});
+  }
+  const p=money(text,'Previous Balance'),n=money(text,'New Balance');
+  if(p!=null&&n!=null){res.reconcile=rec(n-p,-sumAmts(res.txns));res.beginBal=-p;res.endBal=-n;}
+  return finish(res);
+}
+// Mortgage statement (First United / LoanSphere layout). Only the principal part of each row changes what you owe, so that
+// is what gets recorded on the loan. Interest and escrow are already counted when the payment leaves your checking account.
+function parseMortgage(lines,text){
+  const pm=text.match(/Transaction Activity \((\d\d)\/(\d\d)\/(\d\d) to (\d\d)\/(\d\d)\/(\d\d)\)/);if(!pm) return null;
+  const start=iso(2000+ +pm[3],+pm[1],+pm[2]),end=iso(2000+ +pm[6],+pm[4],+pm[5]);if(!end) return null;
+  const last4=((text.match(/Loan Number\s+(\d{6,})/)||[])[1]||'').slice(-4);
+  const res=mkRes({issuer:/First United/i.test(text)||/firstunitedbank/i.test(text)?'First United':'Mortgage',name:'Mortgage',type:'loan',last4,start,end});
+  res.name=(res.issuer==='Mortgage'?'':res.issuer+' ')+'Mortgage';
+  let inA=false,sum=0;
+  for(const l of lines){
+    if(/^Transaction Activity \(/.test(l)){inA=true;continue;}
+    if(/^Past Payments Breakdown/.test(l)){inA=false;continue;}
+    if(!inA) continue;
+    const m=l.match(/^(\d\d)\/(\d\d)\/(\d\d)\s+(.*)$/);if(!m) continue;
+    const {head,amts}=trailAmts(m[4]);if(amts.length<7) continue; // Principal, Interest, Escrow, Late, Other, Advance, Total
+    const pr=amts[amts.length-7];if(Math.abs(pr)<0.005) continue;
+    const date=iso(2000+ +m[3],+m[1],+m[2]);if(!date) continue;
+    const extra=/curtail|reduction|additional/i.test(head);
+    res.txns.push({date,desc:extra?'Extra principal payment':'Mortgage payment (principal part)',amount:pr});sum+=pr;
+  }
+  const paid=(text.match(/\nPrincipal \$([\d,]+\.\d\d) \$[\d,]+\.\d\d/)||[])[1],owe=money(text,'Outstanding Principal');
+  if(paid!=null) res.reconcile=rec(parseAmount(paid),sum);
+  if(owe!=null){res.endBal=-owe;res.beginBal=-(owe+sum);}
+  const rt=(text.match(/Interest Rate\s+(\d+(?:\.\d+)?)%/)||[])[1];if(rt&&+rt<=25) res.apr=+rt;
+  res.loanNote=true;
   return finish(res);
 }
 function parseGeneric(lines,text){
@@ -1117,6 +1178,9 @@ function parseStatementAll(pages){
   if(/SoFi Bank, N\.A\./.test(lines.join('\n'))&&/Monthly Statement Period/.test(lines.join('\n'))){
     const r=parseSofi(lines,lines.join('\n'));if(r) return r;
   }
+  if(/INVESTMENT REPORT/.test(lines.join('\n'))&&/Fidelity/i.test(lines.join('\n'))){
+    const r=parseFidelityAll(lines,lines.join('\n'));if(r) return r.map(statementExtras.bind(null,lines));
+  }
   const one=parseStatement(pages);return one?[one]:[];
 }
 function parseStatement(pages){
@@ -1128,8 +1192,14 @@ function parseStatement(pages){
   else if(/Discover/i.test(text)&&/Statement Period:\s*[A-Z][a-z]{2}/.test(text)&&/ACCOUNT ACTIVITY/.test(text)) r=parseDiscoverSavings(lines,text);
   else if(/Goldman Sachs Bank|Marcus/i.test(text)&&/ACCOUNT ACTIVITY/.test(text)) r=parseMarcus(lines,text);
   else if(/INVESTMENT REPORT/.test(text)&&/Fidelity/i.test(text)) r=parseFidelity(lines,text);
+  else if(/Target Circle Card|Target Card Services/.test(text)&&/^TRANSACTIONS$/m.test(text)) r=parseTarget(lines,text);
+  else if(/^Mortgage Statement$/m.test(text)&&/Transaction Activity \(/.test(text)) r=parseMortgage(lines,text);
   r=r||parseGeneric(lines,text);
-  try{if(r&&!r.apy&&r.apy!==0){const a=apyIn(lines);if(a!=null&&a<=25)r.apy=a;}
+  return statementExtras(lines,r);
+}
+// rates printed on the statement (savings APY, card APR). A loan keeps the rate its own parser read.
+function statementExtras(lines,r){
+  try{if(r&&r.type!=='loan'&&!r.apy&&r.apy!==0){const a=apyIn(lines);if(a!=null&&a<=25)r.apy=a;}
     if(r&&r.type==='credit'&&r.apr==null){const m=lines.map(l=>l.match(/^Purchases (\d+(?:\.\d+)?)%/)).find(Boolean);if(m&&+m[1]<=60)r.apr=+m[1];}}catch(e){}
   return r;
 }
@@ -1211,7 +1281,9 @@ function auditCore(S0,today){
   }
   // 5. transfers should appear on both sides
   // Moves inside one account (SoFi vaults/pockets) have no second account to match.
-  const internal=t=>/\bvault\b/i.test(t.desc)||/\b(to|from)\b.+\bsavings balance\b/i.test(t.desc)||/\b(to|from)\b.+\bpocket\b/i.test(t.desc);
+  // Rows on a loan are pieces of one bigger payment (principal only), so no single row elsewhere matches them either.
+  const loanIds=new Set(S.accounts.filter(a=>a.type==='loan').map(a=>a.id));
+  const internal=t=>loanIds.has(t.acct)||/\bvault\b/i.test(t.desc)||/\b(to|from)\b.+\bsavings balance\b/i.test(t.desc)||/\b(to|from)\b.+\bpocket\b/i.test(t.desc);
   const pool=S.txns.filter(t=>!internal(t)),tr=pool.filter(t=>t.cat==='Transfer').sort((x,y)=>x.date.localeCompare(y.date));
   // pair each transfer with the closest opposite entry in another account (any category), one-to-one, closest date first
   const cand=[];
@@ -1603,8 +1675,9 @@ function loanPast(L){
 }
 function loanHistCard(a){
   const L=loanInfo(a);if(!L) return '';
-  const est=loanPast(L),P=est||(L.hist.length>1?L.hist:null);if(!P) return L.orig?'':'<section class="card"><h2>Balance over time</h2><p class="sub" style="margin:0">Add the rate and payment to see the balance since the loan started.</p></section>';
-  return '<section class="card"><h2>Balance over time</h2><p class="sub" style="margin:-4px 0 4px">'+(est?'Remaining balance since the loan started, about '+new Date(P[0][0]+'T12:00:00').toLocaleDateString('en-US',{month:'long',year:'numeric'})+'.':'Remaining balance from your synced history.')+'</p>'+histChart(P,{id:'ln'+String(a.id).replace(/\W/g,''),label:'Loan balance',inv:true,col:'#f97316'})+(est?'<p class="sub" style="margin:6px 0 0">The past is estimated from the original amount, your rate and your payment, because the bank only sends today\'s balance. Earlier extra payments are not shown.</p>':'')+'</section>';
+  // real history from imported statements wins over the estimate once it covers at least two months
+  const real=L.hist.length>2&&dayNum(L.hist[L.hist.length-1][0])-dayNum(L.hist[0][0])>=60,est=real?null:loanPast(L),P=est||(L.hist.length>1?L.hist:null);if(!P) return L.orig?'':'<section class="card"><h2>Balance over time</h2><p class="sub" style="margin:0">Add the rate and payment to see the balance since the loan started.</p></section>';
+  return '<section class="card"><h2>Balance over time</h2><p class="sub" style="margin:-4px 0 4px">'+(est?'Remaining balance since the loan started, about '+new Date(P[0][0]+'T12:00:00').toLocaleDateString('en-US',{month:'long',year:'numeric'})+'.':'Remaining balance from your statements and syncs, since '+new Date(P[0][0]+'T12:00:00').toLocaleDateString('en-US',{month:'long',year:'numeric'})+'.')+'</p>'+histChart(P,{id:'ln'+String(a.id).replace(/\W/g,''),label:'Loan balance',inv:true,col:'#f97316'})+(est?'<p class="sub" style="margin:6px 0 0">The past is estimated from the original amount, your rate and your payment, because the bank only sends today\'s balance. Earlier extra payments are not shown.</p>':'')+'</section>';
 }
 const nwSeries=()=>balSeries([...new Set(S.accounts.filter(a=>a.sf).flatMap(a=>{const G=sfGroup(a);return G?G.g.map(r=>r.id):[a.sf];}))]);
 const invSeries=()=>balSeries(invIds());
@@ -2905,6 +2978,7 @@ function pdfPreviewHTML(){
      +'<div class="pvn"><span><b>'+it.fresh.length+'</b> new</span>'+(it.dup?'<span><b>'+it.dup+'</b> already in</span>':'')+(bal(it)!==''?'<span class="pvb">Balance <b class="'+(bal(it)<0?'neg':'')+'">'+fmt(bal(it))+'</b></span>':'')+(r.start?'<span class="pvd">'+r.start+' → '+r.end+'</span>':'')+(it.kind&&it.kind!=='pdf'&&it.kind!=='sync'?'<span class="pill">'+it.kind.toUpperCase()+'</span>':'')+'</div>';
     if(r.reconcile) h+=r.reconcile.ok?'<div class="pos pvm">✓ Matches the totals printed on the statement</div>':pdfCheckHTML(r,it,i);
     r.warnings.slice(0,3).forEach(w=>{h+='<div class="neg pvm"><i class="wi"></i>'+esc(w)+'</div>';});
+    if(r.loanNote&&r.txns.length) h+='<div class="sub pvm">Only the principal part of each payment is added to the loan. Interest and escrow are already counted when the payment leaves your bank account.</div>';
     if(r.vaultNote&&r.txns.length) h+='<div class="sub pvm">Moves to and from vaults are filed as Transfers; vault interest is counted as income.</div>';
     h+='<div class="row" style="margin-top:10px"><select data-chg="pdfacct" data-i="'+i+'" aria-label="Account for this file"><option value="">— Skip this one —</option>'
       +(r.generic?'':'<option value="new" '+(it.choice==='new'?'selected':'')+'>＋ New account: '+esc(r.name+(r.last4?' ••'+r.last4:''))+'</option>')
@@ -3044,7 +3118,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" aria-label="Disconnect bank sync" title="Disconnect">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.49.7';
+const APP_VERSION='1.50.0';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -3344,7 +3418,10 @@ function applyRulesAll(){let n=0;for(const t of S.txns){if(t.man) continue;const
   if(t.cat!==r.cat||(r.sub||'')!==(t.sub||'')){t.cat=r.cat;if(r.sub) t.sub=r.sub;else delete t.sub;if(r.inc&&t.amount>0) t.inc=r.inc;n++;}}return n;}
 function learnUncat(){let n=0;for(const t of S.txns) if(t.cat==='Uncategorized'){const c=autoCat(t.desc,t.amount,t.acct);if(c!=='Uncategorized'){t.cat=c;n++;}}return n;}
 function autoCat(desc,amount,acctId){
-  const A=S.accounts.find(a=>a.id===acctId);let c=categorize(desc,amount,S.rules);
+  const A=S.accounts.find(a=>a.id===acctId);
+  // money arriving on a loan pays the loan down. It is a move between your accounts, never income or spending.
+  if(A&&A.type==='loan'&&amount>0) return 'Transfer';
+  let c=categorize(desc,amount,S.rules);
   if(c==='Uncategorized'||(c==='Income'&&amount>0)){const l=learnedCat(desc,amount);if(l) c=l;}
   if(A&&A.type==='brokerage'&&isInc(c)) c='Investing';
   if(A&&A.type==='credit'&&c==='Income'&&amount>0&&!(S.rules||[]).some(r=>r.cat==='Income'&&normMatch(desc).includes(r.match))) c='Uncategorized'; // a credit on a card is a refund or cashback, not pay: let the user decide
