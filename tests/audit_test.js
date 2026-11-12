@@ -87,7 +87,7 @@ const L3=(txns,f)=>run(mk({files:[file(Object.assign({start:'2026-10-01',end:'20
 {const S=mk({accounts:[],files:[file({acct:'GONE',beginBal:100,endBal:150})],txns:[]});const F=run(S);T('3t statement of a deleted account: does not crash',Array.isArray(F));}
 
 // ---------- 4. rows with no original ----------
-{const S=mk({files:[file()],txns:[tx({src:'f1'}),tx({src:undefined,date:'2026-10-12'})]});const F=run(S);T('4a manual row inside a statement period without src -> warn',has(F,/^1 of 2 transactions have no saved original/,'warn'),F);}
+{const S=mk({files:[file()],txns:[tx({src:'f1'}),tx({src:undefined,date:'2026-10-12'})]});const F=run(S);T('4a manual row inside a statement period without src -> warn',has(F,/^1 transaction has no saved original/,'warn'),F);}
 {const S=mk({files:[file()],txns:[tx({src:'f1'}),tx({src:'f1'})]});T('4b all linked -> ok',has(run(S),/^All 2 transactions link to a saved original/,'ok'),run(S));}
 {const S=mk({files:[file()],txns:[tx({src:'f1'}),tx({src:undefined,sf:true,date:'2026-11-03'})]});const F=run(S);T('4c bank-synced row outside any statement is not a problem',!has(F,/no saved original/,'warn'),F);T('4c ...and the check still passes',has(F,/link to a saved original|transactions link/),F);}
 {const S=mk({files:[file()],txns:[tx({src:undefined,sf:true,date:'2026-10-12'})]});T('4d synced row INSIDE a statement period without a link is flagged',has(run(S),/no saved original/,'warn'),run(S));}

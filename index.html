@@ -1105,7 +1105,8 @@ function parseSofi(lines,text){
       const l=L[i];
       if(/^Current Balance/.test(l)&&L[i+1]){const m=L[i+1].match(/^\$?\s*(-?[\d,]+\.\d\d)/);if(m) e=parseAmount(m[1]);continue;}
       if(/^Beginning Balance/.test(l)&&L[i+1]){const m=L[i+1].match(/^\$?\s*(-?[\d,]+\.\d\d)/);if(m) b=parseAmount(m[1]);continue;}
-      if(/^[^$\d]+ Vault$/.test(l)){vault=l;continue;}
+      // a vault heading is a short name on its own line; the page footnote also ends in "Vault" and must not be taken for one
+      if(/^[^$\d.,:]{1,40} Vault$/.test(l)&&!/^(To|From) /i.test(l)){vault=l;continue;}
       const m=l.match(rx);
       if(!m){if(/^[A-Z][a-z]{2} \d{1,2}, \d{4} /.test(l)) res.warnings.push('Could not read this line: '+l.slice(0,70));continue;}
       const date=iso(+m[3],monNum(m[1]),+m[2]);if(!date) continue;
@@ -1205,10 +1206,12 @@ function auditCore(S0,today){
   if(gaps.length) add('warn',gaps.length+' gap'+(gaps.length>1?'s':'')+' between statements (a month may be missing)',gaps,null,'gap');
   if(ovl.length) add('info',ovl.length+' overlapping/repeated statement period'+(ovl.length>1?'s':'')+' (duplicate rows were skipped)',ovl,null,'ovl');
   // 3. does the ledger still add up to each statement?
-  const mism=[];let nm=0;
+  const mism=[],perKey=f=>f.acct+'|'+f.start+'|'+f.end,stmIds=new Map(stm.map(f=>[f.id,perKey(f)]));let nm=0;
   for(const f of stm){
     if(f.beginBal==null||f.endBal==null||f.noLedger) continue;nm++;
-    const net=S.txns.filter(t=>t.acct===f.acct&&t.date>=f.start&&t.date<=f.end).reduce((x,t)=>x+t.amount,0),want=f.endBal-f.beginBal;
+    // Rows read from this statement count for it even when dated outside its period (card statements list the purchase date,
+    // which can fall a day or two before the period starts). Rows from another statement never count here, unless it is a second copy of the same statement.
+    const net=S.txns.filter(t=>t.acct===f.acct&&(t.src===f.id||stmIds.get(t.src)===perKey(f)||(!(t.src&&stmIds.has(t.src))&&t.date>=f.start&&t.date<=f.end))).reduce((x,t)=>x+t.amount,0),want=f.endBal-f.beginBal;
     if(Math.abs(net-want)>0.025) mism.push(A(f.acct)+' '+per(f)+': statement net '+usd(want)+', your ledger '+usd(net));
   }
   if(mism.length) add('bad','Ledger no longer adds up to '+mism.length+' statement'+(mism.length>1?'s':''),mism,null,'ledger');
@@ -1216,9 +1219,11 @@ function auditCore(S0,today){
   // 4. rows with no original behind them. Bank-synced rows outside every saved statement have nothing to link to, so they are not counted.
   if(files.length){
     const dated=files.filter(f=>f.start&&f.end),inStmt=t=>dated.some(f=>f.acct===t.acct&&f.start<=t.date&&t.date<=f.end);
-    const rel=S.txns.filter(t=>!t.sf||inStmt(t)),n=rel.filter(t=>!t.src).length,skipped=S.txns.length-rel.length;
+    // synced vault-side copies of a move ("From/To Joint savings ...") never appear as their own row on a statement, so they are left out too
+    const mirror=t=>t.sf&&/^(from|to) joint savings\b/i.test(t.desc||'');
+    const rel=S.txns.filter(t=>(!t.sf||inStmt(t))&&!mirror(t)),n=rel.filter(t=>!t.src).length,skipped=S.txns.length-rel.length;
     const note=skipped?[skipped+' bank-synced transaction'+(skipped>1?'s fall':' falls')+' outside your saved statements, so there is nothing to link '+(skipped>1?'them':'it')+' to.']:[];
-    if(n) add('warn',n+' of '+rel.length+' transactions have no saved original',['Re-add the matching statements in Settings → Import to link them.'].concat(note),null,'noorig');
+    if(n) add('warn',n+' transaction'+(n>1?'s have':' has')+' no saved original',['That is '+n+' of '+rel.length+'. Re-add the matching statements in Settings → Import to link them.'].concat(note),null,'noorig');
     else if(rel.length) add('ok','All '+rel.length+' transactions link to a saved original',note);
   }
   // 5. transfers should appear on both sides
@@ -3054,7 +3059,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" aria-label="Disconnect bank sync" title="Disconnect">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.49.3';
+const APP_VERSION='1.49.4';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -3240,7 +3245,12 @@ async function recheckOriginals(){
         else{const rows=parseCSV(text,detectDelim(text)),hi=findHeader(rows);txns=extractTxns(rows,hi,f.map,!!f.flip).txns;}
       }
       const L=new Map(S.txns.filter(t=>t.acct===f.acct).map(t=>[t.key,t])),{fresh}=assignKeys(f.acct,txns,new Set()),K=new Set(fresh.map(t=>t.key));
-      const missing=fresh.filter(t=>!L.has(t.key)),extra=S.txns.filter(t=>t.src===f.id&&!K.has(t.key)),changed=fresh.filter(t=>{const r=L.get(t.key);return r&&(Math.abs(r.amount-t.amount)>0.004||r.date!==t.date);});
+      let missing=fresh.filter(t=>!L.has(t.key)),extra=S.txns.filter(t=>t.src===f.id&&!K.has(t.key));const changed=fresh.filter(t=>{const r=L.get(t.key);return r&&(Math.abs(r.amount-t.amount)>0.004||r.date!==t.date);});
+      // A bank-synced row stands in for the statement row when both describe the same payment, but the bank often words it
+      // differently or dates it a few days apart. Pair those up (same amount, within 5 days) so they are not reported as a mismatch.
+      if(missing.length){const pool=S.txns.filter(t=>t.acct===f.acct&&!K.has(t.key)),used=new Set();
+        missing=missing.filter(m=>{const md=dayNum(m.date);let best=null,bd=6;for(const x of pool){if(used.has(x)||Math.abs(x.amount-m.amount)>0.004) continue;const dd=Math.abs(dayNum(x.date)-md);if(dd<bd||(dd===bd&&x.src===f.id)){best=x;bd=dd;}}if(best){used.add(best);return false;}return true;});
+        extra=extra.filter(x=>!used.has(x));}
       if(missing.length||extra.length||changed.length) drift.push(nm+': '+missing.length+' in the file but not in your ledger, '+extra.length+' in your ledger but not in the file'+(changed.length?', '+changed.length+' with a different amount or date':''),...changed.slice(0,4).map(t=>{const r=L.get(t.key);return '  changed: file says '+t.date+' '+fmt(t.amount)+', ledger has '+r.date+' '+fmt(r.amount)+' · '+t.desc;}),...missing.slice(0,4).map(t=>'  missing: '+t.date+' '+fmt(t.amount)+' '+t.desc),...extra.slice(0,4).map(t=>'  extra: '+t.date+' '+fmt(t.amount)+' '+t.desc));
       else okN++;
     }catch(e){drift.push(nm+': could not be re-read');}
@@ -3248,7 +3258,7 @@ async function recheckOriginals(){
   if(miss.length) R.findings.push({lvl:'bad',title:miss.length+' original'+(miss.length>1?'s are':' is')+' missing from browser storage',items:miss});
   if(bad.length) R.findings.push({lvl:'bad',title:'Stored file changed',items:bad});
   if(drift.length) R.findings.push({lvl:'bad',title:'Ledger and original disagree',items:drift});
-  if(okN) R.findings.push({lvl:'ok',title:okN+' of '+fl.length+' originals re-read and match your ledger exactly',items:[]});
+  if(okN) R.findings.push({lvl:'ok',title:okN+' of '+fl.length+' originals re-read and match your ledger',items:[]});
   R.busy=false;R.at=Date.now();upd();
 }
 
@@ -3773,7 +3783,8 @@ async function sfSync(){
 // Returns the saved file's id (reusing an identical file already stored), or null if the browser refused storage.
 async function attachOriginal(m){
   const old=S.files.find(x=>x.hash===m.hash&&x.acct===m.acct);
-  if(old) return {id:old.id,isNew:false};
+  // same file imported again: keep the saved copy but take the fresh totals check, so a statement that reads correctly now stops being flagged
+  if(old){if(m.reconcile){const sg=m.flip?-1:1;old.reconcile=m.reconcile;if(m.beginBal!=null)old.beginBal=sg*m.beginBal;if(m.endBal!=null)old.endBal=sg*m.endBal;}return {id:old.id,isNew:false};}
   const sib=S.files.find(x=>x.hash===m.hash),id=uid();
   let blob=id;
   if(sib) blob=sib.blob||sib.id;   // one PDF can hold several accounts (SoFi): store the bytes once
