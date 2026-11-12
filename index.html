@@ -534,7 +534,9 @@ td.ds{max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dlgbox label.chk{flex-direction:row;align-items:center;gap:8px;font-weight:400}
 .dlgbox label.chk input{width:auto}
 .dlgbox.sheet{max-height:88vh;overflow:auto}
+/* A transaction row you can tap is now at least 24px tall, the usual minimum for anything you tap. It was 22px. */
 .t1[data-act]{cursor:pointer;-webkit-user-select:none;user-select:none}
+.t1[data-act=txedit]{min-height:24px}
 .brow{display:block;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:14px 0;color:inherit;font:inherit;cursor:pointer}
 .brow:last-child,.bwrap:last-child>.brow{border-bottom:0}.bwrap{display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line)}.bwrap:last-child{border-bottom:0}.bwrap>.brow{flex:1;min-width:0;border-bottom:0!important}.bwrap>.btn.bed{flex:none;margin:0;width:36px;height:36px;min-height:36px;padding:0}
 .b1,.b2{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
@@ -715,7 +717,11 @@ function parseCSV(text,delim){
   if(cur!==''||row.length){row.push(cur);rows.push(row);}
   return rows.filter(r=>r.some(x=>x.trim()!==''));
 }
-function iso(y,m,d){ if(m<1||m>12||d<1||d>31) return null; return y+'-'+String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0'); }
+// Builds a date like '2026-01-31' from a year, month and day.
+// It used to accept any day from 1 to 31, so a date that does not exist (Feb 31) or a short year (202)
+// could slip into your transactions. Now those give back nothing, same as any other unreadable date.
+// Real dates, leap days included, come out exactly as before.
+function iso(y,m,d){ if(!(y>=1000&&y<=9999)||m<1||m>12||d<1||d>new Date(Date.UTC(y,m,0)).getUTCDate()) return null; return y+'-'+String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0'); }
 function parseDate(s){
   if(s==null) return null; s=String(s).trim().replace(/^"|"$/g,'');
   let m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/); if(m) return iso(+m[1],+m[2],+m[3]);
@@ -1317,8 +1323,10 @@ const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid=()=>Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-4);
 const NF2=new Intl.NumberFormat('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}),NF0=new Intl.NumberFormat('en-US',{maximumFractionDigits:0});
-const fmt=n=>{n=+n;if(!isFinite(n)) return '–';return (n<0?'-':'')+'$'+NF2.format(Math.abs(n));};
-const fmt0=n=>{n=+n;if(!isFinite(n)) return '–';return (n<0?'-':'')+'$'+NF0.format(Math.round(Math.abs(n)));};
+// Shows an amount as money. The number is rounded first, then the minus sign is added only if something is left,
+// so a tiny leftover like -0.004 now shows as $0.00 instead of -$0.00. Every other amount looks the same as before.
+const fmt=n=>{n=+n;if(!isFinite(n)) return '–';const t=NF2.format(Math.abs(n));return (n<0&&t!=='0.00'?'-':'')+'$'+t;};
+const fmt0=n=>{n=+n;if(!isFinite(n)) return '–';const t=NF0.format(Math.round(Math.abs(n)));return (n<0&&t!=='0'?'-':'')+'$'+t;};
 const monthLabel=ym=>new Date(+ym.slice(0,4),+ym.slice(5)-1,1).toLocaleString('en-US',{month:'long',year:'numeric'});
 const SMN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];const shortMonth=ym=>SMN[+String(ym).slice(5,7)-1]||'';
 function addMonths(ym,n){let y=+ym.slice(0,4),m=+ym.slice(5)-1+n;y+=Math.floor(m/12);m=((m%12)+12)%12;return y+'-'+String(m+1).padStart(2,'0');}
@@ -3060,7 +3068,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" aria-label="Disconnect bank sync" title="Disconnect">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.49.6';
+const APP_VERSION='1.49.7';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
