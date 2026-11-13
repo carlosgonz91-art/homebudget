@@ -161,7 +161,9 @@ T('dayNum rejects rolled-over dates',isNaN(dayNum('2026-02-30'))&&isNaN(dayNum('
 const P=(accts,txns)=>stmtSyncPairs({accounts:accts||[acct('A')],txns});
 {const p=P(null,[tx({sf:true,src:undefined,amount:-12.5,desc:'WALMART 123'}),tx({amount:-12.5,desc:'Walmart Supercenter'})]);T('pairs: same amount same day',p.length===1);}
 {const p=P(null,[tx({sf:true,amount:-12.5,date:'2026-10-10'}),tx({amount:-12.5,date:'2026-10-13'})]);T('pairs: 3 days apart pairs',p.length===1);}
-{const p=P(null,[tx({sf:true,amount:-12.5,date:'2026-10-10'}),tx({amount:-12.5,date:'2026-10-14'})]);T('pairs: 4 days apart does not',p.length===0);}
+{const p=P(null,[tx({sf:true,amount:-12.5,date:'2026-10-10',desc:'SHELL OIL 123'}),tx({amount:-12.5,date:'2026-10-14',desc:'Kroger 55'})]);T('pairs: 4 days apart, different wording does not',p.length===0);}
+{const p=P(null,[tx({sf:true,amount:-16.23,date:'2026-09-13',desc:'Jagex Payment'}),tx({amount:-16.23,date:'2026-09-09',desc:'Jagex Payment CAMBRIDGE'})]);T('pairs: 4 days apart, same wording pairs (card posted late)',p.length===1);}
+{const p=P(null,[tx({sf:true,amount:-16.23,date:'2026-09-16',desc:'Jagex Payment'}),tx({amount:-16.23,date:'2026-09-09',desc:'Jagex Payment'})]);T('pairs: 7 days apart never pairs',p.length===0);}
 {const p=P(null,[tx({sf:true,amount:-12.5}),tx({amount:-12.51})]);T('pairs: different amount does not',p.length===0);}
 {const p=P([acct('A'),acct('B')],[tx({sf:true,amount:-12.5}),tx({amount:-12.5,acct:'B'})]);T('pairs: different accounts do not',p.length===0);}
 {const p=P(null,[tx({sf:true,amount:-12.5}),tx({sf:true,amount:-12.5})]);T('pairs: two synced rows are not each others duplicates',p.length===0);}

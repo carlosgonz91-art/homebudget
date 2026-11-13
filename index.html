@@ -156,6 +156,7 @@ h1{font-size:28px;font-weight:800;letter-spacing:-.03em;margin:2px 0 12px}h2{fon
 .nbtn{position:relative!important;margin-left:auto}.nbtn{background:transparent!important;padding:0!important;touch-action:manipulation}.nbtn>*{pointer-events:none}.nbtn svg{width:38px!important;height:38px!important}.nbtn+.tbtn{margin-left:8px}
 .nbdg{position:absolute;top:-3px;right:-3px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:var(--bad);color:#fff;font-size:10.5px;font-weight:800;display:grid;place-items:center;line-height:1}
 .gdf{display:grid;gap:8px;margin-top:10px}.gdf .btn{justify-self:start}.gdh ol{padding-left:20px;margin:8px 0;display:grid;gap:6px}.gdh code{font-size:12px;word-break:break-all;background:var(--track);padding:1px 5px;border-radius:5px}.gdq{background:var(--soft);border-radius:12px;padding:10px 12px;margin:0 0 10px}
+.hcleg{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--mute);margin:6px 0 0}.hcleg span{display:inline-flex;align-items:center;gap:6px}.hcleg i{width:14px;height:3px;border-radius:2px;display:inline-block}.hcleg i.d{height:0;background:none!important;border-top:2px dashed}.hctx{display:flex!important;align-items:center;gap:5px;font-size:11.5px}.hctx i{width:8px;height:8px;border-radius:50%;display:inline-block}
 .npop{position:fixed;z-index:60;top:calc(env(safe-area-inset-top,0px) + 62px);right:max(12px,env(safe-area-inset-right,0px));width:min(380px,calc(100vw - 24px));background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 18px 40px rgba(0,0,0,.25);padding:8px 8px 10px}
 .nph{display:flex;align-items:center;justify-content:space-between;padding:4px 6px 8px}
 .npi{display:flex;align-items:center;gap:8px;padding:9px 6px;border-top:1px solid var(--line)}
@@ -906,7 +907,7 @@ const LEGACY_RULES=[
 ].map(compileRule);
 // First match wins, so order matters: money moving between your own accounts first, then income/fees, then merchants.
 // bump when DEFAULT_RULES learn new merchants: on next open, Uncategorized/Other transactions get sorted again
-const CAT_V=2;
+const CAT_V=3;
 const DEFAULT_RULES=[
 ['Interest',['interest earned','interest paid','interest payment','interest credit','interest income','interest deposit','interest adjustment','interest pmt','credit interest','bonus interest','savings interest','interest']],
 ['Transfer',['eft funds received','cash contrb','fid bkg svc','moneyline','venmo payment','zelle payment from','transfer','payment thank','autopay','auto payment','automatic payment','epayment','e payment','payment received','credit card payment','payment to chase card','card srvc payment','card services payment','to amex','to discover card','to capital one','to citi card','to barclays','to synchrony','to target card','to apple card','directpay','journal','credit crd','vault','joint savings balance','from joint','to joint','jpmorgan chase bank']],
@@ -1339,7 +1340,9 @@ function stmtSyncPairs(S){
     const g=G.get(a.id);if(!g) continue;const sf=g.sf,man=g.man;
     if(!sf.length||!man.length) continue;
     const cand=[],bk=new Map();for(const f of sf){const k=Math.round(f.amount*100);let b=bk.get(k);if(!b){b=[];bk.set(k,b);}b.push(f);}
-    for(const m of man) for(const f of (bk.get(Math.round(m.amount*100))||[])){const dd=Math.abs(dayNum(m.date)-dayNum(f.date));if(dd<=3&&Math.abs(m.amount-f.amount)<0.005) cand.push([dd,m,f]);}
+    const wd=d=>new Set(String(d||'').toLowerCase().replace(/[^a-z ]+/g,' ').split(' ').filter(w=>w.length>=4));
+    for(const m of man) for(const f of (bk.get(Math.round(m.amount*100))||[])){const dd=Math.abs(dayNum(m.date)-dayNum(f.date));if(Math.abs(m.amount-f.amount)>=0.005||dd>6) continue;
+      if(dd>3){const a=wd(m.desc);if(![...wd(f.desc)].some(w=>a.has(w))) continue;}cand.push([dd,m,f]);}
     cand.sort((x,y)=>x[0]-y[0]);
     const um=new Set(),uf=new Set();
     for(const [,m,f] of cand){if(um.has(m.id)||uf.has(f.id)) continue;um.add(m.id);uf.add(f.id);out.push({manual:m,sf:f});}
@@ -1831,7 +1834,7 @@ function stmtTwins(a,sfId){
   const raw=(S.sfRaw||[]).find(r=>r.id===sfId)||{},l4=(a&&acctL4(a))||((String(raw.name||'').match(/(\d{4})\D*$/)||[])[1])||'';
   const out=a?[a.id]:[];if(l4) S.accounts.forEach(x=>{if(x!==a&&!x.sf&&acctL4(x)===l4) out.push(x.id);});return out;
 }
-function balSeries(ids){
+function balSeries(ids,split){
   const H=S.balHist||{},done=new Set(),units=[],ds=new Set(),ok=x=>isFinite(dayNum(x[0]))&&isFinite(x[1]);
   const isMain=id=>S.accounts.some(x=>x.sf===id);
   [...ids].sort((x,y)=>isMain(y)-isMain(x)).forEach(id=>{if(done.has(id)) return;
@@ -1852,7 +1855,9 @@ function balSeries(ids){
   // statements (say, a mortgage back to 2024) do not draw a long line made of everyone else's guessed balances
   if(units.length>1){const st0=units.filter(u=>u.st.length).map(u=>u.first&&u.first<u.st[0][0]?u.first:u.st[0][0]).sort();if(st0.length){const from=st0[st0.length-1];D=D.filter(d=>d>=from);}}
   const step=(L,d)=>{let v=L[0][1];for(const x of L){if(x[0]<=d)v=x[1];else break;}return v;};
-  return D.map(d=>[d,units.reduce((t,u)=>t+(u.sync.length&&(d>=u.first||!u.st.length)?u.sync.reduce((x,m)=>x+step(H[m],d),0):step(u.st,d)),0)]);
+  const uv=(u,d)=>u.sync.length&&(d>=u.first||!u.st.length)?u.sync.reduce((x,m)=>x+step(H[m],d),0):step(u.st,d);
+  if(split) return D.map(d=>{let t=0,a=0,o=0;for(const u of units){const v=uv(u,d);t+=v;if(v>=0)a+=v;else o-=v;}return [d,t,a,o];});
+  return D.map(d=>[d,units.reduce((t,u)=>t+uv(u,d),0)]);
 }
 // time ranges for over-time charts; each chart remembers its own pick
 const HCR=[['1m','1M',30],['3m','3M',91],['6m','6M',182],['ytd','YTD',0],['1y','1Y',365],['all','All',1e9]];
@@ -1863,22 +1868,23 @@ function histChart(P0,o){
   const opts=HCR.filter(r=>r[0]==='all'||(r[0]==='ytd'?dayNum(todayISO().slice(0,4)+'-01-01')>dayNum(full[0]?full[0][0]:todayISO())+7:r[2]<span0-3));
   if(!opts.some(r=>r[0]===rk)) rk='all';
   if(rk!=='all'&&full.length>1){const last=full[full.length-1][0],r=HCR.find(x=>x[0]===rk),cut=rk==='ytd'?last.slice(0,4)+'-01-01':new Date((dayNum(last)-r[2]+dayNum('1970-01-01'))*864e5).toISOString().slice(0,10);
-    const v0=valAt(full,cut);P=(v0!=null?[[cut,v0]]:[]).concat(full.filter(x=>x[0]>cut));}
+    const v0=valAt(full,cut);let r0=null;for(const x of full){if(x[0]<=cut) r0=x;else break;}P=(v0!=null?[r0&&r0.length>2?[cut,...r0.slice(1)]:[cut,v0]]:[]).concat(full.filter(x=>x[0]>cut));}
   const seg=opts.length>1?'<div class="seg2 hcr" role="group" aria-label="Time range">'+opts.map(r=>'<button type="button" data-act="hcrange" data-id="'+esc(cid)+'" data-r="'+r[0]+'" class="'+(r[0]===rk?'on':'')+'" aria-pressed="'+(r[0]===rk)+'">'+r[1]+'</button>').join('')+'</div>':'';
   if(P.length<2) return '<p class="sub hcn">'+(o.empty||'The chart appears after syncs on two different days.')+'</p>';
-  const W=320,Hh=100,pd=6,x0=dayNum(P[0][0]),x1=dayNum(P[P.length-1][0]),vs=P.map(p=>p[1]),lo0=Math.min(...vs),hi0=Math.max(...vs),fl=hi0-lo0<Math.max(1,Math.abs(hi0)*1e-6),fp=Math.max(1,Math.abs(hi0)*.01),lo=fl?lo0-fp:lo0,hi=fl?hi0+fp:hi0,flat=false,sp=hi-lo;
+  const W=320,Hh=100,pd=6,x0=dayNum(P[0][0]),x1=dayNum(P[P.length-1][0]),ex=!!o.split&&P.every(p=>p.length>=4),vs=ex?P.flatMap(p=>[p[1],p[2],p[3]]):P.map(p=>p[1]),lo0=Math.min(...vs),hi0=Math.max(...vs),fl=hi0-lo0<Math.max(1,Math.abs(hi0)*1e-6),fp=Math.max(1,Math.abs(hi0)*.01),lo=fl?lo0-fp:lo0,hi=fl?hi0+fp:hi0,flat=false,sp=hi-lo;
   const X=d=>pd+(dayNum(d)-x0)/Math.max(1,x1-x0)*(W-2*pd),Y=v=>flat?Hh/2:pd+(1-(v-lo)/sp)*(Hh-2*pd);
   const pts=P.map(p=>X(p[0]).toFixed(1)+','+Y(p[1]).toFixed(1)),d0=P[0][1],d1=P[P.length-1][1],ch=d1-d0,up=ch>=0,good=o.inv?!up:up,col=o.col||(good?'#10b981':'#ef4444'),id='hc'+(o.id||'x');
   const kf=v=>{const a=Math.abs(v),sg=v<0?'-':'';return sg+(a>=1e6?'$'+(a/1e6).toFixed(2)+'M':a>=1e4?'$'+(a/1e3).toFixed(1)+'K':a>=1e3?'$'+(a/1e3).toFixed(2)+'K':'$'+Math.round(a));};
   const G=[hi,(hi+lo)/2,lo];
   const span=x1-x0,isoOf=n=>{const d=new Date(Date.UTC(1970,0,1)+n*864e5);return d.toISOString().slice(0,10);},dn0=dayNum('1970-01-01'),TK=(span<=5?Array.from({length:span+1},(_,i)=>x0+i):[0,1,2,3].map(i=>Math.round(x0+span*i/3))).map(n=>({x:pd+(n-x0)/Math.max(1,span)*(W-2*pd),d:isoOf(n-dn0)}));
-  const hp=JSON.stringify({x0,x1,lo,sp,pd,W,H:Hh,p:P.map(q=>[dayNum(q[0])-x0,Math.round(q[1]*100)/100]),c:col});
+  const hp=JSON.stringify({x0,x1,lo,sp,pd,W,H:Hh,p:P.map(q=>ex?[dayNum(q[0])-x0,Math.round(q[1]*100)/100,Math.round(q[2]),Math.round(q[3])]:[dayNum(q[0])-x0,Math.round(q[1]*100)/100]),c:col});
+  const exL=ex?[[2,'var(--asset,#38bdf8)'],[3,'var(--owed,#f43f5e)']].map(([k,c])=>'<polyline points="'+P.map(p=>X(p[0]).toFixed(1)+','+Y(p[k]).toFixed(1)).join(' ')+'" fill="none" stroke="'+c+'" stroke-width="1.6" stroke-dasharray="5 3" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>').join(''):'';
   return '<div class="hc">'+seg+'<div class="hcw" data-hp="'+esc(hp)+'" tabindex="0" aria-label="'+esc((o.label||'Value')+' chart. Hover, touch or use arrow keys to see values.')+'"><svg viewBox="0 0 '+W+' '+Hh+'" preserveAspectRatio="none" role="img" aria-label="'+esc((o.label||'Value')+' from '+niceDay(P[0][0])+' to '+niceDay(P[P.length-1][0])+': '+fmt0(d0)+' to '+fmt0(d1))+'"><defs><linearGradient id="'+id+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+col+'" stop-opacity=".28"/><stop offset="1" stop-color="'+col+'" stop-opacity="0"/></linearGradient></defs>'
    +G.map(v=>'<line x1="0" x2="'+W+'" y1="'+Y(v).toFixed(1)+'" y2="'+Y(v).toFixed(1)+'" stroke="var(--mute)" stroke-opacity=".38" stroke-width="1" stroke-dasharray="4 4" vector-effect="non-scaling-stroke"/>').join('')
    +TK.map(t=>'<line y1="0" y2="'+Hh+'" x1="'+t.x.toFixed(1)+'" x2="'+t.x.toFixed(1)+'" stroke="var(--mute)" stroke-opacity=".38" stroke-width="1" stroke-dasharray="2 4" vector-effect="non-scaling-stroke"/>').join('')
-   +'<path d="M'+pts.join(' L')+' L'+X(P[P.length-1][0]).toFixed(1)+','+Hh+' L'+X(P[0][0]).toFixed(1)+','+Hh+' Z" fill="url(#'+id+')"/><polyline points="'+pts.join(' ')+'" fill="none" stroke="'+col+'" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg>'
+   +'<path d="M'+pts.join(' L')+' L'+X(P[P.length-1][0]).toFixed(1)+','+Hh+' L'+X(P[0][0]).toFixed(1)+','+Hh+' Z" fill="url(#'+id+')"/>'+exL+'<polyline points="'+pts.join(' ')+'" fill="none" stroke="'+col+'" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg>'
    +'<div class="hcy" aria-hidden="true">'+G.map(v=>'<span style="top:'+(Y(v)/Hh*100).toFixed(1)+'%">'+kf(v)+'</span>').join('')+'</div><i class="hcdot" style="left:calc((100% - 50px)*'+(X(P[P.length-1][0])/W).toFixed(4)+');top:'+(Y(d1)/Hh*100).toFixed(1)+'%;background:'+col+'"></i><i class="hcx" hidden></i><i class="hcp" hidden style="background:'+col+'"></i><div class="hct" hidden></div></div>'
-   +'<div class="hcax hcax2"><div>'+TK.map((t,i)=>'<span class="'+(i===0?'a':i===TK.length-1?'z':'')+'" style="left:'+(t.x/W*100).toFixed(2)+'%">'+(span>300?new Date(t.d+'T12:00:00').toLocaleDateString('en-US',{month:'short',year:'2-digit'}).replace(' ',' \u2019'):shortDate(t.d))+'</span>').join('')+'</div></div><p class="hcc '+(good?'pos':'neg')+'">'+(up?'+':'-')+fmt0(Math.abs(ch)).replace('-','')+(Math.abs(d0)>=1&&Math.abs(d0)>=Math.abs(d1)*.1?' ('+pf(ch/Math.abs(d0)*100)+')':'')+' since '+niceDay(P[0][0])+(o.note?' <span class="mute" style="font-weight:500">· '+o.note+'</span>':'')+'</p></div>';
+   +'<div class="hcax hcax2"><div>'+TK.map((t,i)=>'<span class="'+(i===0?'a':i===TK.length-1?'z':'')+'" style="left:'+(t.x/W*100).toFixed(2)+'%">'+(span>300?new Date(t.d+'T12:00:00').toLocaleDateString('en-US',{month:'short',year:'2-digit'}).replace(' ',' \u2019'):shortDate(t.d))+'</span>').join('')+'</div></div>'+(ex?'<div class="hcleg"><span><i style="background:'+col+'"></i>Net worth</span><span><i class="d" style="border-color:var(--asset,#38bdf8)"></i>Assets</span><span><i class="d" style="border-color:var(--owed,#f43f5e)"></i>Owed</span></div>':'')+'<p class="hcc '+(good?'pos':'neg')+'">'+(up?'+':'-')+fmt0(Math.abs(ch)).replace('-','')+(Math.abs(d0)>=1&&Math.abs(d0)>=Math.abs(d1)*.1?' ('+pf(ch/Math.abs(d0)*100)+')':'')+' since '+niceDay(P[0][0])+(o.note?' <span class="mute" style="font-weight:500">· '+o.note+'</span>':'')+'</p></div>';
 }
 // hover / touch / arrow keys on an over-time chart: a line, a dot and the value on that day
 function hcShow(w,frac){
@@ -1888,7 +1894,7 @@ function hcShow(w,frac){
   const x=w.querySelector('.hcx'),p=w.querySelector('.hcp'),t=w.querySelector('.hct'),dot=w.querySelector('.hcdot');
   const L='calc((100% - 50px)*'+xf.toFixed(4)+')';x.style.left=L;p.style.left=L;p.style.top=(yf*100).toFixed(1)+'%';
   const d=new Date((D.x0+q[0]+dayNum('1970-01-01'))*864e5).toISOString().slice(0,10),ch=q[1]-D.p[0][1];
-  t.innerHTML='<b>'+fmt0(q[1])+'</b><span>'+niceDay(d)+'</span>'+(k?'<em class="'+(ch<0?'neg':'pos')+'">'+(ch<0?'-':'+')+fmt0(Math.abs(ch)).replace('-','')+' since start</em>':'');
+  t.innerHTML='<b>'+fmt0(q[1])+'</b><span>'+niceDay(d)+'</span>'+(q.length>3?'<span class="hctx"><i style="background:var(--asset,#38bdf8)"></i>Assets '+fmt0(q[2])+'</span><span class="hctx"><i style="background:var(--owed,#f43f5e)"></i>Owed '+fmt0(q[3])+'</span>':'')+(k?'<em class="'+(ch<0?'neg':'pos')+'">'+(ch<0?'-':'+')+fmt0(Math.abs(ch)).replace('-','')+' since start</em>':'');
   t.style.left='calc((100% - 50px)*'+xf.toFixed(4)+')';t.classList.toggle('r',xf>=.5);t.classList.toggle('l',xf<.5);
   x.hidden=p.hidden=t.hidden=false;if(dot) dot.style.opacity='.25';
 }
@@ -1920,7 +1926,7 @@ function loanHistCard(a){
 // statement-only accounts (no bank link) that are not just the statements of a linked account
 const isTwin=a=>!a.sf&&S.accounts.some(x=>x.sf&&x!==a&&stmtTwins(x,x.sf).includes(a.id));
 const stmtOnly=types=>S.accounts.filter(a=>!a.sf&&(!types||types.includes(a.type))&&!isTwin(a)&&stmtPoints(a.id).length).map(a=>'acct:'+a.id);
-const nwSeries=()=>balSeries([...new Set(S.accounts.filter(a=>a.sf).flatMap(a=>{const G=sfGroup(a);return G?G.g.map(r=>r.id):[a.sf];}))].concat(stmtOnly()));
+const nwSeries=split=>balSeries([...new Set(S.accounts.filter(a=>a.sf).flatMap(a=>{const G=sfGroup(a);return G?G.g.map(r=>r.id):[a.sf];}))].concat(stmtOnly()),split);
 const invSeries=()=>balSeries(invIds().concat(stmtOnly(['brokerage'])));
 // ---- looking back: the Overview month picker set to a past month ----
 const pastYM=ym=>!!ym&&ym<todayISO().slice(0,7);
@@ -1957,7 +1963,7 @@ function accountsHTML(ym){
   const nwS=fmt(tot),nwI=nwS.lastIndexOf('.'),apct=asset+owe>0?Math.max(2,Math.min(98,asset/(asset+owe)*100)):100;
   const head='<div class="agtop"><h2 style="margin:0">Accounts</h2></div>'+(has?'<div class="agnw"><span class="agnwl">Net worth'+(pm?' · end of '+ymShort(ym):'')+'</span><div class="agnwv'+(tot<0?' neg':'')+'">'+(nwI>0?esc(nwS.slice(0,nwI))+'<small>'+esc(nwS.slice(nwI))+'</small>':esc(nwS))+'</div>'
     +(owe>0.5?'<div class="agbar" role="img" aria-label="Assets '+fmt0(asset)+', owed '+fmt0(owe)+'"><i style="width:'+apct.toFixed(1)+'%"></i><b></b></div>':'')
-    +'<div class="agleg"><span><i class="ga"></i>Assets <b>'+fmt0(asset)+'</b></span>'+(owe>0.5?'<span><i class="go"></i>Owed <b>'+fmt0(owe)+'</b></span>':'')+'</div>'+(S.accounts.some(a=>a.sf)||(S.files||[]).length?'<div class="aghist"><span class="agnwl">Over time'+(pm?' · up to '+ymShort(ym):'')+'</span>'+histChart(pm?nwSeries().filter(p=>p[0]<=end):nwSeries(),{id:'nw',label:'Net worth',empty:'Your net worth chart starts building now. It appears after syncs on two different days.'})+'</div>':'')+'</div>':'');
+    +'<div class="agleg"><span><i class="ga"></i>Assets <b>'+fmt0(asset)+'</b></span>'+(owe>0.5?'<span><i class="go"></i>Owed <b>'+fmt0(owe)+'</b></span>':'')+'</div>'+(S.accounts.some(a=>a.sf)||(S.files||[]).length?'<div class="aghist"><span class="agnwl">Over time'+(pm?' · up to '+ymShort(ym):'')+'</span>'+histChart(pm?nwSeries(true).filter(p=>p[0]<=end):nwSeries(true),{id:'nw',label:'Net worth',split:true,empty:'Your net worth chart starts building now. It appears after syncs on two different days.'})+'</div>':'')+'</div>':'');
   return '<section class="card">'+head+(has?'':'<p class="mute" style="margin:8px 0 0">Balances load after your next bank sync.</p>')+body+'</section>';
 }
 // ---------- charts ----------
@@ -3692,7 +3698,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.60.2';
+const APP_VERSION='1.61.0';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -4042,7 +4048,7 @@ function autoCat(desc,amount,acctId){
   let c=categorize(desc,amount,S.rules);
   if(c==='Uncategorized'||(c==='Income'&&amount>0)){const l=learnedCat(desc,amount);if(l) c=l;}
   if(A&&A.type==='brokerage'&&isInc(c)) c='Investing';
-  if(A&&A.type==='credit'&&c==='Income'&&amount>0&&!(S.rules||[]).some(r=>r.cat==='Income'&&normMatch(desc).includes(r.match))) c='Uncategorized'; // a credit on a card is a refund or cashback, not pay: let the user decide
+  if(A&&A.type==='credit'&&c==='Income'&&amount>0&&!/pay ?yourself ?back/i.test(desc)&&!(S.rules||[]).some(r=>r.cat==='Income'&&normMatch(desc).includes(r.match))) c='Uncategorized'; // a credit on a card is a refund or cashback, not pay: let the user decide
   return c;
 }
 // One-time upgrade of the built-in categories: rows still on 'Uncategorized', or still on exactly what the old built-in rules chose,
@@ -4419,15 +4425,16 @@ function sfPending(j){
 }
 // A synced row can differ by a day or in wording from the same row in a statement; pair those one-to-one by amount and date.
 function fuzzyPair(acct,rows,dupKeys,wantSf,only){
-  const keys=new Set(dupKeys||[]),pool=S.txns.filter(t=>t.acct===acct&&!!t.sf===!!wantSf&&(!only||only(t))),used=new Set(pool.filter(t=>keys.has(t.key)).map(t=>t.id)),fresh=[],matched=[];let dup=0;
+  const keys=new Set(dupKeys||[]),pool=S.txns.filter(t=>t.acct===acct&&!!t.sf===!!wantSf&&(!only||only(t))),used=new Set(pool.filter(t=>keys.has(t.key)).map(t=>t.id)),fresh=[],matched=[],pairs=[];let dup=0;
   for(const r of rows){
     // same amount within 3 days; when several rows qualify, the one whose description shares a word wins
     const rd=dayNum(r.date),rw=new Set(normMatch(r.desc||'').split(' ').filter(w=>w.length>=4));let best=null,bd=9;
-    for(const t of pool){if(used.has(t.id)||Math.abs(t.amount-r.amount)>=0.005) continue;const dd=Math.abs(dayNum(t.date)-rd);if(dd>3) continue;
-      const sc=dd+(normMatch(t.desc||'').split(' ').some(w=>rw.has(w))?0:0.5);if(sc<bd){best=t;bd=sc;}}
-    if(best){used.add(best.id);dup++;matched.push(best);}else fresh.push(r);
+    for(const t of pool){if(used.has(t.id)||Math.abs(t.amount-r.amount)>=0.005) continue;const dd=Math.abs(dayNum(t.date)-rd);if(dd>6) continue;
+      const sw=normMatch(t.desc||'').split(' ').some(w=>rw.has(w));if(dd>3&&!sw) continue; // 4-6 days apart only when the wording agrees (a card charge the bank posts late)
+      const sc=dd+(sw?0:0.5);if(sc<bd){best=t;bd=sc;}}
+    if(best){used.add(best.id);dup++;matched.push(best);pairs.push([r,best]);}else fresh.push(r);
   }
-  return {fresh,dup,matched};
+  return {fresh,dup,matched,pairs};
 }
 async function sfSync(){
   if(SF.busy||!SF.access) return;
@@ -4733,19 +4740,23 @@ const ACT={
         const k=it.res.ref||('file:'+it.fileName);
         if(!made[k]){const a={id:uid(),name:it.res.name+(it.res.last4?' ••'+it.res.last4:''),type:it.res.type,ref:it.res.ref||undefined,sf:it.sfId||undefined};S.accounts.push(a);made[k]=a.id;nAcct++;}
         id=made[k];
-      }else{const a=S.accounts.find(x=>x.id===id);if(a&&!a.ref&&it.res.ref) a.ref=it.res.ref;}
+      }else{const a=S.accounts.find(x=>x.id===id);if(a&&!a.ref&&it.res.ref) a.ref=it.res.ref;
+        // a bank statement knows the account type better than the bank-sync guess; this keeps both import orders the same
+        if(a&&it.kind!=='sync'&&it.res.ref&&['checking','savings','credit','brokerage'].includes(it.res.type)&&['checking','savings','credit','brokerage','other'].includes(a.type)&&a.type!==it.res.type) a.type=it.res.type;}
       if(it.sfId){const a=S.accounts.find(x=>x.id===id);if(a&&(!a.sf||sfIsMain(it.sfId))) a.sf=it.sfId;}
       {const rt=it.res.apy!=null?it.res.apy:it.res.apr,a=S.accounts.find(x=>x.id===id),at=it.res.end||'';
        if(rt!=null&&a&&a.rateSrc!=='manual'&&(!a.rateAt||at>=a.rateAt)){a.rate=rt;a.rateSrc='statement';a.rateAt=at||todayISO();}
        // the newest mortgage statement sets the monthly payment (principal + interest, extra principal, escrow)
        const lp=it.res.loanPay;if(lp&&a&&a.paySrc!=='manual'&&(!a.payAt||at>=a.payAt)){a.pay=lp.pi;if(lp.escrow>0)a.escrow=lp.escrow;else delete a.escrow;if(lp.extra>0)a.extra=lp.extra;else delete a.extra;a.paySrc='statement';a.payAt=at||todayISO();}}
       const r=assignKeys(id,pdfTxns(it),keyMap);
-      if(it.choice!=='new'){const f=fuzzyPair(id,r.fresh,r.dupKeys,it.kind!=='sync');r.fresh=f.fresh;r.dup+=f.dup;if(it.kind!=='sync') r.fm=f.matched;}
+      if(it.choice!=='new'){const f=fuzzyPair(id,r.fresh,r.dupKeys,it.kind!=='sync');r.fresh=f.fresh;r.dup+=f.dup;if(it.kind!=='sync'){r.fm=f.matched;r.fp=f.pairs;}}
       const att=it.hash?await attachOriginal({file:it.file,hash:it.hash,kind:it.kind||'pdf',acct:id,ref:it.res.ref,start:it.res.start,end:it.res.end,beginBal:it.res.beginBal,endBal:it.res.endBal,valBegin:it.res.valBegin,valEnd:it.res.valEnd,noLedger:it.res.noLedger,reconcile:it.res.reconcile,flip:it.flip,map:it.map}):{id:null,isNew:false};
       if(att.isNew) nFiles++;
       for(const t of r.fresh){const row=Object.assign({},t,{id:uid(),acct:id,cat:autoCat(t.desc,t.amount,id),...xtra(t.desc),src:att.id||undefined,sf:it.kind==='sync'||undefined,added:Date.now()});keyMap.set(t.key,row);S.txns.push(row);nNew++;}
       linkRows(att.id,r.dupKeys,keyMap);
       if(r.fm&&att.id) r.fm.forEach(t=>{if(!t.src) t.src=att.id;});
+      // a statement row matched to a bank-synced copy: the statement's date and wording win, so importing before or after a sync gives the same result
+      if(r.fp) r.fp.forEach(([row,t])=>{if(!t.sf) return;if(row.date&&t.date!==row.date) t.date=row.date;if(row.desc&&t.desc!==row.desc){t.desc=row.desc;if(!t.man&&!t.ruleSet) t.cat=autoCat(t.desc,t.amount,t.acct);}});
       if(it.sig) S.mappings[it.sig]={map:it.map,flip:!!it.flip};
       nDup+=r.dup;
     }
@@ -4826,10 +4837,11 @@ const ACT={
   mergedupes(){
     const P=stmtSyncPairs(S);if(!P.length) return;
     dialog({msg:'Merge '+P.length+' duplicate transaction'+(P.length===1?'':'s')+'? The bank-synced copy stays, and keeps any category or nickname you set.',ok:'Merge',onOk:()=>{
-      const rm=new Set(),saved=[],K=['src','cat','nick','sub','inc'];
+      const rm=new Set(),saved=[],K=['src','cat','nick','sub','inc','date','desc'];
       P.forEach(({manual:m,sf:f})=>{
         saved.push([f,Object.fromEntries(K.map(k=>[k,f[k]]))]);
         if(!f.src&&m.src) f.src=m.src;
+        if(m.src){f.date=m.date;if(m.desc) f.desc=m.desc;}
         if(f.cat==='Uncategorized'&&m.cat&&m.cat!=='Uncategorized') f.cat=m.cat;
         if(!f.nick&&m.nick) f.nick=m.nick;if(!f.sub&&m.sub) f.sub=m.sub;if(!f.inc&&m.inc) f.inc=m.inc;
         rm.add(m.id);
@@ -4905,7 +4917,7 @@ document.addEventListener('drop',e=>{e.preventDefault();const fl=[...(e.dataTran
   }catch(e){}
 })();
 (async function(){try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();}catch(e){}await loadState();if(!UI.impAcct&&S.accounts[0])UI.impAcct=S.accounts[0].id;render();if((S.wV||0)<3){S.wV=3;S.wB1=1;S.widgets={order:WDEF.slice(),hidden:[]};save();render();}
-if(!S.wB1){S.wB1=1;const W=S.widgets;if(W&&Array.isArray(W.hidden)&&W.hidden.includes('bills')){W.hidden=W.hidden.filter(x=>x!=='bills');W.order.splice(Math.min(2,W.order.length),0,'bills');save();render();}}if((S.ruleV||0)<CAT_V){S.ruleV=CAT_V;let n=0;for(const t of S.txns){if(t.man||!['Uncategorized','Other'].includes(t.cat)) continue;const c=autoCat(t.desc,t.amount,t.acct);if(c!==t.cat){t.cat=c;n++;}}if(n){save();dlog('rules','Sorted transactions with new built-in rules',{n});render();}}setTimeout(()=>backfillStmtBal().catch(()=>{}),1500);setTimeout(()=>{try{gdBoot();}catch(e){}},GD_JUST?50:1200);})();
+if(!S.wB1){S.wB1=1;const W=S.widgets;if(W&&Array.isArray(W.hidden)&&W.hidden.includes('bills')){W.hidden=W.hidden.filter(x=>x!=='bills');W.order.splice(Math.min(2,W.order.length),0,'bills');save();render();}}if((S.ruleV||0)<CAT_V){S.ruleV=CAT_V;let n=0;for(const t of S.txns){if(t.man||!['Uncategorized','Other'].includes(t.cat)) continue;const c=autoCat(t.desc,t.amount,t.acct);if(c!==t.cat){t.cat=c;n++;}}if(n){save();dlog('rules','Sorted transactions with new built-in rules',{n});render();}}if(!S.tyV){S.tyV=1;let n=0;for(const a of S.accounts){if(a.type==='checking'&&/\bsavings?\b/i.test(a.name||'')&&!/checking/i.test(a.name||'')){a.type='savings';n++;}}if(n){save();render();}}setTimeout(()=>backfillStmtBal().catch(()=>{}),1500);setTimeout(()=>{try{gdBoot();}catch(e){}},GD_JUST?50:1200);})();
 
 // swipe a banner sideways to dismiss it (touch or mouse); a small x shows on hover for desktop
 (function(){
