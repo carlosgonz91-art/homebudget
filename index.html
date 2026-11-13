@@ -3391,11 +3391,14 @@ function typicalHTML(){
   const groups=Object.entries(G).map(([g,l])=>[g,l.reduce((a,e)=>a+e[1],0),l.sort((a,b)=>b[1]-a[1])]).sort((a,b)=>(a[0]==='Not categorized yet')-(b[0]==='Not categorized yet')||b[1]-a[1]);
   if(!groups.length) return '';
   const tot=groups.reduce((a,g)=>a+g[1],0),inc=use.reduce((a,m)=>a+md(m).income,0)/use.length;
-  const when=use.length===1&&use[0]===ym?'This month so far':(use.length===1?'Based on last month':'Average of the last '+use.length+' months');
+  // name the months: "Average of Jul–Sep 2026", so it isn't read as the month picked above
+  const mn=m=>new Date(m+'-15T12:00:00').toLocaleDateString('en-US',{month:'short'}),us=use.slice().sort(),yr=us[us.length-1].slice(0,4);
+  const span=us.length===1?mn(us[0])+' '+us[0].slice(0,4):mn(us[0])+(us[0].slice(0,4)!==yr?' '+us[0].slice(0,4):'')+'–'+mn(us[us.length-1])+' '+yr;
+  const when=use.length===1&&use[0]===ym?'This month so far':(use.length===1?'Based on '+span:'Average per month of '+span+' · tap a category to see those months');
   return '<section class="card"><h2>Typical month</h2><p class="sub" style="margin:-6px 0 10px">'+when+'</p>'
    +'<div class="agtop"><div><div class="sub">Spending</div><div class="agbig">'+fmt0(tot)+'</div></div><div class="agnet"><span class="sub">Income</span><span class="agv">'+fmt0(inc)+'</span></div></div>'
    +groups.map(([g,v,l])=>'<details class="ag"><summary><i class="agd" style="background:'+catColor(l[0][0])+'"></i><span>'+esc(g)+'</span><span class="agsp"></span><span class="agv agsum">'+fmt0(v)+'</span></summary>'
-     +l.map(([c,x])=>'<div class="agr go" role="button" tabindex="0" data-act="gocat" data-cat="'+esc(c)+'"><span>'+esc(c)+'</span><span class="agv">'+fmt0(x)+'<i class="chev">›</i></span></div>').join('')+'</details>').join('')
+     +l.map(([c,x])=>'<div class="agr go" role="button" tabindex="0" data-act="gocat" data-cat="'+esc(c)+'" data-m="'+esc(us.join(','))+'"><span>'+esc(c)+'</span><span class="agv">'+fmt0(x)+'<i class="chev">›</i></span></div>').join('')+'</details>').join('')
    +(G['Not categorized yet']?'<p class="sub" style="margin:10px 0 0">“Not categorized yet” is spending we couldn’t sort. Tap a category to see its transactions.</p>':'')+'</section>';
 }
 function viewBudgets(){
@@ -3465,7 +3468,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" aria-label="Disconnect bank sync" title="Disconnect">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.56.2';
+const APP_VERSION='1.56.3';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -4398,7 +4401,7 @@ const ACT={
   clearflow(){UI.filters.flow='';render();},
   resetfilters(){UI.filters={q:'',acct:'',cat:'',month:''};UI.limit=200;render();},
   gocatm(el){jmp();UI.filters={q:'',acct:'',cat:el.dataset.cat,month:UI.month};UI.limit=200;UI.tab='txns';render();window.scrollTo(0,0);},
-  gocat(el){jmp();UI.filters={q:'',acct:'',cat:el.dataset.cat,month:''};UI.limit=200;UI.tab='txns';render();window.scrollTo(0,0);},
+  gocat(el){jmp();UI.filters={q:'',acct:'',cat:el.dataset.cat,month:el.dataset.m||''};UI.limit=200;UI.tab='txns';render();window.scrollTo(0,0);},
   audgo(el){jmp();UI.filters={q:'',acct:'',cat:'',month:'',ids:String(el.dataset.ids||'').split(',').filter(Boolean),label:el.dataset.label||'Selected transactions'};UI.limit=200;UI.tab='txns';render();window.scrollTo(0,0);},
   mergo(el){const k=el.dataset.k,ym=el.dataset.m||'';const ids=S.txns.filter(t=>(merchantKey(t.desc)||'other')===k&&(!ym||t.date.startsWith(ym))).map(t=>t.id);jmp();UI.filters={q:'',acct:'',cat:'',month:'',ids,label:titleCase(k)+(ym?' · '+monthLabel(ym):' · all')};UI.limit=200;UI.tab='txns';render();window.scrollTo(0,0);},
   blall(){UI.blAll=!UI.blAll;render();},
