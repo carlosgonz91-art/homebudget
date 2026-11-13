@@ -2927,13 +2927,14 @@ function billScan0(){
     if(cad==='month'&&D.length<(like?2:3)) continue;
     const reg=gaps.filter(x=>Math.abs(x-g)<=(cad==='month'?7:20)).length>=gaps.length*0.6;if(!reg) continue;
     const lastD=D[D.length-1];if(T-lastD.d>g*1.6+10) continue; // stopped
-    let due;
-    if(cad==='month'){const dom=med(D.slice(-4).map(x=>+x.date.slice(8))),ld=new Date(lastD.date+'T12:00:00'),nm=new Date(ld.getFullYear(),ld.getMonth()+1,1),dim=new Date(nm.getFullYear(),nm.getMonth()+1,0).getDate();
-      // a payment early in the month for a bill that is usually paid late in the previous month still counts for that cycle
-      due=dayNum(iso(nm.getFullYear(),nm.getMonth()+1,Math.min(dom,dim)));if(due-lastD.d<18) due+=30;}
-    else due=lastD.d+g;
+    // next payment: the last one plus the usual gap between recent payments (a bill paid around the 1st can land on the 30th or the 2nd,
+    // so counting days is steadier than reusing the day of the month)
+    const rg=gaps.slice(-4),gm=Math.round(rg.reduce((a,x)=>a+x,0)/rg.length),due=lastD.d+(cad==='month'&&Math.abs(gm-g)<=4?gm:g);
     const lo=Math.min(...am),hi=Math.max(...am);
-    out.push({k,first:D[0].date,name:titleCase(k),cat:last.cat,cad,amt:mid,lo,hi,varies:(hi-lo)>mid*0.15&&(hi-lo)>=3,n:D.length,last:lastD.date,lastAmt:lastD.a,lastD:lastD.d,due,monthly:cad==='month'?mid:cad==='quarter'?mid/3:cad==='half'?mid/6:mid/12});
+    // amount: the last payment is the best guess for the next one (prices change, utilities vary month to month);
+    // only a one-off far from the usual amount (a catch-up or double payment) falls back to the usual amount
+    const vary=(hi-lo)>mid*0.15&&(hi-lo)>=3,est=Math.abs(lastD.a-mid)<=mid*0.5?lastD.a:mid;
+    out.push({k,first:D[0].date,name:titleCase(k),cat:last.cat,cad,amt:est,typ:mid,lo,hi,varies:(hi-lo)>mid*0.15&&(hi-lo)>=3,n:D.length,last:lastD.date,lastAmt:lastD.a,lastD:lastD.d,due,monthly:cad==='month'?mid:cad==='quarter'?mid/3:cad==='half'?mid/6:mid/12});
   }
   return out;
 }
@@ -2962,7 +2963,7 @@ function billsHTML(pym){
   const tiles=stiles([{k:'Due soon',v:soon.length?fmtT(soon.reduce((t,b)=>t+b.amt,0)):'$0',s:soon.length?soon.length+' bill'+(soon.length===1?'':'s')+' · 7 days':'Nothing due',c:soon.length?'var(--warn)':'#10b981'},{k:'Still due',v:fmtT(thisMo.reduce((t,b)=>t+b.amt,0)),s:paid.length+' paid so far',c:'#6366f1'},{k:'Per month',v:fmtT(mon),s:R.length+' bill'+(R.length===1?'':'s'),c:'#0ea5e9'}]);
   const cadL={month:'Monthly',quarter:'Every 3 months',half:'Twice a year',year:'Yearly'};
   const when=b=>b.late?'Expected '+nd(b.due):b.inDays<0?'Was due '+nd(b.due):b.inDays===0?'Due today':b.inDays===1?'Due tomorrow':b.inDays<=7?'Due in '+b.inDays+' days':'Due ~'+nd(b.due);
-  const row=(b,done)=>'<div class="ip rcr go bl'+(done?' done':'')+'" role="button" tabindex="0" data-act="mergo" data-k="'+esc(b.k)+'">'+avHTML(b.cat)+'<div class="l"><b>'+esc(b.name)+'</b><span>'+esc(b.cat)+' · '+cadL[b.cad]+(b.varies?' · usually '+fmt0(b.lo)+'–'+fmt0(b.hi):'')+'</span></div><div class="r"><b>'+(done?fmt(b.lastAmt):(b.varies?'≈':'')+fmt(b.amt))+'</b><span class="rdue'+(done?' paid':b.late?' late':b.inDays<=7?' soon':'')+'">'+(done?'✓ Paid '+niceDay(b.last):when(b))+'</span></div></div>';
+  const row=(b,done)=>'<div class="ip rcr go bl'+(done?' done':'')+'" role="button" tabindex="0" data-act="mergo" data-k="'+esc(b.k)+'">'+avHTML(b.cat)+'<div class="l"><b>'+esc(b.name)+'</b><span>'+esc(b.cat)+' · '+cadL[b.cad]+(b.varies?' · changes, last one '+fmt(b.lastAmt)+' · range '+fmt0(b.lo)+'–'+fmt0(b.hi):'')+'</span></div><div class="r"><b>'+(done?fmt(b.lastAmt):(b.varies?'≈':'')+fmt(b.amt))+'</b><span class="rdue'+(done?' paid':b.late?' late':b.inDays<=7?' soon':'')+'">'+(done?'✓ Paid '+niceDay(b.last):when(b))+'</span></div></div>';
   // Upcoming: grouped by when each bill is next expected. All bills: every bill found, with its usual amount and next date.
   const tab=UI.blTab==='all'?'all':'up';
   const seg='<div class="seg2" role="group" aria-label="Bills view"><button type="button" data-act="bltab" data-m="up" class="'+(tab==='up'?'on':'')+'" aria-pressed="'+(tab==='up')+'">Upcoming</button><button type="button" data-act="bltab" data-m="all" class="'+(tab==='all'?'on':'')+'" aria-pressed="'+(tab==='all')+'">All bills · '+R.length+'</button></div>';
@@ -3467,7 +3468,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" aria-label="Disconnect bank sync" title="Disconnect">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.56.4';
+const APP_VERSION='1.56.5';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
