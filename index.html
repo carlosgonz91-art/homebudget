@@ -2510,9 +2510,9 @@ function secData(c,acct){
 // a pie of what one account holds, by sector or kind (CDs & bonds, cash, commodities, funds, technology, finance…)
 const SECPAL=['#6366f1','#0ea5e9','#10b981','#f59e0b','#ec4899','#8b5cf6','#14b8a6','#f97316','#64748b'];
 // every holding group keeps the same color everywhere (pies, labels, Stock insights), whatever else an account holds
-const SECCOL={'Cash':'#a78bfa','CDs & bonds':'#10b981','Commodities':'#eab308','Mutual funds':'#0ea5e9','Funds & ETFs':'#14b8a6','Not loaded yet':'#94a3b8','Other':'#64748b',
+const SECCOL={'Cash':'#a78bfa','CDs & bonds':'#10b981','Commodities':'#eab308','Mutual funds':'#ec4899','Funds & ETFs':'#14b8a6','Not loaded yet':'#94a3b8','Other':'#64748b',
   'Technology':'#6366f1','Financial Services':'#3b82f6','Banking':'#1d4ed8','Insurance':'#0284c7','Retail':'#f97316','Pharmaceuticals':'#ef4444','Health Care':'#ef4444','Biotechnology':'#e11d48',
-  'Media':'#d946ef','Communications':'#c026d3','Telecommunication':'#a21caf','Hotels, Restaurants & Leisure':'#f59e0b','Consumer products':'#fb923c','Beverages':'#fbbf24','Food Products':'#84cc16',
+  'Media':'#d946ef','Communications':'#7c3aed','Telecommunication':'#a21caf','Hotels, Restaurants & Leisure':'#f59e0b','Consumer products':'#fb923c','Beverages':'#fbbf24','Food Products':'#84cc16',
   'Energy':'#b45309','Oil & Gas':'#92400e','Utilities':'#a3e635','Semiconductors':'#4f46e5','Automobiles':'#64748b','Aerospace & Defense':'#475569','Real Estate':'#8b5cf6','Industrial Conglomerates':'#57534e','Machinery':'#71717a','Airlines':'#0ea5e9','Logistics & Transportation':'#0891b2','Chemicals':'#65a30d'};
 const SECX=['#7c3aed','#db2777','#059669','#ca8a04','#2563eb','#dc2626','#0d9488','#9333ea','#ea580c','#4d7c0f'];
 const secColor=k=>SECCOL[k]||SECX[[...String(k)].reduce((a,ch)=>(a*31+ch.charCodeAt(0))>>>0,7)%SECX.length];
@@ -3580,7 +3580,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.59.5';
+const APP_VERSION='1.59.6';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
