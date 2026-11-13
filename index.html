@@ -153,7 +153,7 @@ h1{font-size:28px;font-weight:800;letter-spacing:-.03em;margin:2px 0 12px}h2{fon
 .hcw[data-hp]{cursor:crosshair;touch-action:pan-y;outline:none}.hcw[data-hp]:focus-visible{box-shadow:0 0 0 2px var(--brand);border-radius:8px}
 .hcr{margin:2px 0 8px;display:inline-flex}
 [hidden].hxtt,[hidden].hct,[hidden].hxv,[hidden].hxq,[hidden].hxq2,[hidden].hcx,[hidden].hcp{display:none!important}
-.nbtn{position:relative!important;margin-left:auto}.nbtn svg{width:24px!important;height:24px!important}.nbtn+.tbtn{margin-left:8px}
+.nbtn{position:relative!important;margin-left:auto}.nbtn{background:transparent!important;padding:0!important}.nbtn svg{width:38px!important;height:38px!important}.nbtn+.tbtn{margin-left:8px}
 .nbdg{position:absolute;top:-3px;right:-3px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:var(--bad);color:#fff;font-size:10.5px;font-weight:800;display:grid;place-items:center;line-height:1}
 .npop{position:fixed;z-index:60;top:calc(env(safe-area-inset-top,0px) + 62px);right:max(12px,env(safe-area-inset-right,0px));width:min(380px,calc(100vw - 24px));background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 18px 40px rgba(0,0,0,.25);padding:8px 8px 10px}
 .nph{display:flex;align-items:center;justify-content:space-between;padding:4px 6px 8px}
@@ -3258,13 +3258,13 @@ function notesPaint(){
   const b=document.getElementById('noteBtn'),pop=document.getElementById('notePop');if(!b) return;
   const L=notesList(),bad=L.some(x=>x.lvl==='bad');
   b.hidden=!L.length;b.classList.toggle('bad',bad);
-  b.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#fbbf24" stroke="none"/><path d="M12 6.8v6.7" stroke="#1f1300" stroke-width="2.6" stroke-linecap="round"/><circle cx="12" cy="17.2" r="1.5" fill="#1f1300" stroke="none"/></svg>'+(L.length?'<span class="nbdg">'+L.length+'</span>':'');
+  b.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="12" fill="#fbbf24" stroke="none"/><path d="M12 6.8v6.7" stroke="#1f1300" stroke-width="2.6" stroke-linecap="round"/><circle cx="12" cy="17.2" r="1.5" fill="#1f1300" stroke="none"/></svg>'+(L.length?'<span class="nbdg">'+L.length+'</span>':'');
   b.setAttribute('aria-label',L.length?L.length+' message'+(L.length===1?'':'s'):'No messages');
   if(!L.length) UI.notesOpen=false;
   b.setAttribute('aria-expanded',String(!!UI.notesOpen));
   if(!pop) return;pop.hidden=!UI.notesOpen;
   // open right under the ! button
-  if(UI.notesOpen){const r=b.getBoundingClientRect();pop.style.top=Math.round(r.bottom+8)+'px';pop.style.right=Math.max(12,Math.round(window.innerWidth-r.right-8))+'px';}
+  if(UI.notesOpen){const r=b.getBoundingClientRect();pop.style.top=Math.round(r.bottom+8)+'px';const vw=document.documentElement.clientWidth,pw=Math.min(380,vw-24);pop.style.right=Math.max(12,Math.min(Math.round(vw-r.right-8),vw-pw-12))+'px';}
   if(UI.notesOpen) pop.innerHTML='<div class="nph"><b>Messages</b><button type="button" class="npx" data-act="notes" aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>'
     +L.map(x=>'<div class="npi '+x.lvl+'"><span class="npd" aria-hidden="true"></span><span class="npt">'+x.txt+'</span><button type="button" class="btn small" data-act="notego" data-a="'+x.act+'">'+x.lbl+'</button><button type="button" class="npx" data-act="bndis" data-id="'+esc(x.id)+'" data-sig="'+esc(x.sig)+'" aria-label="Dismiss" title="Dismiss"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>').join('');
 }
@@ -3582,7 +3582,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.59.15';
+const APP_VERSION='1.59.16';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
