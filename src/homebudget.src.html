@@ -3442,7 +3442,10 @@ function pdfPreviewHTML(){
     h+='</div>';
   });
   if(quiet.length) h+='<details class="pvq"><summary><b>'+quiet.length+' account'+(quiet.length===1?'':'s')+' up to date</b><span class="sub">nothing new to import</span></summary>'+quiet.map(({it})=>{const v=bal(it);return '<div class="pvr"><span>'+esc(it.res.name+(it.res.last4?' ••'+it.res.last4:''))+(it.choice==='new'?' <i class="pvs new">New</i>':'')+'</span>'+(v!==''?'<b class="'+(v<0?'neg':'')+'">'+fmt(v)+'</b>':'')+'</div>';}).join('')+'</details>';
-  h+='<div class="row" style="margin-top:12px"><button class="btn" data-act="pdfgo" '+(tot||keep?'':'disabled style="opacity:.5"')+'>'+(tot?'Import '+tot:'Save originals')+'</button><button class="btn ghost" data-act="pdfcancel">Cancel</button></div></div>';
+  const upd=ok.reduce((a,i)=>a+(i.upd||0),0);
+  if(!tot&&!upd&&!keep) h+='<p class="sub" style="margin:10px 0 0">Everything in these files is already in the app. Nothing to change.</p>';
+  else if(!tot&&upd) h+='<p class="sub" style="margin:10px 0 0">'+upd+' bank-synced transaction'+(upd===1?'':'s')+' will take the date and wording from your statements.</p>';
+  h+='<div class="row" style="margin-top:12px"><button class="btn" data-act="'+(tot||upd||keep?'pdfgo':'pdfcancel')+'">'+(tot?'Import '+tot:upd?'Update '+upd:keep?'Save originals':'Done')+'</button><button class="btn ghost" data-act="pdfcancel">Cancel</button></div></div>';
   return h;
 }
 function previewHTML(){
@@ -3675,7 +3678,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.61.1';
+const APP_VERSION='1.61.2';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -4142,7 +4145,7 @@ function pdfCheckHTML(r,it,i){
 function recomputePdf(){
   const keys=new Set(S.txns.map(t=>t.key)),sids=new Set(S.txns.filter(t=>t.sid).map(t=>t.sid));
   for(const it of UI.pdf.items){
-    it.fresh=[];it.dup=0;it.hasFile=!!it.hash&&!!it.choice&&it.choice!=='new'&&S.files.some(f=>f.hash===it.hash&&f.acct===it.choice);
+    it.fresh=[];it.dup=0;it.upd=0;it.hasFile=!!it.hash&&!!it.choice&&it.choice!=='new'&&S.files.some(f=>f.hash===it.hash&&f.acct===it.choice);
     if(!it.res||!it.choice) continue;
     // The bank's own transaction id is the surest match: a row we already hold is skipped even if the bank reworded it or moved its date.
     let rows=pdfTxns(it),sidDup=0;
@@ -4150,6 +4153,7 @@ function recomputePdf(){
     const r=assignKeys(pdfAcctId(it),rows,keys);r.dup+=sidDup;
     if(it.choice!=='new'){
       let f=fuzzyPair(it.choice,r.fresh,r.dupKeys,it.kind!=='sync');r.fresh=f.fresh;r.dup+=f.dup;
+      if(it.kind!=='sync') it.upd=f.pairs.filter(([row,t])=>t.sf&&((row.date&&t.date!==row.date)||(row.desc&&t.desc!==row.desc))).length;
       // Rows synced by an older version carry no bank id; pair those by amount and date if the bank changed them.
       if(it.kind==='sync'){f=fuzzyPair(it.choice,r.fresh,r.dupKeys,true,t=>!t.sid);r.fresh=f.fresh;r.dup+=f.dup;}
     }
