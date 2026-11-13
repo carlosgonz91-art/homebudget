@@ -3702,7 +3702,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.61.2';
+const APP_VERSION='1.61.3';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -3852,7 +3852,9 @@ function findingHTML(f){
   const ic={bad:'✕',warn:'!',ok:'✓',info:'i'}[f.lvl],refs=f.refs||[];
   const acts=(r,x)=>{if(!r) return '';const kind=r.k.split(':')[0],lab=(AUDLAB[kind]||['Not an issue'])[0];
     return '<span class="fa">'+(r.id?'<button class="btn ghost small" data-act="audgo" data-ids="'+esc(r.id)+'" data-label="One transaction">View</button>':'')+(kind==='odd'?'<button class="btn small" data-act="audxfer" data-id="'+esc(r.id)+'">Set to Transfer</button>':'')+'<button class="btn ghost small" data-act="audok" data-k="'+esc(r.k)+'" data-id="'+esc(r.id||'')+'" data-l="'+esc(x.slice(0,140))+'">'+lab+'</button>'+(kind==='rep'&&!r.sf?'<button class="btn danger small" data-act="audrm" data-id="'+esc(r.id)+'">Remove this copy</button>':'')+'</span>';};
-  const it=f.items&&f.items.length?'<details'+(refs.length&&f.items.length<=4?' open':'')+'><summary>Details</summary><ul>'+f.items.slice(0,14).map((x,i)=>'<li>'+esc(x)+acts(refs[i],x)+'</li>').join('')+(f.items.length>14?'<li>…and '+(f.items.length-14)+' more</li>':'')+'</ul></details>':'';
+  // remember open/closed: the page redraws often (sync, Drive check), which used to snap Details shut on phones
+  const dk='ad_'+String(f.tag||'')+String(f.title||'').replace(/\W+/g,'').slice(0,40),dop=UI[dk]===undefined?(refs.length&&f.items&&f.items.length<=4):UI[dk];
+  const it=f.items&&f.items.length?'<details data-tg="'+esc(dk)+'"'+(dop?' open':'')+'><summary>Details</summary><ul>'+f.items.slice(0,14).map((x,i)=>'<li>'+esc(x)+acts(refs[i],x)+'</li>').join('')+(f.items.length>14?'<li>…and '+(f.items.length-14)+' more</li>':'')+'</ul></details>':'';
   const ids=refs.map(r=>r&&r.id).filter(Boolean),see=/uncategorized transaction/.test(f.title)?'<button class="btn small" data-act="gouncat">See transactions ›</button>':ids.length>1?'<button class="btn small" data-act="audgo" data-ids="'+esc(ids.join(','))+'" data-label="'+esc(f.title.slice(0,60))+'">See these '+ids.length+' ›</button>':'';
   const fin=(see||f.tag&&f.lvl!=='ok')?'<div class="fa">'+see+(f.tag&&f.lvl!=='ok'?'<button class="btn ghost small" data-act="audok" data-k="'+esc('f:'+f.tag+':'+f.title)+'" data-l="'+esc(f.title.slice(0,140))+'">Mark as reviewed</button>':'')+'</div>':'';
   return '<div class="fnd '+f.lvl+'"><span class="ic">'+ic+'</span><div><div>'+esc(f.title)+'</div>'+it+fin+'</div></div>';
