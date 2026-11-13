@@ -1260,7 +1260,10 @@ function auditCore(S0,today){
     const chk=files.filter(f=>f.reconcile),bad=chk.filter(f=>!f.reconcile.ok),none=files.filter(f=>!f.reconcile);
     if(bad.length) add('bad',bad.length+' statement'+(bad.length>1?'s don\'t':' doesn\'t')+' match the totals printed on '+(bad.length>1?'them':'it'),bad.map(f=>A(f.acct)+' '+per(f)+': statement says '+usd(f.reconcile.expected)+', read '+usd(f.reconcile.got)),null,'stmt');
     if(chk.length>bad.length) add('ok',(chk.length-bad.length)+' of '+files.length+' saved files match the totals printed on them');
-    if(none.length) add('info',none.length+' file'+(none.length>1?'s have':' has')+' no printed totals to check against (CSV/OFX or an unrecognized layout)',none.map(f=>A(f.acct)+' · '+f.name),null,'noprint');
+    // a statement with no transactions (e.g. an investment account that only changed in value) has nothing to add up
+    const hasRows=new Set(S.txns.map(t=>t.src).filter(Boolean)),quiet=none.filter(f=>f.kind==='pdf'&&!hasRows.has(f.id)),none2=none.filter(f=>!quiet.includes(f));
+    if(quiet.length) add('ok',quiet.length+' statement'+(quiet.length>1?'s have':' has')+' no transactions, so there is nothing to add up',quiet.map(f=>A(f.acct)+' · '+f.name));
+    if(none2.length) add('info',none2.length+' file'+(none2.length>1?'s have':' has')+' no printed totals to check against (CSV/OFX or an unrecognized layout)',none2.map(f=>A(f.acct)+' · '+f.name),null,'noprint');
   }
   // 2. missing months, overlaps, balance hand-off between consecutive statements
   const gaps=[],ovl=[],jumps=[];let hand=0;
@@ -1298,7 +1301,8 @@ function auditCore(S0,today){
   if(files.length){
     const dated=files.filter(f=>f.start&&f.end),inStmt=t=>dated.some(f=>f.acct===t.acct&&f.start<=t.date&&t.date<=f.end);
     // synced vault-side copies of a move ("From/To Joint savings ...") never appear as their own row on a statement, so they are left out too
-    const mirror=t=>t.sf&&/^(from|to) joint savings\b/i.test(t.desc||'');
+    // so are a brokerage's automatic cash sweeps and reinvestments (the statement lists them as core fund activity, not as transactions)
+    const mirror=t=>t.sf&&(/^(from|to) joint savings\b/i.test(t.desc||'')||/^(reinvestment|purchase into core account|redemption from core account)\b/i.test(t.desc||''));
     const rel=S.txns.filter(t=>(!t.sf||inStmt(t))&&!mirror(t)),n=rel.filter(t=>!t.src).length,skipped=S.txns.length-rel.length;
     const note=skipped?[skipped+' bank-synced transaction'+(skipped>1?'s fall':' falls')+' outside your saved statements, so there is nothing to link '+(skipped>1?'them':'it')+' to.']:[];
     if(n) add('warn',n+' transaction'+(n>1?'s have':' has')+' no saved original',['That is '+n+' of '+rel.length+'. Re-add the matching statements in Settings → Import to link them.'].concat(note),null,'noorig');
@@ -1308,16 +1312,25 @@ function auditCore(S0,today){
   // Moves inside one account (SoFi vaults/pockets) have no second account to match.
   // Rows on a loan are pieces of one bigger payment (principal only), so no single row elsewhere matches them either.
   const loanIds=new Set(S.accounts.filter(a=>a.type==='loan').map(a=>a.id));
-  const internal=t=>loanIds.has(t.acct)||/\bvault\b/i.test(t.desc)||/\b(to|from)\b.+\bsavings balance\b/i.test(t.desc)||/\b(to|from)\b.+\bpocket\b/i.test(t.desc);
+  const ownL4=new Map(S.accounts.map(a=>[a.id,(a.ref||'').split(':')[1]||((a.name||'').match(/••(\d{4})/)||[])[1]||'']));
+  const internal=t=>loanIds.has(t.acct)||(ownL4.get(t.acct)&&/^(from|to) joint savings\b/i.test(t.desc||'')&&new RegExp('\\b'+ownL4.get(t.acct)+'\\b').test(t.desc))||/\bvault\b/i.test(t.desc)||/\b(to|from)\b.+\bsavings balance\b/i.test(t.desc)||/\b(to|from)\b.+\bpocket\b/i.test(t.desc);
   const pool=S.txns.filter(t=>!internal(t)),tr=pool.filter(t=>t.cat==='Transfer').sort((x,y)=>x.date.localeCompare(y.date));
   // pair each transfer with the closest opposite entry in another account (any category), one-to-one, closest date first
   const cand=[];
   const byAD=new Map();for(const u of pool){const k=Math.round(u.amount*100)+'|'+dayNum(u.date);let b=byAD.get(k);if(!b){b=[];byAD.set(k,b);}b.push(u);}
   const near=t=>{const a=-Math.round(t.amount*100),d0=dayNum(t.date),o=[];for(let d=d0-4;d<=d0+4;d++){const b=byAD.get(a+'|'+d);if(b) for(const u of b) o.push(u);}return o;};
+  // payments to/from other people (Zelle, Venmo...) never pair with a row in another of your accounts unless that row names them too;
+  // a purchase that only happens to have the same amount is not the other half of a transfer
+  const p2p=t=>/\b(zelle|venmo|cash app|paypal)\b/i.test(t.desc||'');
+  const xferish=t=>t.cat==='Transfer'||t.cat==='Investing'||isInc(t.cat)||/\b(transfer|xfer|payment|pmt|autopay|epay|deposit|withdrawal|ach|thank you|online|moneyline|loan)\b/i.test(t.desc||'');
+  const l4a=id=>{const a=S.accounts.find(x=>x.id===id);return a?((a.ref||'').split(':')[1]||((a.name||'').match(/••(\d{4})/)||[])[1]||''):'';};
+  const names=(t,id)=>{const l=l4a(id);return !!l&&new RegExp('(\\.{2,3}|ending(\\s+in)?|x{2,}|\\*{2,}|••|#)\\s*'+l+'\\b','i').test(t.desc||'');};
   for(const t of tr) for(const u of near(t)){
     if(u===t||u.acct===t.acct||Math.abs(u.amount+t.amount)>=0.005) continue;
+    if(!xferish(u)||p2p(t)||p2p(u)) continue;
     const dd=Math.abs(dayNum(u.date)-dayNum(t.date));
-    if(dd<=4) cand.push([dd+(u.cat==='Transfer'?0:.5),t,u]);
+    // a row that names the other account by its last 4 digits is the best match
+    if(dd<=4) cand.push([dd+(u.cat==='Transfer'?0:.5)-(names(t,u.acct)||names(u,t.acct)?.8:0),t,u]);
   }
   cand.sort((x,y)=>x[0]-y[0]);
   const used=new Set(),odd=[];
@@ -1347,7 +1360,9 @@ function auditCore(S0,today){
   // 6. housekeeping
   const un=S.txns.filter(t=>t.cat==='Uncategorized').length;
   if(un) add('warn',un+' uncategorized transaction'+(un>1?'s':''));
-  const rk=t=>'rep:'+t.acct+':'+(t.key||t.id),rep=S.txns.filter(t=>/\|([2-9]|\d\d+)$/.test(t.key||'')&&!dk(rk(t)));
+  // a row printed twice on a statement whose totals check out is two real charges, not a copy
+  const fOk=new Map((S.files||[]).map(f=>[f.id,!!(f.reconcile&&f.reconcile.ok)]));
+  const rk=t=>'rep:'+t.acct+':'+(t.key||t.id),rep=S.txns.filter(t=>/\|([2-9]|\d\d+)$/.test(t.key||'')&&!(t.src&&fOk.get(t.src))&&!dk(rk(t)));
   if(rep.length) add('info',rep.length+' repeat row'+(rep.length>1?'s':'')+' — identical date, amount and description in the same account',rep.slice(0,12).map(t=>t.date+' · '+A(t.acct)+' · '+usd(t.amount)+' · '+t.desc),rep.slice(0,12).map(t=>({k:rk(t),id:t.id,sf:!!t.sf})));
   const badDate=S.txns.filter(t=>isNaN(dayNum(t.date))),fut=today?S.txns.filter(t=>t.date>today&&!dk('fut:'+t.id)):[],incNeg=S.txns.filter(t=>isInc(t.cat)&&t.amount<0&&!dk('incneg:'+t.id));
   if(badDate.length) add('bad',badDate.length+' transactions have an unreadable date');
@@ -3250,7 +3265,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" aria-label="Disconnect bank sync" title="Disconnect">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.53.1';
+const APP_VERSION='1.53.2';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -3946,8 +3961,10 @@ function sfPending(j){
 function fuzzyPair(acct,rows,dupKeys,wantSf,only){
   const keys=new Set(dupKeys||[]),pool=S.txns.filter(t=>t.acct===acct&&!!t.sf===!!wantSf&&(!only||only(t))),used=new Set(pool.filter(t=>keys.has(t.key)).map(t=>t.id)),fresh=[],matched=[];let dup=0;
   for(const r of rows){
-    const rd=dayNum(r.date);let best=null,bd=9;
-    for(const t of pool){if(used.has(t.id)||Math.abs(t.amount-r.amount)>=0.005) continue;const dd=Math.abs(dayNum(t.date)-rd);if(dd<=3&&dd<bd){best=t;bd=dd;}}
+    // same amount within 3 days; when several rows qualify, the one whose description shares a word wins
+    const rd=dayNum(r.date),rw=new Set(normMatch(r.desc||'').split(' ').filter(w=>w.length>=4));let best=null,bd=9;
+    for(const t of pool){if(used.has(t.id)||Math.abs(t.amount-r.amount)>=0.005) continue;const dd=Math.abs(dayNum(t.date)-rd);if(dd>3) continue;
+      const sc=dd+(normMatch(t.desc||'').split(' ').some(w=>rw.has(w))?0:0.5);if(sc<bd){best=t;bd=sc;}}
     if(best){used.add(best.id);dup++;matched.push(best);}else fresh.push(r);
   }
   return {fresh,dup,matched};
