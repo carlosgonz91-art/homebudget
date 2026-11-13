@@ -3597,8 +3597,9 @@ function openTx(id){
   const el=$('#dlg'),custom=!['Uncategorized','Income','Interest','Transfer','Investing'].includes(t.cat)&&groupOf(t.cat)==='Other';
   el.innerHTML='<div class="dlgbox sheet" role="dialog" aria-modal="true"><h3>'+esc(t.desc)+'</h3><p class="sub">'+niceDay(t.date)+' · '+esc(acctName(t.acct))+' · '+fmt(t.amount)+'</p>'
    +(t.payee||t.memo||t.td?'<p class="sub txx">'+[t.td?'Bought '+niceDay(t.td)+' · posted '+niceDay(t.date):'',t.payee?'Payee: '+esc(t.payee):'',t.memo?'Memo: '+esc(t.memo):''].filter(Boolean).join('<br>')+'</p>':'')
-   +'<label>Note<input id="txNick" type="text" value="'+esc(t.nick||'')+'" placeholder="e.g. Split with Hannah, she paid me back" maxlength="140" autocomplete="off"><small class="sub" style="display:block;margin-top:4px;font-weight:500">Shows next to this transaction in Activity. The bank\'s name for it stays the same.</small></label>'
-   +'<label>Category<select id="txCat" data-chg="txcat">'+catOpts(t.cat)+'</select></label>'
+   +'<label>Note<input id="txNick" type="text" value="'+esc(t.nick||'')+'" placeholder="e.g. Split with a friend, they paid me back" maxlength="140" autocomplete="off"><small class="sub" style="display:block;margin-top:4px;font-weight:500">Shows next to this transaction in Activity. The bank\'s name for it stays the same.</small></label>'
+   +'<label>Category<select id="txCat" data-chg="txcat">'+catOpts(t.cat)+'<option value="__new__">+ New category…</option></select></label>'
+   +'<div id="txNewBox" hidden><label>New category name<input type="text" id="txNewCat" placeholder="e.g. Taxes" maxlength="40" autocomplete="off"></label></div>'
    +'<label>Subcategory (optional)<input id="txSub" type="text" list="subList" value="'+esc(t.sub||'')+'" placeholder="e.g. Air travel" autocomplete="off"></label><datalist id="subList">'+subOpts(t.cat)+'</datalist>'
    +'<div id="txGrpBox"'+(custom?'':' hidden')+'><label>Group for this category<select id="txGrp">'+GROUP_NAMES().map(g=>'<option'+(g===groupOf(t.cat)?' selected':'')+'>'+esc(g)+'</option>').join('')+'</select></label></div>'
    +(t.amount>0?'<label>Income source (optional)<input id="txInc" type="text" value="'+esc(t.inc||'')+'" placeholder="'+esc(incomeSource(Object.assign({},t,{inc:''})))+'" autocomplete="off"></label>':'')
@@ -3711,7 +3712,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.61.4';
+const APP_VERSION='1.61.5';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -4800,7 +4801,10 @@ const ACT={
   txedit(el){openTx(el.dataset.id);},
   txsave(el){
     const t=S.txns.find(x=>x.id===el.dataset.id);if(!t) return;
-    const cat=$('#txCat').value,sub=$('#txSub').value.trim(),incEl=$('#txInc'),inc=incEl?incEl.value.trim():'',mk=merchantKey(t.desc);
+    let cat=$('#txCat').value;
+    if(cat==='__new__'){const n=(($('#txNewCat')||{}).value||'').trim().replace(/\s+/g,' ');if(!n){toast('Type a name for the new category');const i=$('#txNewCat');if(i) i.focus();return;}
+      const ex=['Uncategorized'].concat(allCats()).find(c=>c.toLowerCase()===n.toLowerCase());cat=ex||n;if(!ex){S.customCats=S.customCats||[];S.customCats.push(n);}}
+    const sub=$('#txSub').value.trim(),incEl=$('#txInc'),inc=incEl?incEl.value.trim():'',mk=merchantKey(t.desc);
     const chg=cat!==t.cat||sub!==(t.sub||'')||(t.amount>0&&incEl&&inc!==(t.inc||'')),all=$('#txAll')&&$('#txAll').checked&&chg; // a nickname-only edit must not touch other rows
     const targets=[t];
     if(all&&mk.length>=3) S.txns.forEach(x=>{if(x.id!==t.id&&merchantKey(x.desc)===mk&&(x.amount>0)===(t.amount>0)) targets.push(x);});
@@ -4885,7 +4889,9 @@ const CHG={
   fday(el){const v=/^\d{4}-\d\d-\d\d$/.test(el.value)?el.value:'';UI.filters.day=v;if(v)UI.filters.month='';UI.limit=200;mpSync(el.closest('.mpick'));},
   possort(el){FOLD.set('hb-possort',el.value);if(!invOpen().length){const f=document.querySelector('#app .ivh[data-act=invtoggle]');if(f&&f.dataset.id) FOLD.set('hb-invopen3',JSON.stringify([f.dataset.id]));}UI._sortFx=true;render();const h=document.getElementById('posSortHint');if(h){h.classList.remove('fx');void h.offsetWidth;h.classList.add('fx');}toast('Sorted by '+el.options[el.selectedIndex].text.toLowerCase());},
   txcat(el){
-    const c=el.value,dl=$('#subList');if(dl) dl.innerHTML=subOpts(c);
+    const c=el.value,dl=$('#subList'),nb=$('#txNewBox');
+    if(nb){nb.hidden=c!=='__new__';if(c==='__new__'){const box=$('#txGrpBox');if(box) box.hidden=false;const g=$('#txGrp');if(g) g.value='Other';const i=$('#txNewCat');if(i) setTimeout(()=>i.focus(),0);return;}}
+    if(dl) dl.innerHTML=subOpts(c);
     const box=$('#txGrpBox');if(box){const custom=!['Uncategorized','Income','Interest','Transfer','Investing'].includes(c)&&groupOf(c)==='Other';box.hidden=!custom;const g=$('#txGrp');if(g) g.value=groupOf(c);}
   },
   impAcct(el){if(el.value==='__new__'){newAcctDialog(UI.import&&UI.import.fileName,a=>{if(UI.import){UI.import.acct=a.id;UI.import.why='';recomputeImport();}render();},()=>render());return;}UI.impAcct=el.value;if(UI.import){UI.import.acct=el.value;UI.import.why='';recomputeImport();render();}},
