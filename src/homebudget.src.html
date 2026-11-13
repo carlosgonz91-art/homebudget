@@ -94,7 +94,7 @@ h1{font-size:28px;font-weight:800;letter-spacing:-.03em;margin:2px 0 12px}h2{fon
 .bkw>.row{flex-wrap:nowrap}.bkt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.bkt h2{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.bkt .bkh{display:flex;align-items:center;gap:6px}.bkw .bkh{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rcr.go{cursor:pointer;border-radius:12px;transition:background .12s}.rcr.go:hover{background:var(--soft)}.rcmore{margin-top:8px;width:100%}
 .tkre.spin svg{animation:tkspin .8s linear infinite}@keyframes tkspin{to{transform:rotate(360deg)}}.tkre.done{color:var(--good);border-color:color-mix(in srgb,var(--good) 45%,var(--line))}.tkre.done svg{animation:tkpop .5s ease}@keyframes tkpop{40%{transform:scale(1.25)}}@media (prefers-reduced-motion:reduce){.tkre.spin svg,.tkre.done svg{animation:none}}
-.sfbtns{display:flex;gap:6px;flex-wrap:nowrap;align-items:center}.sfbtns>*{flex:none}.okg{color:var(--good);font-weight:600}.sfbtns .sfdc{color:var(--bad)!important;margin-left:auto}
+.sfbtns{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.sfbtns>*{flex:none}.okg{color:var(--good);font-weight:600}.sfbtns .sfdc{color:var(--bad)!important}
 .dgroup{margin-top:14px;border:1px solid var(--line);border-radius:14px;overflow:hidden}
 .drow{border-top:1px solid var(--line)}.drow:first-child{border-top:0}
 .drow>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:12px 14px;font-weight:700}.drow>summary::-webkit-details-marker{display:none}
@@ -155,6 +155,7 @@ h1{font-size:28px;font-weight:800;letter-spacing:-.03em;margin:2px 0 12px}h2{fon
 .tdo{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}.tdo>b{margin-right:4px}.tdi{display:inline-flex;align-items:center;gap:2px;background:rgba(0,0,0,.05);border-radius:99px;padding:2px 4px 2px 10px}
 .tdb{background:none;border:0;font:inherit;font-weight:650;color:inherit;cursor:pointer;padding:4px 2px}.tdb:hover{text-decoration:underline}
 .bgrp{margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}.bgrp.first{margin-top:0;padding-top:0;border-top:0}
+.rtg{display:flex;align-items:center;gap:8px;margin:12px 0 0;padding:6px 0;background:none;border:0;font:inherit;font-weight:700;color:var(--brand);cursor:pointer}.rtgc{display:inline-block;font-size:12px;transition:transform .15s}.rtg[aria-expanded="true"] .rtgc{transform:rotate(90deg)}
 .flowbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:-2px 0 10px}.flowbar .btn{padding:5px 10px}
 .setsub{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}.setsub>h2,.setsub>.ivh h2{font-size:16px}
 .aud2{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}.aud2>summary{font-weight:700;cursor:pointer}.aud2 details{margin:6px 0 0 12px}
@@ -3477,9 +3478,9 @@ function sfCardHTML(){
   const hd='<section class="card" id="s-sync"><h2>Banks &amp; accounts</h2>';
   if(!sfOnline()) return hd+'<p class="mute" style="margin:0">Automatic sync with SimpleFIN works in the desktop copy of HomeBudget, a file saved on your computer. This online viewer blocks network access, so use import here.</p></section>';
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
-  return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" aria-label="Disconnect bank sync" title="Disconnect">Disconnect</button></div></section>';
+  return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.57.3';
+const APP_VERSION='1.57.4';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -3586,8 +3587,10 @@ function rulesCardHTML(){
   const un=S.txns.filter(t=>t.cat==='Uncategorized').length,n=S.rules.length,open=!!UI.rulesOpen,pages=Math.max(1,Math.ceil(n/RULE_PG)),pg=Math.min(Math.max(0,UI.rulePg||0),pages-1);
   const list=n?S.rules.slice(pg*RULE_PG,pg*RULE_PG+RULE_PG).map((r,k)=>{const i=pg*RULE_PG+k;return '<div class="rl"><span class="rlm" title="'+esc(r.match)+'">“'+esc(r.match)+'”</span><span class="rlc">→ '+esc(r.cat)+(r.sub?' › '+esc(r.sub):'')+(r.inc?' · '+esc(r.inc):'')+'</span><button class="btn danger small" data-act="delrule" data-i="'+i+'">Remove</button></div>';}).join(''):'<p class="mute">No custom rules yet.</p>';
   const nav=pages>1?'<div class="rpg"><button class="btn ghost small" data-act="rulepg" data-d="-1"'+(pg?'':' disabled')+'>‹ Prev</button><span class="sub">Page '+(pg+1)+' of '+pages+'</span><button class="btn ghost small" data-act="rulepg" data-d="1"'+(pg<pages-1?'':' disabled')+'>Next ›</button></div>':'';
-  return '<section class="card" id="s-rules"><button type="button" class="ivh" data-act="rulestoggle" aria-expanded="'+open+'"><h2>Categories &amp; rules</h2><span class="sub">'+n+' rule'+(n===1?'':'s')+'</span><span class="spacer"></span><span class="chv2" aria-hidden="true">›</span></button>'
+  return '<section class="card" id="s-rules"><h2 style="margin:0 0 4px">Categories &amp; rules</h2>'
    +'<p class="mute" style="margin:8px 0 0">A rule is made when you recategorize a transaction for all similar ones. Rules run first on every import and apply to your existing transactions too.</p>'
+   // the rule list folds open below, like the other expandable lists
+   +'<button type="button" class="rtg" data-act="rulestoggle" aria-expanded="'+open+'"><span class="rtgc" aria-hidden="true">▸</span>Your rules <span class="sub">· '+n+'</span></button>'
    +(open?'<div class="rls">'+list+'</div>'+nav:'')
    +'<div class="row" style="margin-top:12px">'+(un?'<button class="btn" data-act="gouncat">Review '+un+' uncategorized</button>':'')+'<button class="btn ghost" data-act="reapply">Apply rules to everything</button></div></section>';
 }
