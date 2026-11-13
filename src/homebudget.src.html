@@ -432,7 +432,7 @@ td.ds{max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .lnw{cursor:pointer}.lnw:hover{background:color-mix(in srgb,var(--soft) 40%,var(--card))}.lnw:focus-visible{outline:2px solid var(--brand);outline-offset:-2px}.lnwt{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums}.lnwr{margin:10px 0 0}.lnwn{display:flex;justify-content:space-between;gap:10px;font-size:14px;font-weight:650;margin-bottom:5px}.lnwn span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lnwn em{font-style:normal;color:#059669;font-weight:700;font-size:12.5px;white-space:nowrap}.lnwp{font-size:12px;color:var(--mute);margin-top:4px}.ivsw{margin:0 0 14px}
 .tx.pa,.mr.pa{animation:posin .34s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i)*30ms)}
 @media (prefers-reduced-motion:reduce){.tx.pa,.mr.pa{animation:none}}
-.lnbk{margin:0 0 14px;padding:12px 13px;border-radius:14px;background:var(--soft);border:1px solid var(--line)}.lnbkh{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:9px}.lnbkh span{font-size:12.5px;color:var(--mute);font-weight:650}.lnbkh b{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums}.lnbar{display:flex;gap:2px;height:10px;border-radius:99px;overflow:hidden;margin-bottom:8px}.lnbar i{display:block;min-width:3px}.lnbkr{display:grid;grid-template-columns:minmax(0,1fr) auto 38px;gap:8px;align-items:baseline;padding:5px 0;font-size:14px;border-top:1px solid var(--line)}.lnbkr:first-of-type{border-top:0}.lnbkr span{min-width:0}.lnbkr span em{font-style:normal;color:var(--mute);font-size:12px;margin-left:4px}.lnbkr b{font-variant-numeric:tabular-nums}.lnbkr>em{font-style:normal;color:var(--mute);font-size:12px;text-align:right}
+.lnbk{margin:0 0 14px;padding:12px 13px;border-radius:14px;background:var(--soft);border:1px solid var(--line)}.lnbkh{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:9px}.lnbkh span{font-size:12.5px;color:var(--mute);font-weight:650}.lnbkh b{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums}.lnbar{display:flex;gap:2px;height:10px;border-radius:99px;overflow:hidden;margin-bottom:8px}.lnbar i{display:block;min-width:3px}.lnbkr{display:grid;grid-template-columns:minmax(0,1fr) auto 38px;gap:8px;align-items:baseline;padding:5px 0;font-size:14px;border-top:1px solid var(--line)}.lnbkr:first-of-type{border-top:0}.lnbkr span{min-width:0}.lnbkr span em{font-style:normal;color:var(--mute);font-size:12px;margin-left:4px}.lnbkr b{font-variant-numeric:tabular-nums}.lnbkr>em{font-style:normal;color:var(--mute);font-size:12px;text-align:right}.lnbkt{border-top:1.5px solid var(--fg)!important;margin-top:2px;font-weight:750}.lnbkt b{font-size:15px}
 .rls{margin-top:6px}.rl{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}.rl:first-child{border-top:0}.rlm{flex:1 1 0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:650}.rlc{flex:none;max-width:48%;color:var(--mute);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.rl .btn{flex:none;min-width:5.6em;text-align:center}
 .fnd .fa{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 4px}.fnd li{margin-bottom:10px}
 .rpg{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px}.rpg .btn[disabled]{opacity:.4}
@@ -1655,14 +1655,19 @@ const vaultTotal=a=>{if(!a.vaults)return 0;const m=S.txns.filter(t=>t.acct===a.i
 // Balances printed on saved statements for one account, as [date,value] at each statement's first and last day.
 // Investment reports give the account value; bank and card statements give the balance (cards and loans are negative).
 function stmtPoints(acctId){
-  const P=[];
-  (S.files||[]).forEach(f=>{if(f.acct!==acctId||!f.start||!f.end) return;const b=f.vb!=null?f.vb:f.beginBal,e=f.ve!=null?f.ve:f.endBal;
+  const P=[],ids=Array.isArray(acctId)?acctId:[acctId];
+  (S.files||[]).forEach(f=>{if(!ids.includes(f.acct)||!f.start||!f.end) return;const b=f.vb!=null?f.vb:f.beginBal,e=f.ve!=null?f.ve:f.endBal;
     if(b!=null&&isFinite(b)) P.push([f.start,+b]);if(e!=null&&isFinite(e)) P.push([f.end,+e]);});
   P.sort((x,y)=>x[0]<y[0]?-1:x[0]>y[0]?1:0);
   return P.filter((x,i)=>i===P.length-1||P[i+1][0]!==x[0]); // one value per day: the later statement wins
 }
 // Balance over time for a set of bank-synced accounts. Bank sync only started recently, so before an account's first
 // sync its line comes from the balances printed on the statements you imported. An account with neither stays flat.
+// the app accounts whose statements describe this bank account: its own, plus a statement-only account with the same last 4 digits
+function stmtTwins(a,sfId){
+  const raw=(S.sfRaw||[]).find(r=>r.id===sfId)||{},l4=(a&&acctL4(a))||((String(raw.name||'').match(/(\d{4})\D*$/)||[])[1])||'';
+  const out=a?[a.id]:[];if(l4) S.accounts.forEach(x=>{if(x!==a&&!x.sf&&acctL4(x)===l4) out.push(x.id);});return out;
+}
 function balSeries(ids){
   const H=S.balHist||{},done=new Set(),units=[],ds=new Set(),ok=x=>isFinite(dayNum(x[0]))&&isFinite(x[1]);
   const isMain=id=>S.accounts.some(x=>x.sf===id);
@@ -1671,7 +1676,7 @@ function balSeries(ids){
     // a savings account with vaults: the statement balance covers the vaults too, so it only stands in for the whole group
     if(a){const G=sfGroup(a);if(G&&G.g.length>1){const all=G.g.map(r=>r.id);mem=[...new Set([id,...all.filter(m=>ids.includes(m))])];whole=all.every(m=>mem.includes(m));}}
     mem.forEach(m=>done.add(m));
-    const sync=mem.filter(m=>(H[m]||[]).length),st=a&&whole?stmtPoints(a.id).filter(ok):[];
+    const sync=mem.filter(m=>(H[m]||[]).length),st=whole?stmtPoints(stmtTwins(a,id)).filter(ok):[];
     if(!sync.length&&!st.length) return;
     const first=sync.length?sync.map(m=>H[m][0][0]).sort()[0]:null;
     sync.forEach(m=>H[m].forEach(x=>{if(ok(x)) ds.add(x[0]);}));
@@ -2383,9 +2388,9 @@ function bubbleHTML(){
 }
 // ---- loans: owed, payment, payoff, graph ----
 const _liC=new Map();let _liV=-1;
-function loanInfo(a){const dv=DATA_V+'|'+S.txns.length+'|'+S.accounts.length+'|'+todayISO();if(_liV!==dv){_liC.clear();_liV=dv;}const ck=a.id+'|'+JSON.stringify([a.rate,a.pay,a.extra,a.escrow,S.balSf&&a.sf&&S.balSf[a.sf]]);if(_liC.has(ck)) return _liC.get(ck);const r=loanInfo0(a);_liC.set(ck,r);return r;}
+function loanInfo(a){const dv=DATA_V+'|'+S.txns.length+'|'+S.accounts.length+'|'+(S.files||[]).length+'|'+todayISO();if(_liV!==dv){_liC.clear();_liV=dv;}const ck=a.id+'|'+JSON.stringify([a.rate,a.pay,a.extra,a.escrow,loanBal(a)]);if(_liC.has(ck)) return _liC.get(ck);const r=loanInfo0(a);_liC.set(ck,r);return r;}
 function loanInfo0(a){
-  const b=a.sf&&S.balSf&&S.balSf[a.sf];if(!b) return null;
+  const b=loanBal(a);if(!b) return null;
   const owed=Math.abs(b.v),ts=S.txns.filter(t=>t.acct===a.id).sort((x,y)=>y.date<x.date?-1:y.date>x.date?1:0);
   // many servicers send no transactions at all: the payment shows up in the checking account instead ("LOAN PMT ...9574")
   const l4=(String(a.name).match(/••(\d{4})/)||[])[1]||String(a.ref||'').split(':')[1]||'';
@@ -2404,7 +2409,7 @@ function loanInfo0(a){
   const last=pays[0]?pays[0].date:null;
   const om=String(a.name||'').match(/orig(?:inal|\.)?\s*\$?\s*([\d,]+(?:\.\d+)?)/i),orig=a.orig>0?a.orig:(om?parseFloat(om[1].replace(/,/g,'')):null);
   const raw=(S.sfRaw||[]).find(x=>x.id===a.sf)||{},org=raw.org||{};
-  return {hr:a.rate!=null,lastAmt:pays[0]?pays[0].amount:null,orig:orig>0?orig:null,a,owed,extra,escrow,pi:a.pay>0?a.pay:null,pay,paySrc,rate,months,interest,A,hist,proj:A?projOf(A.path):[],last,mInt:owed*rate/1200,org:org.name||org.domain||'',url:/^https:\/\//.test(org.url||'')?org.url:'',at:(S.balSf[a.sf]||{}).at};
+  return {hr:a.rate!=null,lastAmt:pays[0]?pays[0].amount:null,orig:orig>0?orig:null,a,owed,extra,escrow,pi:a.pay>0?a.pay:null,pay,paySrc,rate,months,interest,A,hist,proj:A?projOf(A.path):[],last,mInt:owed*rate/1200,org:org.name||org.domain||'',url:/^https:\/\//.test(org.url||'')?org.url:'',at:b.at};
 }
 // pay a loan down month by month: how long, how much interest
 function amort(owed,rate,pay){
@@ -2468,7 +2473,9 @@ function lnSimPaint(id,from){
   box.querySelectorAll('.lnch button').forEach(b=>{const on=+b.dataset.v===x;b.classList.toggle('on',on);b.setAttribute('aria-pressed',String(on));});
   const ni=box.querySelector('[data-inp=lnx]'),sl=box.querySelector('[data-inp=lnxr]');if(from!=='n'&&ni) ni.value=x||'';if(from!=='r'&&sl) sl.value=Math.min(+sl.max,x);
 }
-const loanAccts=()=>S.accounts.filter(a=>a.type==='loan'&&a.sf&&S.balSf&&S.balSf[a.sf]);
+// a loan's balance: the bank link when there is one, else the newest statement
+function loanBal(a){const b=a.sf&&S.balSf&&S.balSf[a.sf];if(b) return b;const P=stmtPoints(a.id),l=P[P.length-1];return l?{v:l[1],at:new Date(l[0]+'T12:00:00').getTime(),stmt:true}:null;}
+const loanAccts=()=>S.accounts.filter(a=>a.type==='loan'&&loanBal(a));
 const loanName=a=>titleCase(String(a.name).replace(/\s*\(\s*orig[^)]*\)/i,'').replace(/\s*••\d{4}$/,'').trim().toLowerCase());
 function loanBlock(a,split){
     const L=loanInfo(a);if(!L) return '';
@@ -2478,13 +2485,14 @@ function loanBlock(a,split){
     const ex=(UI.lnX||{})[a.id]||0,XA=ex&&L.A?amort(L.owed,L.rate,L.pay+ex):null;
     const eta=(left!=null?'<div class="lneta"><div><small>Debt-free</small><b>'+inMonths(left)+'</b></div><div><small>Time left</small><b>'+monthsTxt(left)+'</b></div><div><small>Payments</small><b>'+left+'</b></div></div>':'<div class="lneta mute"><span>'+(L.owed<0.5?'This loan is <b>paid off</b>.':L.pay&&L.hr?'<b>Not paid off</b> at this payment'+(L.rate&&L.pay<=L.mInt+0.01?' (under the '+fmt0(L.mInt)+' monthly interest)':'')+'. Check the rate and payment.':L.pay?'Add your <b>rate</b> to see the payoff date.':'Add your <b>rate</b> and <b>payment</b> to see the payoff date.')+'</span></div>')+(L.pay&&L.hr&&!L.a.pay&&left!=null?'<div class="sub lnx" style="margin:-4px 0 10px">Payment found in your account; it may include escrow. Tap <b>Payment</b> to fix.</div>':'');
     const hero='<div class="lnhero">'+(pct!=null?loanRing(pct):'')+'<div class="lnk"><div class="sub">Still owed</div><div class="lnbig">'+fmt0(L.owed)+'</div>'+(L.orig?'<div class="sub">of '+fmt0(L.orig)+'</div>'+(L.orig>L.owed?'<div class="lnpd">'+fmt0(L.orig-L.owed)+' paid</div>':''):'')+'</div></div>'+eta;
-    const tiles=stiles([{k:'Payment',v:L.pay?fmtT(L.pay):'–',s:L.pay?(L.extra?'incl. '+fmtT(L.extra)+' extra':'per month'):'not found',c:'#6366f1'},{k:'This month',v:L.hr&&L.owed?fmtT(L.mInt):'–',s:L.hr?'in interest':'add rate',c:'#f97316'},{k:'Interest',v:L.interest!=null?fmtT(L.interest):'–',s:L.hr?'left to pay':'add rate',c:'#e11d48'}]);
+    const isM=/mortg|home|house|escrow/i.test(a.name+' '+(a.sub||''))||L.escrow>0,payLbl=isM?'Mortgage payment':'Monthly payment';
+    const tiles=stiles([{k:payLbl,v:L.pay?fmtT(L.pay+(L.escrow||0)):'–',s:L.pay?(L.escrow?'incl. escrow'+(L.extra?' + extra':''):L.extra?'incl. '+fmtT(L.extra)+' extra':'per month'):'not found',c:'#6366f1'},{k:'This month',v:L.hr&&L.owed?fmtT(L.mInt):'–',s:L.hr?'in interest':'add rate',c:'#f97316'},{k:'Interest',v:L.interest!=null?fmtT(L.interest):'–',s:L.hr?'left to pay':'add rate',c:'#e11d48'}]);
     let brk='';
     if(L.pay>0){
       const ex=L.extra||0,pi=L.pay-ex,it=L.hr?Math.min(L.mInt,pi):null,pr=it!=null?Math.max(0,pi-it):null,es=L.escrow||0,tot=L.pay+es;
       const mix=it!=null&&!es&&L.paySrc!=='you'&&/mortg|home|house|trail|heloc|escrow/i.test(a.name+' '+(a.sub||''));
-      const R=(mix?[['Principal &amp; escrow',pr,'#10b981'],['Interest',it,'#f97316']]:it!=null?[['Principal',pr,'#10b981'],...(ex?[['Extra principal',ex,'#34d399']]:[]),['Interest',it,'#f97316']]:[[es?'Principal &amp; interest':'Everything you pay',pi,'#6366f1'],...(ex?[['Extra principal',ex,'#34d399']]:[])]).concat(es?[['Escrow <em>taxes &amp; insurance</em>',es,'#0ea5e9']]:[]);
-      brk='<div class="lnbk"><div class="lnbkh"><span>Monthly payment</span><b>'+fmt0(tot)+'</b></div><div class="lnbar" role="img" aria-label="Payment split">'+R.map(r=>'<i style="flex:'+Math.max(r[1],0.0001)+';background:'+r[2]+'"></i>').join('')+'</div>'+R.map(r=>'<div class="lnbkr"><span><i class="cdot" style="background:'+r[2]+'"></i>'+r[0]+'</span><b>'+fmt0(r[1])+'</b><em>'+Math.round(r[1]/tot*100)+'%</em></div>').join('')+(L.hr&&(es||a.escrow!=null||a.pay>0)?'':'<div class="sub" style="margin-top:6px">'+(mix?'This payment includes escrow, so the principal shown is inflated. Tap <b>Payment</b> to add your principal &amp; interest, escrow, and any extra principal you pay.':'Add your <b>rate</b>'+(es?'':' and <b>payment</b> (with escrow)')+' to split it into principal, interest and escrow.')+'</div>')+'</div>';
+      const R=(mix?[['Principal &amp; escrow',pr,'#10b981'],['Interest',it,'#f97316']]:it!=null?[['Principal',pr,'#10b981'],...(ex?[['Extra principal',ex,'#34d399']]:[]),['Interest',it,'#f97316']]:[[es?'Principal &amp; interest':'Everything you pay',pi,'#6366f1'],...(ex?[['Extra principal',ex,'#34d399']]:[])]).concat(es?[['Escrow',es,'#0ea5e9']]:[]);
+      brk='<div class="lnbk"><div class="lnbkh"><span>'+payLbl+'</span><b>'+fmt0(tot)+'</b></div><div class="lnbar" role="img" aria-label="Payment split">'+R.map(r=>'<i style="flex:'+Math.max(r[1],0.0001)+';background:'+r[2]+'"></i>').join('')+'</div>'+R.map(r=>'<div class="lnbkr"><span><i class="cdot" style="background:'+r[2]+'"></i>'+r[0]+'</span><b>'+fmt0(r[1])+'</b><em>'+Math.round(r[1]/tot*100)+'%</em></div>').join('')+'<div class="lnbkr lnbkt"><span>Total</span><b>'+fmt0(tot)+'</b><em></em></div>'+(L.hr&&(es||a.escrow!=null||a.pay>0)?'':'<div class="sub" style="margin-top:6px">'+(mix?'This payment includes escrow, so the principal shown is inflated. Tap <b>Payment</b> to add your principal &amp; interest, escrow, and any extra principal you pay.':'Add your <b>rate</b>'+(es?'':' and <b>payment</b> (with escrow)')+' to split it into principal, interest and escrow.')+'</div>')+'</div>';
     }
     let wi='';
     if(L.A&&L.owed>=0.5){wi='<div class="lnwi"><div class="lnwh">What if you paid extra each month?</div><div class="lnch">'+LNX.map(v=>'<button type="button" data-act="lnextra" data-id="'+esc(a.id)+'" data-v="'+v+'" class="'+(v===ex?'on':'')+'" aria-pressed="'+(v===ex)+'">'+(v?'+$'+v:'None')+'</button>').join('')+'</div>'+(XA?'<div class="lnres">Debt-free <b>'+monthsTxt(L.months-XA.months)+' sooner</b> ('+inMonths(XA.months)+') · saves <b>'+fmt0(L.interest-XA.interest)+'</b> in interest</div>':'<div class="sub" style="margin-top:6px">Pick an amount to see how much sooner you would finish.</div>')+'</div>';}
@@ -2497,7 +2505,7 @@ function loanBlock(a,split){
       const hero2='<div class="sub" style="margin:12px 0 0">Still owed</div><div class="invtot">'+fmt0(L.owed)+'</div>'+(pct!=null?'<div class="track lnpt" role="img" aria-label="'+Math.round(pct)+'% paid off"><div class="fill" style="width:'+pct.toFixed(1)+'%;background:linear-gradient(90deg,#10b981,#0ea5e9)"></div></div>':'')
         +'<div class="ivst">'+(L.orig&&L.orig>L.owed?st('Paid off',fmt0(L.orig-L.owed)+' ('+Math.round(pct)+'%)','rdyc'):'')+(left!=null?st('Debt-free',inMonths(left))+st('Time left',monthsTxt(left))+st('Payments left',String(left)):'')+'</div>'+(left==null?eta:'');
       return '<section class="card lnb">'+head+hero2+'<div style="height:12px"></div>'+tiles+(L.interest!=null?'<p class="sub" style="margin:-2px 0 0">About <b>'+fmt0(L.interest)+'</b> more interest until it\'s paid off.</p>':'')+'</section>'
-       +(brk?'<section class="card"><h2>Monthly payment</h2>'+brk.replace('<div class="lnbkh"><span>Monthly payment</span>','<div class="lnbkh"><span>Total each month</span>')+'</section>':'')
+       +(brk?'<section class="card"><h2>'+payLbl+'</h2>'+brk.replace('<div class="lnbkh"><span>'+payLbl+'</span>','<div class="lnbkh"><span>Total each month</span>')+'</section>':'')
        +loanHistCard(a)+lnSimCard(a,facts);
     }
     return '<div class="lnb">'+head+hero+brk+tiles+(L.interest!=null?'<p class="sub" style="margin:-2px 0 12px">About <b>'+fmt0(L.interest)+'</b> more interest until it\'s paid off.</p>':'')+wi+(chart?'<div style="margin-top:10px">'+chart+'</div>':'')+(facts.length?'<div class="sub lnx">'+facts.join(' · ')+'</div>':'')+'</div>';
@@ -2997,7 +3005,7 @@ function pdfPreviewHTML(){
   const ok=P.items.filter(i=>i.res&&i.choice),tot=ok.reduce((a,i)=>a+i.fresh.length,0),dup=ok.reduce((a,i)=>a+i.dup,0);
   const isBad=i=>i.res&&((i.res.reconcile&&!i.res.reconcile.ok)||(i.res.warnings||[]).length);
   const bad=P.items.filter(i=>i.res&&i.res.reconcile&&!i.res.reconcile.ok).length,keep=new Set(ok.filter(i=>!i.hasFile&&i.hash).map(i=>i.hash+'|'+(i.choice==='new'?i.res.ref||i.fileName:i.choice))).size,nFiles=new Set(P.items.map(i=>i.fileName)).size;
-  const nNew=P.items.filter(i=>i.res&&i.choice==='new').length,probs=P.items.filter(i=>!i.res||isBad(i)).length;
+  const nNew=new Set(P.items.filter(i=>i.res&&i.choice==='new').map(pdfAcctId)).size,probs=P.items.filter(i=>!i.res||isBad(i)).length;
   let h='<div class="pv"><h3>'+(P.sync?nFiles+' account'+(nFiles>1?'s':'')+' from SimpleFIN':nFiles+' file'+(nFiles>1?'s':'')+' read')+'</h3>'
    +stiles([{k:'New',v:String(tot),s:'transaction'+(tot===1?'':'s'),c:tot?'#10b981':'#94a3b8'},{k:'New accounts',v:String(nNew),s:dup+' already in',c:nNew?'#6366f1':'#94a3b8'},{k:'Check',v:String(probs),s:probs?'need a look':'all clear',c:probs?'#f97316':'#10b981'}])
    +(keep?'<p class="sub" style="margin:-4px 0 8px">'+keep+' original'+(keep>1?'s':'')+' will be kept</p>':'');
@@ -3155,7 +3163,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" aria-label="Disconnect bank sync" title="Disconnect">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.51.0';
+const APP_VERSION='1.51.1';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -3323,6 +3331,17 @@ function viewAudit(){
       +S.files.filter(f=>f.acct===a.id).sort((x,y)=>(x.start||'').localeCompare(y.start||'')).map(f=>'<div class="stp"><span>'+esc(f.start?f.start+' → '+f.end:f.name)+(f.reconcile?(f.reconcile.ok?' <span class="pos">✓</span>':' <span class="neg">✕</span>'):'')+'</span><button class="btn ghost small" data-act="getfile" data-id="'+esc(f.id)+'">Download</button></div>').join('')+'</details>').join('')+'</section>';
   }
   return h;
+}
+// statements saved by older versions have no start/end balance: read the kept PDF again and fill them in, once
+async function backfillStmtBal(){
+  const L=(S.files||[]).filter(f=>f.kind==='pdf'&&!f.bf&&f.vb==null&&f.ve==null&&f.endBal==null);if(!L.length) return;
+  let n=0;
+  for(const f of L){
+    f.bf=1;const b=await blobGet(f.blob||f.id);if(!b) continue;
+    try{const all=parseStatementAll(await readPdfPages(b)),r=all.find(x=>f.ref&&x.ref===f.ref)||(all.length===1?all[0]:null);if(!r) continue;
+      const sg=f.flip?-1:1;if(r.valBegin!=null)f.vb=r.valBegin;if(r.valEnd!=null)f.ve=r.valEnd;if(r.beginBal!=null)f.beginBal=sg*r.beginBal;if(r.endBal!=null)f.endBal=sg*r.endBal;if(!f.start&&r.start)f.start=r.start;if(!f.end&&r.end)f.end=r.end;n++;}catch(e){}
+  }
+  save();if(n){dlog('import','Filled in balances from kept statements',{files:n});render();}
 }
 async function recheckOriginals(){
   const R=UI.recheck={busy:true,progress:'Starting…',findings:[],at:null},fl=S.files.slice(),bad=[],miss=[],drift=[];let okN=0;
@@ -4293,7 +4312,7 @@ document.addEventListener('drop',e=>{e.preventDefault();const fl=[...(e.dataTran
     }
   }catch(e){}
 })();
-(async function(){try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();}catch(e){}await loadState();if(!UI.impAcct&&S.accounts[0])UI.impAcct=S.accounts[0].id;render();})();
+(async function(){try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();}catch(e){}await loadState();if(!UI.impAcct&&S.accounts[0])UI.impAcct=S.accounts[0].id;render();setTimeout(()=>backfillStmtBal().catch(()=>{}),1500);})();
 
 // swipe a banner sideways to dismiss it (touch or mouse); a small x shows on hover for desktop
 (function(){
