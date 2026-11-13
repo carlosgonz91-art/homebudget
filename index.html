@@ -153,6 +153,13 @@ h1{font-size:28px;font-weight:800;letter-spacing:-.03em;margin:2px 0 12px}h2{fon
 .hcw[data-hp]{cursor:crosshair;touch-action:pan-y;outline:none}.hcw[data-hp]:focus-visible{box-shadow:0 0 0 2px var(--brand);border-radius:8px}
 .hcr{margin:2px 0 8px;display:inline-flex}
 [hidden].hxtt,[hidden].hct,[hidden].hxv,[hidden].hxq,[hidden].hxq2,[hidden].hcx,[hidden].hcp{display:none!important}
+.nbtn{position:relative!important;margin-left:auto;color:var(--warn,#d97706)}.nbtn.bad{color:var(--bad)}.nbtn+.tbtn{margin-left:8px}
+.nbdg{position:absolute;top:-3px;right:-3px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:var(--bad);color:#fff;font-size:10.5px;font-weight:800;display:grid;place-items:center;line-height:1}
+.npop{position:fixed;z-index:60;top:calc(env(safe-area-inset-top,0px) + 62px);right:max(12px,env(safe-area-inset-right,0px));width:min(380px,calc(100vw - 24px));background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 18px 40px rgba(0,0,0,.25);padding:8px 8px 10px}
+.nph{display:flex;align-items:center;justify-content:space-between;padding:4px 6px 8px}
+.npi{display:flex;align-items:center;gap:8px;padding:9px 6px;border-top:1px solid var(--line)}
+.npd{width:8px;height:8px;border-radius:50%;flex:none;background:var(--mute)}.npi.bad .npd{background:var(--bad)}.npi.warn .npd{background:var(--warn,#d97706)}.npi.info .npd{background:var(--brand)}
+.npt{flex:1;min-width:0;font-weight:600;font-size:13.5px}.npi .btn{flex:none}
 .tdo{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}.tdo>b{margin-right:4px}.tdi{display:inline-flex;align-items:center;gap:2px;background:rgba(0,0,0,.05);border-radius:99px;padding:2px 4px 2px 10px}
 .tdb{background:none;border:0;font:inherit;font-weight:650;color:inherit;cursor:pointer;padding:4px 2px}.tdb:hover{text-decoration:underline}
 .bgrp{margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}.bgrp.first{margin-top:0;padding-top:0;border-top:0}
@@ -698,7 +705,7 @@ html,body{touch-action:pan-x pan-y}
 <button data-act="tab" data-tab="audit"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M8.5 12l2.5 2.5L16 9.5"/></svg>Audit</button>
 <button data-act="tab" data-tab="settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Settings</button>
 </nav>
-<button class="tbtn" data-act="themetoggle" id="themeBtn" aria-label="Change theme"></button></div></header>
+<button class="tbtn nbtn" data-act="notes" id="noteBtn" aria-label="Messages" aria-haspopup="true" aria-expanded="false" hidden></button><button class="tbtn" data-act="themetoggle" id="themeBtn" aria-label="Change theme"></button></div></header><div id="notePop" class="npop" role="dialog" aria-label="Messages" hidden></div>
 <main id="app"></main>
 <div id="toast" role="status" aria-live="polite"></div>
 <div id="busy" role="status" aria-live="polite" hidden><div class="bcard"><span class="bspin" aria-hidden="true"></span><div class="btxt"><b class="bmsg"></b><span class="bdots" aria-hidden="true"><i></i><i></i><i></i></span><div class="bsub"></div></div></div></div>
@@ -1709,6 +1716,7 @@ function render(){
   if(UI.tab==='import')UI.tab='settings';
   document.querySelectorAll('[data-tab]').forEach(b=>{const on=b.dataset.tab===UI.tab;b.classList.toggle('on',on);if(b.closest('nav')){if(on) b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');}});
   {const nb=document.getElementById('navInv');if(nb)nb.hidden=!(hasInv()||hasLoans()||S.accounts.some(a=>a.type==='brokerage'&&a.sf));}
+  try{notesPaint();}catch(e){}
   const v={dash:viewDash,txns:viewTxns,budgets:viewBudgets,invest:viewInvest,audit:viewAudit,settings:viewSettings}[UI.tab]||viewDash;
   try{$('#app').innerHTML=v();}
   catch(e){
@@ -3163,9 +3171,8 @@ function viewDash(){
    {const cs=cdList().filter(x=>x.days<=14);if(cs.length) h+=bn('cd',cs.map(x=>x.issuer+x.mat).join(',')+'|'+day,cs.length===1?esc(cs[0].issuer)+' CD '+(cs[0].days<0?'has matured':cs[0].days===0?'matures today':'matures in '+cs[0].days+' day'+(cs[0].days===1?'':'s')):cs.length+' CDs mature within 14 days','gocds','View');}
    if(uncat) h+=bn('uncat',String(uncat),uncat+' to categorize','gouncat','Review');
    if(stale) h+=bn('backup',String(wk),'Not backed up recently','backup','Back up');
-   // several reminders share one banner instead of stacking
-   if(TD.length===1) h+=bn1(...TD[0]);
-   else if(TD.length) h+='<div class="banner tdo"><b>To do</b>'+TD.map(([id,sig,txt,act,lbl])=>'<span class="tdi"><button type="button" class="tdb" data-act="'+act+'">'+txt+' <span aria-hidden="true">›</span></button><button type="button" class="bx" data-act="bndis" data-id="'+esc(id)+'" data-sig="'+esc(sig)+'" aria-label="Dismiss: '+esc(String(txt).replace(/<[^>]+>/g,''))+'">×</button></span>').join('')+'</div>';}
+   // reminders now live behind the ! button at the top (see notesList)
+   }
   h+='<div class="mprow">'+monthPicker()+(UI.wedit?'':'<button type="button" class="wed" data-act="wedit" title="Edit widgets" aria-label="Edit widgets: rearrange, add or remove"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></button>')+'</div>';
   h+='<div class="stats chv'+(anim?'':' still')+'">'+heroCardHTML(UI.month,d)+'</div>';
   const cats=Object.entries(d.byCat).filter(e=>Math.abs(e[1])>0.005).sort((a,b)=>b[1]-a[1]);
@@ -3192,6 +3199,35 @@ function viewDash(){
   return h;
 }
 
+// Messages behind the ! button at the top: bank problems, CDs maturing, uncategorized, backup.
+// Same items the Overview used to show as banners; each can be opened or dismissed (it comes back if its situation changes).
+function notesList(){
+  if(!S.accounts.length) return [];
+  const DS=dismissed(),day=Math.floor(Date.now()/864e5),wk=Math.floor(Date.now()/(7*864e5)),out=[];
+  const add=(id,sig,lvl,txt,act,lbl)=>{if(DS[id]!==sig) out.push({id,sig,lvl,txt,act,lbl});};
+  try{const HH=sfHealth(),nn=HH.bad+HH.general.length;
+    if(nn) add('bank',nn+'|'+HH.bad+'|'+day,'bad',HH.bad?(()=>{const nb=new Set(HH.issues.filter(i=>!i.gen).map(i=>i.bank)).size||1;return HH.bad===1?'1 bank account needs attention':nb+' bank'+(nb===1?'':'s')+' ('+HH.bad+' accounts) need attention';})():'Bank connection needs attention','goaccts','Details');}catch(e){}
+  try{const cs=cdList().filter(x=>x.days<=14);if(cs.length) add('cd',cs.map(x=>x.issuer+x.mat).join(',')+'|'+day,'warn',cs.length===1?esc(cs[0].issuer)+' CD '+(cs[0].days<0?'has matured':cs[0].days===0?'matures today':'matures in '+cs[0].days+' day'+(cs[0].days===1?'':'s')):cs.length+' CDs mature within 14 days','gocds','View');}catch(e){}
+  const uncat=S.txns.filter(t=>t.cat==='Uncategorized').length;if(uncat) add('uncat',String(uncat),'info',uncat+' transaction'+(uncat===1?'':'s')+' to categorize','gouncat','Review');
+  if(!S.lastBackup||(Date.now()-S.lastBackup)>30*864e5) add('backup',String(wk),'info','Not backed up in the last 30 days','backup','Back up');
+  return out;
+}
+function notesPaint(){
+  const b=document.getElementById('noteBtn'),pop=document.getElementById('notePop');if(!b) return;
+  const L=notesList(),bad=L.some(x=>x.lvl==='bad');
+  b.hidden=!L.length;b.classList.toggle('bad',bad);
+  b.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5"/><path d="M12 16.5h.01"/></svg>'+(L.length?'<span class="nbdg">'+L.length+'</span>':'');
+  b.setAttribute('aria-label',L.length?L.length+' message'+(L.length===1?'':'s'):'No messages');
+  if(!L.length) UI.notesOpen=false;
+  b.setAttribute('aria-expanded',String(!!UI.notesOpen));
+  if(!pop) return;pop.hidden=!UI.notesOpen;
+  // open right under the ! button
+  if(UI.notesOpen){const r=b.getBoundingClientRect();pop.style.top=Math.round(r.bottom+8)+'px';pop.style.right=Math.max(12,Math.round(window.innerWidth-r.right-8))+'px';}
+  if(UI.notesOpen) pop.innerHTML='<div class="nph"><b>Messages</b><button type="button" class="bx" data-act="notes" aria-label="Close">×</button></div>'
+    +L.map(x=>'<div class="npi '+x.lvl+'"><span class="npd" aria-hidden="true"></span><span class="npt">'+x.txt+'</span><button type="button" class="btn small" data-act="notego" data-a="'+x.act+'">'+x.lbl+'</button><button type="button" class="bx" data-act="bndis" data-id="'+esc(x.id)+'" data-sig="'+esc(x.sig)+'" aria-label="Dismiss">×</button></div>').join('');
+}
+document.addEventListener('click',e=>{if(!UI.notesOpen) return;if(e.target.closest('#notePop,#noteBtn')) return;UI.notesOpen=false;notesPaint();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&UI.notesOpen){UI.notesOpen=false;notesPaint();const b=document.getElementById('noteBtn');if(b) b.focus();}});
 // one card, several views: tabs across the top, the picked view's content below (its own title is dropped)
 function tabbedCard(id,title,tabs,H){
   const got=tabs.map(([k,l])=>{const f=H[k];let h=typeof f==='function'?f():f;return [k,l,h||''];}).filter(x=>x[2]);
@@ -3504,7 +3540,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.57.4';
+const APP_VERSION='1.58.0';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -4451,6 +4487,8 @@ const ACT={
   mergo(el){const k=el.dataset.k,ym=el.dataset.m||'';const ids=S.txns.filter(t=>(merchantKey(t.desc)||'other')===k&&(!ym||t.date.startsWith(ym))).map(t=>t.id);jmp();UI.filters={q:'',acct:'',cat:'',month:'',ids,label:titleCase(k)+(ym?' · '+monthLabel(ym):' · all')};UI.limit=200;UI.tab='txns';render();window.scrollTo(0,0);},
   blall(){UI.blAll=!UI.blAll;render();},
   bltab(el){UI.blTab=el.dataset.m;UI.blAll=false;render();},
+  notes(){UI.notesOpen=!UI.notesOpen;notesPaint();if(UI.notesOpen){const f=document.querySelector('#notePop .btn');if(f) f.focus();}},
+  notego(el){UI.notesOpen=false;notesPaint();const a=el.dataset.a;if(ACT[a]) ACT[a](el);},
   wtab(el){UI.wt=UI.wt||{};UI.wt[el.dataset.id]=el.dataset.k;render();},
   hcrange(el){UI.hcR=UI.hcR||{};UI.hcR[el.dataset.id]=el.dataset.r;render();},
   rcall(){UI.rcAll=!UI.rcAll;render();},
