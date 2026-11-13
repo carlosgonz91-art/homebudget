@@ -916,9 +916,12 @@ function categorize(desc,amount,userRules,rules){
 }
 const _mk=new Map();
 function merchantKey(desc){const ck=String(desc==null?'':desc);if(_mk.has(ck)) return _mk.get(ck);const r=merchantKey0(ck);if(_mk.size>20000) _mk.clear();_mk.set(ck,r);return r;}
+const US_ST=new Set('al ak az ar ca co ct de fl ga hi id il in ia ks ky la me md ma mi mn ms mo mt ne nv nh nj nm ny nc nd oh ok or pa ri sc sd tn tx ut vt va wa wv wi wy dc'.split(' '));
 function merchantKey0(desc){
   const w=normMatch(desc).split(' ').filter(x=>x.length>=2);
   while(w.length>2&&/^(tst|sq|sp|pp|pos|paypal|purchase|recurring|checkcard|debit|ach|web)$/.test(w[0]))w.shift();
+  // "Cinemark 800-2463627 TX" and "Cinemark" are the same merchant: a US state code right after the name is not part of it
+  if(w.length>=2&&w[0].length>=4&&US_ST.has(w[1])) return w[0];
   return w.slice(0,2).join(' ');
 }
 // ---------- PDF statement parsing ----------
@@ -2938,7 +2941,11 @@ function merchMonth(ym){const o={};for(const t of S.txns){if(t.date.slice(0,7)!=
 function billsPastHTML(ym){
   const end=ymEnd(ym),M=merchMonth(ym),B=billScan().filter(b=>b.first<=end);
   if(!B.length) return wCard('Bills','',wEmpty('No bills found for '+ymShort(ym)+'.'));
-  const paid=B.filter(b=>M[b.k]).sort((a,b)=>M[b.k].a-M[a.k].a),miss=B.filter(b=>!M[b.k]&&b.cad==='month'&&b.first<ym+'-01');
+  // a bill that posts around the 1st can land on the last day of the month before (Sep 30 instead of Oct 1): a payment
+  // within 5 days of the month's edges still counts for that month, so it isn't shown as missed
+  const w0=new Date((dayNum(ym+'-01')-5+dayNum('1970-01-01'))*864e5).toISOString().slice(0,10),w1=new Date((dayNum(end)+5+dayNum('1970-01-01'))*864e5).toISOString().slice(0,10);
+  const near=new Set(S.txns.filter(t=>t.date>=w0&&t.date<=w1&&t.amount<0).map(t=>merchantKey(t.desc)));
+  const paid=B.filter(b=>M[b.k]).sort((a,b)=>M[b.k].a-M[a.k].a),miss=B.filter(b=>!M[b.k]&&!near.has(b.k)&&b.cad==='month'&&b.first<ym+'-01');
   const tot=paid.reduce((t,b)=>t+M[b.k].a,0);
   const tiles=stiles([{k:'Paid in '+ymShort(ym).split(' ')[0],v:fmtT(tot),s:paid.length+' bill'+(paid.length===1?'':'s'),c:'#6366f1'},{k:'Not paid',v:String(miss.length),s:miss.length?'monthly bill'+(miss.length===1?'':'s'):'all monthly bills paid',c:miss.length?'var(--warn)':'#10b981'},{k:'Per month',v:fmtT(B.reduce((t,b)=>t+b.monthly,0)),s:'usual',c:'#0ea5e9'}]);
   const row=(b,p)=>'<div class="ip rcr go bl'+(p?' done':'')+'" role="button" tabindex="0" data-act="mergo" data-k="'+esc(b.k)+'">'+avHTML(b.cat)+'<div class="l"><b>'+esc(b.name)+'</b><span>'+esc(b.cat)+'</span></div><div class="r"><b>'+fmt(p?p.a:b.amt)+'</b><span class="rdue'+(p?' paid':' late')+'">'+(p?'✓ Paid '+niceDay(p.d):'No payment')+'</span></div></div>';
@@ -3458,7 +3465,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" aria-label="Disconnect bank sync" title="Disconnect">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.56.1';
+const APP_VERSION='1.56.2';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
