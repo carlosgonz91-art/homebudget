@@ -94,7 +94,7 @@ h1{font-size:28px;font-weight:800;letter-spacing:-.03em;margin:2px 0 12px}h2{fon
 .bkw>.row{flex-wrap:nowrap}.bkt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.bkt h2{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.bkt .bkh{display:flex;align-items:center;gap:6px}.bkw .bkh{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rcr.go{cursor:pointer;border-radius:12px;transition:background .12s}.rcr.go:hover{background:var(--soft)}.rcmore{margin-top:8px;width:100%}
 .tkre.spin svg{animation:tkspin .8s linear infinite}@keyframes tkspin{to{transform:rotate(360deg)}}.tkre.done{color:var(--good);border-color:color-mix(in srgb,var(--good) 45%,var(--line))}.tkre.done svg{animation:tkpop .5s ease}@keyframes tkpop{40%{transform:scale(1.25)}}@media (prefers-reduced-motion:reduce){.tkre.spin svg,.tkre.done svg{animation:none}}
-.sfbtns{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.sfbtns>*{flex:none}.okg{color:var(--good);font-weight:600}.sfbtns .sfdc{color:var(--bad)!important}
+.sfbtns{display:flex;gap:6px;flex-wrap:nowrap;align-items:center}.sfbtns>*{flex:0 1 auto;min-width:0;white-space:nowrap}.sfbtns .btn.small{font-size:12px;padding:5px 9px;gap:4px}.sfbtns .btn.small svg{width:13px;height:13px}.okg{color:var(--good);font-weight:600}.sfbtns .sfdc{color:var(--bad)!important}
 .dgroup{margin-top:14px;border:1px solid var(--line);border-radius:14px;overflow:hidden}
 .drow{border-top:1px solid var(--line)}.drow:first-child{border-top:0}
 .drow>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:12px 14px;font-weight:700}.drow>summary::-webkit-details-marker{display:none}
@@ -3558,7 +3558,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.59.12';
+const APP_VERSION='1.59.13';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
