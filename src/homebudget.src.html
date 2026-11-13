@@ -167,7 +167,7 @@ h1{font-size:28px;font-weight:800;letter-spacing:-.03em;margin:2px 0 12px}h2{fon
 .rtg{display:flex;align-items:center;gap:8px;margin:12px 0 0;padding:6px 0;background:none;border:0;font:inherit;font-weight:700;color:var(--brand);cursor:pointer}.rtgc{display:inline-block;font-size:12px;transition:transform .15s}.rtg[aria-expanded="true"] .rtgc{transform:rotate(90deg)}
 .ivtop{display:flex;align-items:baseline;justify-content:space-between;gap:8px}.ivas{font-size:11px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ipt{display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-width:0}.ipt>*{min-width:0}.ip .l .pcl{display:inline-block!important;width:auto!important;margin:0;padding:0 6px;border:1px solid;border-radius:6px;font-size:10px;font-weight:700;line-height:16px;white-space:nowrap;flex:none}
-.ivsec{margin:6px 0 12px}.ivvw{margin:0 0 8px}.ivmore{margin:8px 0 4px}.ivsecb{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-top:6px}.ivpie{width:120px;height:120px;flex:none}
+.ivsec{margin:6px 0 12px}.ivvw{margin:0 0 8px}.ivmore{margin:8px 0 4px}.ivsecb{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-top:6px}.ivpie{width:120px;height:120px;flex:none}.ivsecb.dn svg.ivpie{width:132px;height:132px;margin:0}.ivsecb.dn .dc{stroke-width:18}.ivsecb.dn .dc.f{stroke-width:23}.ivsecb.dn{margin-bottom:0}
 .ivsecl{flex:1 1 200px;max-width:440px;min-width:0;display:grid;gap:5px}.ivsecr{display:grid;grid-template-columns:12px minmax(0,1fr) auto auto;gap:8px;align-items:center;font-size:13px}
 .ivsecr i{width:10px;height:10px;border-radius:3px}.ivsecr span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}.ivsecr b{font-variant-numeric:tabular-nums}.ivsecr em{font-style:normal;color:var(--mute);font-variant-numeric:tabular-nums;min-width:64px;text-align:right}
 .insmorebtn{display:block;margin:6px 0 0;padding:6px 0;background:none;border:0;font:inherit;font-weight:700;color:var(--brand);cursor:pointer}
@@ -2239,7 +2239,7 @@ function merchHTML(ym){
     $$(box,'.f').forEach(e=>e.classList.remove('f'));box.dataset.f=i;
     $$(box,'[data-i="'+i+'"]').forEach(e=>e.classList.add('f'));
     const c=box.querySelector('.dc[data-i="'+i+'"]');if(!c) return;
-    box.querySelector('.dk').textContent=c.dataset.n;box.querySelector('.dv').textContent=c.dataset.v;box.querySelector('.dp').textContent=c.dataset.p+' of spending';
+    box.querySelector('.dk').textContent=c.dataset.n;box.querySelector('.dv').textContent=c.dataset.v;box.querySelector('.dp').textContent=c.dataset.p+(box.dataset.ps||' of spending');
   }
   function skReset(sk){if(!sk) return;delete sk.dataset.f;delete sk.dataset.g;$$(sk,'.f').forEach(e=>e.classList.remove('f'));}
   function trFocus(tr,i){
@@ -2498,10 +2498,10 @@ function acctSecPie(id){
   if(!SD.L.length||!(SD.tot>0)) return '';
   const L=SD.L.length>7?SD.L.slice(0,6).concat([['Other',SD.L.slice(6).reduce((t,x)=>t+x[1],0)]]):SD.L,tot=SD.tot;
   const R=46,C=2*Math.PI*R,gap=L.length>1?2.4:0;let off=0,arcs='';
-  L.forEach(([k,v],i)=>{const len=v/tot*C;arcs+='<circle cx="60" cy="60" r="'+R+'" fill="none" stroke="'+secColor(k)+'" stroke-width="18" stroke-dasharray="'+Math.max(1,len-gap).toFixed(2)+' '+C.toFixed(2)+'" stroke-dashoffset="'+(-off).toFixed(2)+'" transform="rotate(-90 60 60)"><title>'+esc(k)+' '+Math.round(v/tot*100)+'%</title></circle>';off+=len;});
+  L.forEach(([k,v],i)=>{const len=v/tot*C;arcs+='<circle class="dc" data-i="'+i+'" data-n="'+esc(k)+'" data-v="'+fmt0(v)+'" data-p="'+(v/tot<.01?'<1%':Math.round(v/tot*100)+'%')+'" cx="60" cy="60" r="'+R+'" fill="none" stroke="'+secColor(k)+'" stroke-dasharray="'+Math.max(1,len-gap).toFixed(2)+' '+C.toFixed(2)+'" stroke-dashoffset="'+(-off).toFixed(2)+'" transform="rotate(-90 60 60)" style="--c:'+C.toFixed(2)+';animation-delay:'+(i*70)+'ms"/>';off+=len;});
   const pc=v=>v/tot<.01?'<1%':Math.round(v/tot*100)+'%';
-  return '<div class="ivsec"><span class="agnwl">What it holds</span><div class="ivsecb"><svg viewBox="0 0 120 120" class="ivpie" role="img" aria-label="'+esc(L.map(([k,v])=>k+' '+pc(v)).join(', '))+'"><circle cx="60" cy="60" r="'+R+'" fill="none" stroke="var(--track)" stroke-width="18"/>'+arcs+'</svg>'
-    +'<div class="ivsecl">'+L.map(([k,v],i)=>'<div class="ivsecr"><i style="background:'+secColor(k)+'"></i><span>'+esc(k)+'</span><b>'+pc(v)+'</b><em>'+fmt0(v)+'</em></div>').join('')+'</div></div>'
+  return '<div class="ivsec"><span class="agnwl">What it holds</span><div class="ivsecb dn" data-ps=" of this account"><svg viewBox="0 0 120 120" class="ivpie" role="img" aria-label="'+esc(L.map(([k,v])=>k+' '+pc(v)).join(', '))+'"><circle cx="60" cy="60" r="'+R+'" fill="none" stroke="var(--track)" stroke-width="18"/>'+arcs+'<text class="dk" x="60" y="54" font-size="8.5" style="fill:var(--mute)" font-weight="600">Total</text><text class="dv" x="60" y="70" font-size="14" font-weight="800">'+fmt0(tot)+'</text><text class="dp" x="60" y="82" font-size="7.5" style="fill:var(--mute)" font-weight="600"> </text></svg>'
+    +'<div class="ivsecl">'+L.map(([k,v],i)=>'<div class="ivsecr lg" data-i="'+i+'"><i style="background:'+secColor(k)+'"></i><span>'+esc(k)+'</span><b>'+pc(v)+'</b><em>'+fmt0(v)+'</em></div>').join('')+'</div></div>'
     +(SD.pend?'<p class="sub" style="margin:6px 0 0">'+SD.pend+' stock'+(SD.pend===1?'':'s')+' not sorted into a sector yet'+(fhKey()?' (loading in Stock insights below).':'. Add a free Finnhub key under Markets → Stock lookup to sort them.')+'</p>':'')+'</div>';
 }
 function insightsHTML(noFetch){
@@ -3558,7 +3558,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.59.13';
+const APP_VERSION='1.59.14';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
