@@ -926,13 +926,14 @@ function mkRes(o){return Object.assign({issuer:'',name:'',type:'other',last4:'',
 function finish(res){if(res.last4&&res.issuer) res.ref=res.issuer.toLowerCase()+':'+res.last4;return res;}
 const sumAmts=t=>t.reduce((a,x)=>a+x.amount,0);
 
-function parseChaseChecking(lines,text){
-  const pm=text.match(new RegExp('('+MONW+') (\\d{1,2}), (\\d{4}) through ('+MONW+') (\\d{1,2}), (\\d{4})'));
+function parseChaseChecking(lines,text,full){
+  const pm=(full||text).match(new RegExp('('+MONW+') (\\d{1,2}), (\\d{4}) through ('+MONW+') (\\d{1,2}), (\\d{4})'));
   if(!pm) return null;
   const start=iso(+pm[3],monNum(pm[1]),+pm[2]),end=iso(+pm[6],monNum(pm[4]),+pm[5]);
   const acct=(text.match(/Account Number:\s*(\d{6,})/)||[])[1]||'';
   const savings=/SAVINGS SUMMARY/i.test(text)&&!/CHECKING SUMMARY/i.test(text);
-  const prod=(text.match(/Chase (?:[A-Z][a-z]+ )?(?:Checking|Savings)/)||[])[0]||('Chase '+(savings?'Savings':'Checking'));
+  const hd=full?lines.find(l=>/^CHASE [A-Z ]*(CHECKING|SAVINGS)$/.test(l)):null;
+  const prod=hd?titleCase(hd.toLowerCase()):(text.match(/Chase (?:[A-Z][a-z]+ )?(?:Checking|Savings)/)||[])[0]||('Chase '+(savings?'Savings':'Checking'));
   const res=mkRes({issuer:'Chase',name:prod,type:savings?'savings':'checking',last4:acct.slice(-4),start,end});
   let inD=false;
   for(const l of lines){
@@ -940,7 +941,8 @@ function parseChaseChecking(lines,text){
     if(!inD) continue;
     if(/^Ending Balance/i.test(l)) break;
     const m=l.match(/^(\d\d)\/(\d\d)\s+(.*)$/);if(!m) continue;
-    const {head,amts}=trailAmts(m[3]);if(!amts.length) continue;
+    // a long check/trace number printed after the balance is not an amount
+    const {head,amts}=trailAmts(m[3].replace(/\s+\d{12,}$/,''));if(!amts.length) continue;
     const amount=amts.length>=2?amts[amts.length-2]:amts[0];
     const date=resolveDate(+m[1],+m[2],end);if(!date) continue;
     res.txns.push({date,desc:head.replace(/^\d\d\/\d\d\s+/,'')||'(no description)',amount});
@@ -964,7 +966,8 @@ function parseChaseCard(lines,text){
     if(/Totals Year-to-Date|^INTEREST CHARGES/i.test(l)){inA=false;continue;}
     if(!inA) continue;
     const m=l.match(/^(\d\d)\/(\d\d)\s+(.*)$/);if(!m) continue;
-    const {head,amts}=trailAmts(m[3]);if(!amts.length) continue;
+    // a long check/trace number printed after the balance is not an amount
+    const {head,amts}=trailAmts(m[3].replace(/\s+\d{12,}$/,''));if(!amts.length) continue;
     const date=resolveDate(+m[1],+m[2],end);if(!date) continue;
     res.txns.push({date,desc:head||'(no description)',amount:-amts[amts.length-1]});
   }
@@ -1216,6 +1219,16 @@ function parseStatementAll(pages){
   }
   if(/INVESTMENT REPORT/.test(lines.join('\n'))&&/Fidelity/i.test(lines.join('\n'))){
     const r=parseFidelityAll(lines,lines.join('\n'));if(r) return r.map(statementExtras.bind(null,lines));
+  }
+  // Chase prints linked accounts (e.g. checking + savings) in one statement: read each account's section
+  const tx=lines.join('\n');
+  const nums=new Set((tx.match(/Account Number:\s*\d{6,}/g)||[]).map(x=>x.replace(/\D/g,'')));
+  if(/JPMorgan Chase Bank/i.test(tx)&&nums.size>1){
+    // one section per account: where each account number first appears
+    const at=[],seen=new Set();lines.forEach((l,i)=>{const m=l.match(/Account Number:\s*(\d{6,})/);if(m&&!seen.has(m[1])){seen.add(m[1]);at.push(i);}});
+    const cut=at.map(i=>{let j=i;for(let k=i;k>=Math.max(0,i-4);k--) if(/^CHASE [A-Z ]*(CHECKING|SAVINGS)$/.test(lines[k])) j=k;return j;});
+    const out=cut.map((c,n)=>{const L=lines.slice(c,n+1<cut.length?cut[n+1]:lines.length);return /TRANSACTION DETAIL/.test(L.join('\n'))?parseChaseChecking(L,L.join('\n'),tx):null;}).filter(r=>r&&r.last4);
+    if(out.length>1) return out.map(statementExtras.bind(null,lines));
   }
   const one=parseStatement(pages);return one?[one]:[];
 }
@@ -3261,7 +3274,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" aria-label="Disconnect bank sync" title="Disconnect">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.53.0';
+const APP_VERSION='1.53.1';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
