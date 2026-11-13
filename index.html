@@ -3381,21 +3381,20 @@ function catRowHTML(c,ym){
   const d=md(ym),b=budgetOf(c,ym),carry=rolloverIn(c,ym),spent=d.byCat[c]||0,avail=b+carry,left=avail-spent,has=b||carry;
   return '<div class="bwrap"><button class="brow" data-act="budgo" data-cat="'+esc(c)+'" aria-label="See '+esc(c)+' transactions"><div class="b1"><span style="display:flex;align-items:center;gap:8px"><i class="cdot" style="background:'+catColor(c)+'"></i>'+esc(c)+(S.rollover[c]?' ↻':'')+'</span><span class="bl '+(has?(left<0?'neg':'pos'):'mute')+'">'+(has?(left<0?fmt0(-left)+' over':fmt0(left)+' left'):'')+'</span></div>'+barHTML(spent,avail,catColor(c))+'<div class="b2 sub"><span>'+fmt0(spent)+' spent</span><span>'+(has?'of '+fmt0(avail)+(carry?' (incl. '+fmt0(carry)+' rolled over)':''):'No budget')+'</span></div></button><button class="btn ghost small bed" data-act="budedit" data-cat="'+esc(c)+'" aria-label="Edit '+esc(c)+' budget">Edit budget</button></div>';
 }
+// spending in the month picked above, by group and category (the 3-month average is only used for budget suggestions)
 function typicalHTML(){
-  const ym=UI.month,first=S.txns.reduce((a,t)=>t.date&&t.date<a?t.date:a,'9999'),prev=months().filter(m=>m<ym&&!(m===first.slice(0,7)&&first.slice(8,10)>'05')&&S.txns.some(t=>t.date.slice(0,7)===m)).slice(0,3);
-  const use=prev.length?prev:(S.txns.some(t=>t.date.startsWith(ym))?[ym]:[]);
-  if(!use.length) return '';
+  const ym=UI.month;
+  if(!S.txns.some(t=>t.date.startsWith(ym))) return '';
+  const use=[ym];
   const avg=c=>use.reduce((a,m)=>a+(md(m).byCat[c]||0),0)/use.length;
   const G={};
   expenseCats().concat(['Uncategorized']).map(c=>[c,avg(c)]).filter(e=>e[1]>=1).forEach(([c,v])=>{const g=c==='Uncategorized'?'Not categorized yet':groupOf(c);(G[g]=G[g]||[]).push([c,v]);});
   const groups=Object.entries(G).map(([g,l])=>[g,l.reduce((a,e)=>a+e[1],0),l.sort((a,b)=>b[1]-a[1])]).sort((a,b)=>(a[0]==='Not categorized yet')-(b[0]==='Not categorized yet')||b[1]-a[1]);
   if(!groups.length) return '';
   const tot=groups.reduce((a,g)=>a+g[1],0),inc=use.reduce((a,m)=>a+md(m).income,0)/use.length;
-  // name the months: "Average of Jul–Sep 2026", so it isn't read as the month picked above
-  const mn=m=>new Date(m+'-15T12:00:00').toLocaleDateString('en-US',{month:'short'}),us=use.slice().sort(),yr=us[us.length-1].slice(0,4);
-  const span=us.length===1?mn(us[0])+' '+us[0].slice(0,4):mn(us[0])+(us[0].slice(0,4)!==yr?' '+us[0].slice(0,4):'')+'–'+mn(us[us.length-1])+' '+yr;
-  const when=use.length===1&&use[0]===ym?'This month so far':(use.length===1?'Based on '+span:'Average per month of '+span+' · tap a category to see those months');
-  return '<section class="card"><h2>Typical month</h2><p class="sub" style="margin:-6px 0 10px">'+when+'</p>'
+  const us=use,mon=new Date(ym+'-15T12:00:00').toLocaleDateString('en-US',{month:'long',year:'numeric'});
+  const when=ym===todayISO().slice(0,7)?'So far this month · tap a category to see its transactions':'Tap a category to see its transactions';
+  return '<section class="card"><h2>Spending in '+esc(mon)+'</h2><p class="sub" style="margin:-6px 0 10px">'+when+'</p>'
    +'<div class="agtop"><div><div class="sub">Spending</div><div class="agbig">'+fmt0(tot)+'</div></div><div class="agnet"><span class="sub">Income</span><span class="agv">'+fmt0(inc)+'</span></div></div>'
    +groups.map(([g,v,l])=>'<details class="ag"><summary><i class="agd" style="background:'+catColor(l[0][0])+'"></i><span>'+esc(g)+'</span><span class="agsp"></span><span class="agv agsum">'+fmt0(v)+'</span></summary>'
      +l.map(([c,x])=>'<div class="agr go" role="button" tabindex="0" data-act="gocat" data-cat="'+esc(c)+'" data-m="'+esc(us.join(','))+'"><span>'+esc(c)+'</span><span class="agv">'+fmt0(x)+'<i class="chev">›</i></span></div>').join('')+'</details>').join('')
@@ -3468,7 +3467,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" aria-label="Disconnect bank sync" title="Disconnect">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.56.3';
+const APP_VERSION='1.56.4';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
