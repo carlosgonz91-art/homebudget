@@ -2268,9 +2268,12 @@ const WID=[
   {id:'cal',t:'Day by day',w:'half'},{id:'merch',t:'Top spending',w:'half'},{id:'accts',t:'Accounts',w:'full'},{id:'inv',t:'Investments',w:'half'},
   {id:'bills',t:'Bills',w:'half'},{id:'usual',t:'Compared with usual',w:'half'},{id:'recur',t:'Recurring charges',w:'half'},{id:'bank',t:'Bank connections',w:'half'},{id:'mix',t:'Investment mix',w:'full'},{id:'loans',t:'Loans',w:'full'},{id:'tick',t:'Market watch',w:'half'},{id:'bubble',t:'AI crash alarm',w:'full'},{id:'cds',t:'CD maturities',w:'half'}
 ];
+// default Overview: every widget, big picture first (money overall, this month, where it went, regular costs),
+// then investments and loans, and the market tools (stock lookup, AI crash alarm) at the bottom. Half-width cards sit in pairs.
+const WDEF=['accts','cat','bills','trend','usual','flow','merch','recur','cal','inv','mix','loans','cds','bank','tick','bubble'];
 function wState(){
   const all=WID.map(x=>x.id),W=S.widgets;
-  if(!W||!Array.isArray(W.order)) {const d=['cat','trend','bills','flow','cal','merch','accts','loans','cds'];return {order:d,hidden:all.filter(i=>!d.includes(i))};}
+  if(!W||!Array.isArray(W.order)) return {order:WDEF.filter(i=>all.includes(i)),hidden:[]};
   const mg={big:'merch',nw:'accts',pace:null};W.order=W.order.map(i=>i in mg?mg[i]:i).filter((i,k,a)=>i&&a.indexOf(i)===k);W.hidden=(W.hidden||[]).filter(i=>!(i in mg));
   const order=W.order.filter(i=>all.includes(i)),hidden=(W.hidden||[]).filter(i=>all.includes(i)&&!order.includes(i));
   all.forEach(i=>{if(!order.includes(i)&&!hidden.includes(i)){if(i==='bills') order.splice(Math.min(2,order.length),0,i);else if(i==='cds'||i==='loans') order.push(i);else hidden.push(i);}});
@@ -3438,7 +3441,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" aria-label="Disconnect bank sync" title="Disconnect">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.55.1';
+const APP_VERSION='1.56.0';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -4610,7 +4613,8 @@ document.addEventListener('drop',e=>{e.preventDefault();const fl=[...(e.dataTran
     }
   }catch(e){}
 })();
-(async function(){try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();}catch(e){}await loadState();if(!UI.impAcct&&S.accounts[0])UI.impAcct=S.accounts[0].id;render();if(!S.wB1){S.wB1=1;const W=S.widgets;if(W&&Array.isArray(W.hidden)&&W.hidden.includes('bills')){W.hidden=W.hidden.filter(x=>x!=='bills');W.order.splice(Math.min(2,W.order.length),0,'bills');save();render();}}if((S.ruleV||0)<CAT_V){S.ruleV=CAT_V;let n=0;for(const t of S.txns){if(t.man||!['Uncategorized','Other'].includes(t.cat)) continue;const c=autoCat(t.desc,t.amount,t.acct);if(c!==t.cat){t.cat=c;n++;}}if(n){save();dlog('rules','Sorted transactions with new built-in rules',{n});render();}}setTimeout(()=>backfillStmtBal().catch(()=>{}),1500);})();
+(async function(){try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();}catch(e){}await loadState();if(!UI.impAcct&&S.accounts[0])UI.impAcct=S.accounts[0].id;render();if((S.wV||0)<2){S.wV=2;S.wB1=1;S.widgets={order:WDEF.slice(),hidden:[]};save();render();}
+if(!S.wB1){S.wB1=1;const W=S.widgets;if(W&&Array.isArray(W.hidden)&&W.hidden.includes('bills')){W.hidden=W.hidden.filter(x=>x!=='bills');W.order.splice(Math.min(2,W.order.length),0,'bills');save();render();}}if((S.ruleV||0)<CAT_V){S.ruleV=CAT_V;let n=0;for(const t of S.txns){if(t.man||!['Uncategorized','Other'].includes(t.cat)) continue;const c=autoCat(t.desc,t.amount,t.acct);if(c!==t.cat){t.cat=c;n++;}}if(n){save();dlog('rules','Sorted transactions with new built-in rules',{n});render();}}setTimeout(()=>backfillStmtBal().catch(()=>{}),1500);})();
 
 // swipe a banner sideways to dismiss it (touch or mouse); a small x shows on hover for desktop
 (function(){
