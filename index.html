@@ -3457,7 +3457,7 @@ function viewBudgets(){
   }
   h+='</section>';
   // with budgets set, each group above already shows what was spent, so the month's spending card isn't repeated
-  h+='<div class="row" style="margin-bottom:8px"><button class="btn ghost" data-act="addbud">＋ Add a budget</button><button class="btn ghost" data-act="suggest">Suggest budgets</button></div>';
+  h+='<div class="row" style="margin-bottom:8px"><button class="btn ghost" data-act="addbud">＋ Add a budget</button><button class="btn ghost" data-act="suggest">Re-suggest from my last 3 months</button></div>';
   return h;
 }
 // bottom sheet for editing one category's budget
@@ -3501,7 +3501,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" aria-label="Disconnect bank sync" title="Disconnect">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.57.1';
+const APP_VERSION='1.57.2';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -4587,19 +4587,25 @@ const ACT={
   bdclear(el){const c=el.dataset.cat;dialog({msg:'Remove the '+c+' budget for '+monthLabel(UI.month)+'? Its transactions stay.',ok:'Remove budget',bad:true,onOk:()=>ACT._bdclear(el),onCancel:()=>openSheet(c)});},
   _bdclear(el){setBudget(el.dataset.cat,UI.month,0,false);delete S.rollover[el.dataset.cat];ACT.bdclose();save();render();},
   bdsee(el){jmp();UI.filters.cat=el.dataset.cat;UI.filters.month=UI.month;UI.filters.q='';UI.filters.acct='';UI.limit=100;ACT.bdclose();UI.tab='txns';render();},
-  suggest(){
-    // average spending over up to 3 earlier months that have data, rounded up to the next $10
-    const prev=months().filter(m=>m<UI.month&&S.txns.some(t=>t.date.slice(0,7)===m)).slice(0,3);
+  suggest(el,how){const replace=how==='replace';
+    // average spending over the 3 full months before this one. The first month of your data is usually partial
+    // (statements start mid-month), so it is skipped when there is anything else to go on.
+    const withData=months().filter(m=>m<UI.month&&S.txns.some(t=>t.date.slice(0,7)===m)),first=withData[withData.length-1];
+    const prev=(withData.length>1?withData.filter(m=>m!==first):withData).slice(0,3);
     if(!prev.length){toast('Import at least one earlier month of data first.');return;}
+    const mn=m=>new Date(m+'-15T12:00:00').toLocaleDateString('en-US',{month:'short',year:'numeric'}),span=prev.length>1?mn(prev[prev.length-1])+' – '+mn(prev[0]):mn(prev[0]);
+    const has=expenseCats().concat(['Income']).some(c=>budgetOf(c,UI.month));
+    if(has&&!replace){dialog({msg:'You already have budgets. Replace all of them with your average spending from '+span+'? (Your earlier months keep their budgets.)',ok:'Replace',onOk:()=>ACT.suggest(null,'replace')});return;}
     let n=0;
     for(const c of expenseCats()){
-      if(budgetOf(c,UI.month)) continue;
       const avg=prev.reduce((a,m)=>a+(md(m).byCat[c]||0),0)/prev.length;
       if(avg>=10){setBudget(c,UI.month,Math.ceil(avg/10)*10,false);n++;}
+      else if(replace&&budgetOf(c,UI.month)) setBudget(c,UI.month,0,false);
     }
-    if(!budgetOf('Income',UI.month)){const ai=prev.reduce((a,m)=>a+md(m).income,0)/prev.length;if(ai>=100) setBudget('Income',UI.month,Math.round(ai/100)*100,false);}
-    save();render();toast(n?'Added '+n+' budgets from your last '+prev.length+' month'+(prev.length>1?'s':''):'Nothing to suggest yet.');
+    {const ai=prev.reduce((a,m)=>a+md(m).income,0)/prev.length;if(ai>=100) setBudget('Income',UI.month,Math.round(ai/100)*100,false);}
+    save();render();toast(n?'Set '+n+' budgets from your average of '+span:'Nothing to suggest yet.');
   },
+
   mergedupes(){
     const P=stmtSyncPairs(S);if(!P.length) return;
     dialog({msg:'Merge '+P.length+' duplicate transaction'+(P.length===1?'':'s')+'? The bank-synced copy stays, and keeps any category or nickname you set.',ok:'Merge',onOk:()=>{
