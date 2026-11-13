@@ -2466,6 +2466,13 @@ async function ensureInsights(force){
 }
 function insPaint(){const el=document.getElementById('inscard');if(!el) return;const t=document.createElement('div');t.innerHTML=insightsHTML(true);const n=t.firstElementChild;if(n){const op=[...el.querySelectorAll('details[open]')].map(d=>d.dataset.k);el.replaceWith(n);op.forEach(k=>{const d=n.querySelector('details[data-k="'+k+'"]');if(d)d.open=true;});}}
 const COMMOD=/^(GLD|GLDM|IAU|IAUM|PHYS|PSLV|CEF|SLV|SIVR|SGOL|BAR|AAAU|OUNZ|PPLT|PALL|GLTR|DBC|PDBC|GSG|COMT|USO|BNO|UNG|DBA|CPER|BCI|FTGC)$/,COMMODN=/\b(gold|silver|platinum|palladium|bullion|precious metals?|commodit)/i;
+// big tech companies Finnhub files under Retail (Amazon), Media (Google, Meta), Semiconductors (TSMC, NVIDIA)… count as Technology
+const BIGTECH=new Set(['AAPL','MSFT','GOOG','GOOGL','AMZN','META','NVDA','TSM','AVGO','ORCL','ADBE','CRM','AMD','INTC','QCOM','TXN','IBM','CSCO','NFLX','TSLA','ASML','MU','AMAT','LRCX','KLAC','SHOP','UBER','PLTR','SNOW','NOW','INTU','PANW','CRWD','ARM','SMCI','DELL','HPQ','ANET','MRVL']);
+// Finnhub's industries folded into broader groups
+const SECMAP={'Semiconductors':'Technology','Software':'Technology','IT Services':'Technology','Technology Hardware, Storage & Peripherals':'Technology','Electronic Equipment, Instruments & Components':'Technology','Internet Software & Services':'Technology','Communications Equipment':'Technology',
+  'Banking':'Financial Services','Capital Markets':'Financial Services','Insurance':'Financial Services','Diversified Financial Services':'Financial Services',
+  'Biotechnology':'Health Care','Pharmaceuticals':'Health Care','Health Care Providers & Services':'Health Care','Life Sciences Tools & Services':'Health Care','Health Care Equipment & Supplies':'Health Care',
+  'Oil & Gas':'Energy','Oil, Gas & Consumable Fuels':'Energy','Telecommunication':'Communications','Media':'Communications'};
 // the group one position belongs to (also used for the label on each position)
 // "Other" = no ticker symbol and not recognized as a CD, bond, cash, fund or commodity (e.g. a private holding or an unusual description)
 function posClass(h,c){
@@ -2474,7 +2481,8 @@ function posClass(h,c){
   if(isCashPos(h)||(h.shares>0&&v>0&&Math.abs(v/h.shares-1)<0.03)) return 'Cash';
   if(COMMOD.test(s)||COMMODN.test(((p&&p.nm)||'')+' '+nm)) return 'Commodities';
   if(isFundSym(s)) return 'Mutual funds';
-  if(p){const raw=String(p.sec||'').trim();return (!raw||/^n\/?a$/i.test(raw))?'Funds & ETFs':raw;}
+  if(BIGTECH.has(s)) return 'Technology';
+  if(p){const raw=String(p.sec||'').trim();return (!raw||/^n\/?a$/i.test(raw))?'Funds & ETFs':(SECMAP[raw]||raw);}
   if(/^[A-Z]{1,5}$/.test(s)) return 'Not loaded yet';
   return 'Other';
 }
@@ -2502,10 +2510,10 @@ function secData(c,acct){
 // a pie of what one account holds, by sector or kind (CDs & bonds, cash, commodities, funds, technology, finance…)
 const SECPAL=['#6366f1','#0ea5e9','#10b981','#f59e0b','#ec4899','#8b5cf6','#14b8a6','#f97316','#64748b'];
 // every holding group keeps the same color everywhere (pies, labels, Stock insights), whatever else an account holds
-const SECCOL={'Cash':'#a78bfa','CDs & bonds':'#10b981','Commodities':'#eab308','Mutual funds':'#0ea5e9','Funds & ETFs':'#06b6d4','Not loaded yet':'#94a3b8','Other':'#64748b',
-  'Technology':'#6366f1','Financial Services':'#3b82f6','Banking':'#1d4ed8','Insurance':'#0284c7','Retail':'#f97316','Pharmaceuticals':'#ef4444','Health Care':'#f43f5e','Biotechnology':'#e11d48',
+const SECCOL={'Cash':'#a78bfa','CDs & bonds':'#10b981','Commodities':'#eab308','Mutual funds':'#0ea5e9','Funds & ETFs':'#14b8a6','Not loaded yet':'#94a3b8','Other':'#64748b',
+  'Technology':'#6366f1','Financial Services':'#3b82f6','Banking':'#1d4ed8','Insurance':'#0284c7','Retail':'#f97316','Pharmaceuticals':'#ef4444','Health Care':'#ef4444','Biotechnology':'#e11d48',
   'Media':'#d946ef','Communications':'#c026d3','Telecommunication':'#a21caf','Hotels, Restaurants & Leisure':'#f59e0b','Consumer products':'#fb923c','Beverages':'#fbbf24','Food Products':'#84cc16',
-  'Energy':'#78350f','Oil & Gas':'#92400e','Utilities':'#14b8a6','Semiconductors':'#4f46e5','Automobiles':'#64748b','Aerospace & Defense':'#475569','Real Estate':'#8b5cf6','Industrial Conglomerates':'#57534e','Machinery':'#71717a','Airlines':'#0ea5e9','Logistics & Transportation':'#0891b2','Chemicals':'#65a30d'};
+  'Energy':'#b45309','Oil & Gas':'#92400e','Utilities':'#a3e635','Semiconductors':'#4f46e5','Automobiles':'#64748b','Aerospace & Defense':'#475569','Real Estate':'#8b5cf6','Industrial Conglomerates':'#57534e','Machinery':'#71717a','Airlines':'#0ea5e9','Logistics & Transportation':'#0891b2','Chemicals':'#65a30d'};
 const SECX=['#7c3aed','#db2777','#059669','#ca8a04','#2563eb','#dc2626','#0d9488','#9333ea','#ea580c','#4d7c0f'];
 const secColor=k=>SECCOL[k]||SECX[[...String(k)].reduce((a,ch)=>(a*31+ch.charCodeAt(0))>>>0,7)%SECX.length];
 function acctSecPie(id){
@@ -2884,7 +2892,7 @@ function holdClass(h){
   if(/\b(ETF|FUND|INDEX|TRUST|ISHARES|SPDR|VANGUARD|MINISHARES)\b/.test(t)||/^[A-Z]{4}X$/.test((h.sym||'').toUpperCase())) return 'Funds & ETFs';
   return 'Stocks';
 }
-const MIXCOL={'Cash & CDs':'#10b981','Funds & ETFs':'#06b6d4','Stocks':'#f59e0b','Cash in accounts':'#a78bfa','Other':'#94a3b8'};
+const MIXCOL={'Cash & CDs':'#10b981','Funds & ETFs':'#14b8a6','Stocks':'#f59e0b','Cash in accounts':'#a78bfa','Other':'#94a3b8'};
 function invMixBar(){
   const H=S.holdings||{},m={};
   invIds().forEach(id=>{let p=0;(H[id]||[]).forEach(h=>{if(!(h.value>0))return;const c=holdClass(h);m[c]=(m[c]||0)+h.value;p+=h.value;});const b=S.balSf&&S.balSf[id];if(b&&b.v-p>=1)m['Cash in accounts']=(m['Cash in accounts']||0)+(b.v-p);});
@@ -3572,7 +3580,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.59.3';
+const APP_VERSION='1.59.4';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
