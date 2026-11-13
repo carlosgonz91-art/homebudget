@@ -3675,10 +3675,13 @@ function gdCardHTML(){
   const steps='<details class="gdh"'+(c.cid?'':' open')+'><summary>One-time setup (about 10 minutes)</summary><ol class="mute">'
     +'<li>Open <a href="https://console.cloud.google.com/projectcreate" target="_blank" rel="noopener">Google Cloud console</a> and create a project called HomeBudget.</li>'
     +'<li>Turn on the <a href="https://console.cloud.google.com/apis/library/drive.googleapis.com" target="_blank" rel="noopener">Google Drive API</a>.</li>'
-    +'<li>Open <a href="https://console.cloud.google.com/auth/overview" target="_blank" rel="noopener">Google Auth Platform</a>, press Get started, choose <b>External</b>. Under <b>Audience</b>, add your Gmail (and Hannah’s) as test users.</li>'
-    +'<li>Under <b>Clients</b>, create a client: type <b>Web application</b>. Authorized JavaScript origin: <code>'+esc(location.origin)+'</code>. Authorized redirect URI: <code>'+esc(gdHome())+'</code></li>'
-    +'<li>Copy the <b>Client ID</b> and paste it below.</li></ol>'
-    +'<p class="sub">Google will say the app isn’t verified. That’s expected for your own private app: press Continue.</p></details>';
+    +'<li>Open <a href="https://console.cloud.google.com/auth/overview" target="_blank" rel="noopener">Google Auth Platform</a> and press <b>Get started</b>. Fill in every step: app name HomeBudget, your email, <b>External</b>, contact email, agree, <b>Create</b>. (The Clients menu only appears after this.)</li>'
+    +'<li>Open <a href="https://console.cloud.google.com/auth/audience" target="_blank" rel="noopener">Audience</a> → <b>Test users</b> → <b>Add users</b>. Add your Gmail (and Hannah’s), then <b>Save</b>. Without this, Google blocks the sign-in.</li>'
+    +'<li>Open <a href="https://console.cloud.google.com/auth/clients" target="_blank" rel="noopener">Clients</a> → <b>Create client</b>. Type: <b>Web application</b>. Authorized JavaScript origin: <code>'+esc(location.origin)+'</code>. Authorized redirect URI: <code>'+esc(gdHome())+'</code> (exactly, with the / at the end). <b>Create</b>.</li>'
+    +'<li>Copy the <b>Client ID</b> (ends in .apps.googleusercontent.com) and paste it below, with the folder link or name.</li>'
+    +'<li>Press <b>Connect Google Drive</b> and pick your account. If Google says the app isn’t verified, press <b>Continue</b>, then allow access.</li>'
+    +'<li>Back here, choose <b>Only new ones</b> so statements you already imported aren’t read again.</li></ol>'
+    +'<p class="sub">The “not verified” warning is expected for your own private app.</p></details>';
   return hd+'<p class="mute" style="margin-top:0">Link the Drive folder where you save statements. New files you add there show up here automatically.</p>'+steps
     +'<div class="gdf"><input type="text" id="gdCid" placeholder="Client ID (…apps.googleusercontent.com)" autocomplete="off" spellcheck="false" value="'+esc(c.cid||'')+'"><input type="text" id="gdFolder" placeholder="Folder link, or its name (e.g. Statement)" autocomplete="off" spellcheck="false" value="'+esc(c.folderIn||'')+'"><button class="btn" data-act="gdconnect">Connect Google Drive</button></div>'
     +'<p class="sub" style="margin:10px 0 0">Read-only. Files go straight from Google to this browser.</p>'+err+'</section>';
@@ -3689,7 +3692,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.60.0';
+const APP_VERSION='1.60.1';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
