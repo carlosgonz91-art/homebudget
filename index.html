@@ -167,6 +167,9 @@ h1{font-size:28px;font-weight:800;letter-spacing:-.03em;margin:2px 0 12px}h2{fon
 .bgrp{margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}.bgrp.first{margin-top:0;padding-top:0;border-top:0}
 .rtg{display:flex;align-items:center;gap:8px;margin:12px 0 0;padding:6px 0;background:none;border:0;font:inherit;font-weight:700;color:var(--brand);cursor:pointer}.rtgc{display:inline-block;font-size:12px;transition:transform .15s}.rtg[aria-expanded="true"] .rtgc{transform:rotate(90deg)}
 .ivtop{display:flex;align-items:baseline;justify-content:space-between;gap:8px}.ivas{font-size:11px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ivsec{margin:6px 0 12px}.ivsecb{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-top:6px}.ivpie{width:120px;height:120px;flex:none}
+.ivsecl{flex:1 1 200px;max-width:440px;min-width:0;display:grid;gap:5px}.ivsecr{display:grid;grid-template-columns:12px minmax(0,1fr) auto auto;gap:8px;align-items:center;font-size:13px}
+.ivsecr i{width:10px;height:10px;border-radius:3px}.ivsecr span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}.ivsecr b{font-variant-numeric:tabular-nums}.ivsecr em{font-style:normal;color:var(--mute);font-variant-numeric:tabular-nums;min-width:64px;text-align:right}
 .flowbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:-2px 0 10px}.flowbar .btn{padding:5px 10px}
 .setsub{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}.setsub>h2,.setsub>.ivh h2{font-size:16px}
 .aud2{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}.aud2>summary{font-weight:700;cursor:pointer}.aud2 details{margin:6px 0 0 12px}
@@ -2490,6 +2493,19 @@ function secData(c,acct){
   const L=Object.keys(M).map(k=>[k,M[k].reduce((t,x)=>t+x.v,0)]).sort((a,b)=>b[1]-a[1]);
   return {L,M,tot,accts:A,pend};
 }
+// a pie of what one account holds, by sector or kind (CDs & bonds, cash, commodities, funds, technology, finance…)
+const SECPAL=['#6366f1','#0ea5e9','#10b981','#f59e0b','#ec4899','#8b5cf6','#14b8a6','#f97316','#64748b'];
+function acctSecPie(id){
+  let SD;try{SD=secData(insLoad(),id);}catch(e){return '';}
+  if(!SD.L.length||!(SD.tot>0)) return '';
+  const L=SD.L.length>7?SD.L.slice(0,6).concat([['Other',SD.L.slice(6).reduce((t,x)=>t+x[1],0)]]):SD.L,tot=SD.tot;
+  const R=46,C=2*Math.PI*R,gap=L.length>1?2.4:0;let off=0,arcs='';
+  L.forEach(([k,v],i)=>{const len=v/tot*C;arcs+='<circle cx="60" cy="60" r="'+R+'" fill="none" stroke="'+SECPAL[i%SECPAL.length]+'" stroke-width="18" stroke-dasharray="'+Math.max(1,len-gap).toFixed(2)+' '+C.toFixed(2)+'" stroke-dashoffset="'+(-off).toFixed(2)+'" transform="rotate(-90 60 60)"><title>'+esc(k)+' '+Math.round(v/tot*100)+'%</title></circle>';off+=len;});
+  const pc=v=>v/tot<.01?'<1%':Math.round(v/tot*100)+'%';
+  return '<div class="ivsec"><span class="agnwl">What it holds</span><div class="ivsecb"><svg viewBox="0 0 120 120" class="ivpie" role="img" aria-label="'+esc(L.map(([k,v])=>k+' '+pc(v)).join(', '))+'"><circle cx="60" cy="60" r="'+R+'" fill="none" stroke="var(--track)" stroke-width="18"/>'+arcs+'</svg>'
+    +'<div class="ivsecl">'+L.map(([k,v],i)=>'<div class="ivsecr"><i style="background:'+SECPAL[i%SECPAL.length]+'"></i><span>'+esc(k)+'</span><b>'+pc(v)+'</b><em>'+fmt0(v)+'</em></div>').join('')+'</div></div>'
+    +(SD.pend?'<p class="sub" style="margin:6px 0 0">'+SD.pend+' stock'+(SD.pend===1?'':'s')+' not sorted into a sector yet'+(fhKey()?' (loading in Stock insights below).':'. Add a free Finnhub key under Markets → Stock lookup to sort them.')+'</p>':'')+'</div>';
+}
 function insightsHTML(noFetch){
   const H=insSyms();if(!H.length) return '';
   if(!fhKey()) return '<section class="card" id="inscard"><h2>Stock insights</h2><p class="sub" style="margin:0 0 8px">Dividends, sectors, earnings dates, analyst ratings and news for the stocks you own.</p>'+fhSetupHTML()+'</section>';
@@ -3543,7 +3559,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.58.2';
+const APP_VERSION='1.59.0';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -3634,7 +3650,7 @@ function viewInvest0(){
     const cash=(r.inf.bal!=null?r.inf.bal:r.pos)-r.pos;
     const open=OPEN.includes(r.id);
     h+='<section class="card" id="iv-'+esc(r.id)+'"><button type="button" class="ivh" data-act="invtoggle" data-id="'+esc(r.id)+'" aria-expanded="'+open+'"><i class="chv2">›</i><h2>'+esc(r.inf.name)+'</h2><span class="spacer"></span><b class="invv">'+fmt0(r.inf.bal!=null?r.inf.bal:r.pos)+'</b></button><div class="sub" style="margin:2px 0 6px 24px">'+esc(r.inf.org)+(r.inf.org?' · ':'')+r.L.length+' position'+(r.L.length===1?'':'s')+(CB.by[r.id]?' · <b class="rdyc">'+fmt0(CB.by[r.id])+' ready to invest</b>':'')+'</div>'+(r.gl?'<div class="glr"><span class="'+(r.gl.d<0?'neg':'pos')+'">'+(r.gl.d<0?'-':'+')+fmt0(Math.abs(r.gl.d)).replace('-','')+' ('+pf(r.gl.p)+')</span> gain/loss'+'</div>':'')
-     +'<div class="ipl" data-sort="'+PS+'"'+(open?'':' hidden')+'><div class="ivhc"><span class="agnwl">Balance over time</span>'+histChart(balSeries([r.id]),{id:'a'+String(r.id).replace(/\W/g,''),label:r.inf.name,empty:'No history yet. Import this account\'s statements (Settings → Import) to fill in the past, or it builds up with each daily sync.'})+'</div>'+r.L.map(x=>{const fi=fixedInc(x),g=(x.value!=null&&x.cost!=null&&!fi)?x.value-x.cost:null;
+     +'<div class="ipl" data-sort="'+PS+'"'+(open?'':' hidden')+'><div class="ivhc"><span class="agnwl">Balance over time</span>'+histChart(balSeries([r.id]),{id:'a'+String(r.id).replace(/\W/g,''),label:r.inf.name,empty:'No history yet. Import this account\'s statements (Settings → Import) to fill in the past, or it builds up with each daily sync.'})+'</div>'+acctSecPie(r.id)+r.L.map(x=>{const fi=fixedInc(x),g=(x.value!=null&&x.cost!=null&&!fi)?x.value-x.cost:null;
        return '<div class="ip"><div class="l">'+fxTitle(fi?fi.issuer:(x.sym||x.desc||'Position'))+(fi?'<span class="fi">'+fi.kind+' · <b>'+fi.rate+'%</b> · '+matText(fi.mat)+(x.value>0?' · ≈'+fmt0(x.value*fi.rate/100)+'/yr':'')+'</span>':'<span>'+esc(x.sym&&x.desc?x.desc:'')+(x.shares!=null?(x.sym&&x.desc?' · ':'')+(+x.shares.toFixed(4))+' sh':'')+(x.price!=null?' @ '+fmt(x.price):'')+(x.since&&dayNum(todayISO())-dayNum(x.since)>30?' · since '+new Date(x.since+'T12:00:00').toLocaleDateString('en-US',{month:'short',year:'numeric'}):'')+'</span>')+'</div><div class="r"><b>'+(x.value!=null?fmt(x.value):'–')+'</b>'+(g!=null?'<span class="'+(g<0?'neg':'pos')+'">'+(g<0?'-':'+')+fmt(Math.abs(g)).replace('-','')+' · '+pf(g/x.cost*100)+'</span>':'<span>&nbsp;</span>')+'</div></div>';}).join('')
      +(Math.abs(cash)>=1?'<div class="ip"><div class="l"><b>Cash &amp; other</b><span>Not in a position</span></div><div class="r"><b>'+fmt(cash)+'</b><span>&nbsp;</span></div></div>':'')+'</div></section>';
   });
