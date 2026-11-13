@@ -67,16 +67,16 @@ h1{font-size:28px;font-weight:800;letter-spacing:-.03em;margin:2px 0 12px}h2{fon
 .hxt span{display:block;font-size:12px;font-weight:600;opacity:.85}
 .hxt b{display:block;font-size:20px;font-weight:750;font-variant-numeric:tabular-nums;margin:1px 0 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .hxt em{display:block;font-style:normal;font-size:11.5px;font-weight:650;opacity:.9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.hxt em.ok{color:#b9f6d4}.hxt em.bad{color:#ffd0d0}
+.hxt em.ok{color:#5dffb4}.hxt em.bad{color:#ff8fab}
 .hxc{margin-top:16px;outline:none}.hxc:focus-visible{box-shadow:0 0 0 2px #fff;border-radius:10px}
 .hxcl{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:11.5px;font-weight:600;opacity:.9;margin-bottom:6px}
-.hxcl i{display:inline-block;width:16px;margin-right:6px;vertical-align:middle;border-top:2.5px solid #fff}
-.hxcl i.s2{border-top:2px dashed rgba(255,255,255,.6)}.hxcl i.s3{border-top:2px dotted rgba(255,255,255,.85)}.hxcl i.s4{border-top:2px dashed #ffd166}
+.hxcl i{display:inline-block;width:16px;margin-right:6px;vertical-align:middle;border-top:3px solid #2ff5c8}
+.hxcl i.s2{border-top:2.5px dashed #ffc233}.hxcl i.s3{border-top:2.5px dotted #2ff5c8}.hxcl i.s4{border-top:2.5px dashed #ff4f8b}
 .hxcw{position:relative;height:150px;cursor:crosshair;touch-action:pan-y}
 .hxcw svg{width:100%;height:100%;display:block;overflow:visible}
 .hxy span{position:absolute;left:0;transform:translateY(-110%);font-size:10.5px;font-weight:600;opacity:.65}
-.hxd,.hxq,.hxq2{position:absolute;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;background:#fff;box-shadow:0 0 0 4px rgba(255,255,255,.28);pointer-events:none}
-.hxq2{width:8px;height:8px;margin:-4px 0 0 -4px;background:rgba(255,255,255,.55);box-shadow:none}
+.hxd,.hxq,.hxq2{position:absolute;width:11px;height:11px;margin:-5.5px 0 0 -5.5px;border-radius:50%;background:#2ff5c8;box-shadow:0 0 0 4px rgba(47,245,200,.3),0 0 0 6px rgba(255,255,255,.15);pointer-events:none}
+.hxq2{width:9px;height:9px;margin:-4.5px 0 0 -4.5px;background:#ffc233;box-shadow:0 0 0 3px rgba(255,194,51,.3)}
 .hxv{position:absolute;top:0;bottom:0;border-left:1.5px dashed rgba(255,255,255,.7);pointer-events:none}
 .hxtt{position:absolute;top:4px;background:#fff;color:#1e1b4b;border-radius:12px;padding:8px 10px;font-size:12px;line-height:1.35;box-shadow:0 10px 26px rgba(0,0,0,.25);pointer-events:none;z-index:3;display:flex;flex-direction:column;white-space:nowrap}
 .hxtt span{color:#6b7280;font-weight:600}.hxtt b{font-size:14px}.hxtt em{font-style:normal;color:#4b5563}.hxtt i{font-style:normal;font-weight:700}.hxtt i.bad{color:#dc2626}.hxtt i.ok{color:#059669}
@@ -857,7 +857,7 @@ const LEGACY_RULES=[
 ].map(compileRule);
 // First match wins, so order matters: money moving between your own accounts first, then income/fees, then merchants.
 // bump when DEFAULT_RULES learn new merchants: on next open, Uncategorized/Other transactions get sorted again
-const CAT_V=1;
+const CAT_V=2;
 const DEFAULT_RULES=[
 ['Interest',['interest earned','interest paid','interest payment','interest credit','interest income','interest deposit','interest adjustment','interest pmt','credit interest','bonus interest','savings interest','interest']],
 ['Transfer',['eft funds received','cash contrb','fid bkg svc','moneyline','venmo payment','zelle payment from','transfer','payment thank','autopay','auto payment','automatic payment','epayment','e payment','payment received','credit card payment','payment to chase card','card srvc payment','card services payment','to amex','to discover card','to capital one','to citi card','to barclays','to synchrony','to target card','to apple card','directpay','journal','credit crd','vault','joint savings balance','from joint','to joint','jpmorgan chase bank']],
@@ -1934,12 +1934,12 @@ function heroChart(ym,tb){
   const md0=new Date(ym+'-15T12:00:00').toLocaleDateString('en-US',{month:'short'});
   return '<div class="hxc" data-hx="'+esc(hp)+'" tabindex="0" aria-label="Spending through '+esc(md0)+'. Hover, touch or use the arrow keys to see each day.">'
    +'<div class="hxcl"><span class="a"><i class="s1"></i>Spent so far</span><span><i class="s2"></i>Last month</span>'+(pace?'<span><i class="s3"></i>On pace for '+fmt0(pace)+'</span>':'')+(showB?'<span><i class="s4"></i>Budget '+fmt0(tb)+'</span>':'')+'</div>'
-   +'<div class="hxcw"><svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="hxg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>'
+   +'<div class="hxcw"><svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="hxg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2ff5c8" stop-opacity=".45"/><stop offset="1" stop-color="#2ff5c8" stop-opacity="0"/></linearGradient></defs>'
    +[.25,.5,.75].map(f=>'<line x1="0" x2="'+W+'" y1="'+(H*f).toFixed(1)+'" y2="'+(H*f).toFixed(1)+'" stroke="#fff" stroke-opacity=".12" vector-effect="non-scaling-stroke"/>').join('')
-   +(showB?'<line x1="0" x2="'+W+'" y1="'+Y(tb).toFixed(1)+'" y2="'+Y(tb).toFixed(1)+'" stroke="#ffd166" stroke-opacity=".9" stroke-width="1.5" stroke-dasharray="6 5" vector-effect="non-scaling-stroke"/>':'')
-   +(pp.length>1?'<path d="'+smoothPath(pp)+'" fill="none" stroke="#fff" stroke-opacity=".45" stroke-width="1.6" stroke-dasharray="3 4" vector-effect="non-scaling-stroke"/>':'')
-   +(area?'<path d="'+area+'" fill="url(#hxg)"/><path d="'+line+'" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>':'')
-   +(pace&&e?'<line x1="'+e[0].toFixed(1)+'" y1="'+e[1].toFixed(1)+'" x2="'+W+'" y2="'+Y(pace).toFixed(1)+'" stroke="#fff" stroke-opacity=".75" stroke-width="1.6" stroke-dasharray="1 5" stroke-linecap="round" vector-effect="non-scaling-stroke"/>':'')
+   +(showB?'<line x1="0" x2="'+W+'" y1="'+Y(tb).toFixed(1)+'" y2="'+Y(tb).toFixed(1)+'" stroke="#ff4f8b" stroke-width="1.8" stroke-dasharray="6 5" vector-effect="non-scaling-stroke"/>':'')
+   +(pp.length>1?'<path d="'+smoothPath(pp)+'" fill="none" stroke="#ffc233" stroke-width="2" stroke-dasharray="4 4" vector-effect="non-scaling-stroke"/>':'')
+   +(area?'<path d="'+area+'" fill="url(#hxg)"/><path d="'+line+'" fill="none" stroke="#2ff5c8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>':'')
+   +(pace&&e?'<line x1="'+e[0].toFixed(1)+'" y1="'+e[1].toFixed(1)+'" x2="'+W+'" y2="'+Y(pace).toFixed(1)+'" stroke="#2ff5c8" stroke-width="2.2" stroke-dasharray="1 6" stroke-linecap="round" vector-effect="non-scaling-stroke"/>':'')
    +'</svg><div class="hxy">'+yl+'</div>'+(e?'<i class="hxd" style="left:'+(e[0]/W*100).toFixed(2)+'%;top:'+(e[1]/H*100).toFixed(1)+'%"></i>':'')
    +'<i class="hxv" hidden></i><i class="hxq" hidden></i><i class="hxq2" hidden></i><div class="hxtt" hidden></div></div>'
    +'<div class="hxx"><span>'+md0+' 1</span><span>'+md0+' '+Math.ceil(n/2)+'</span><span>'+md0+' '+n+'</span></div></div>';
@@ -3414,7 +3414,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" aria-label="Disconnect bank sync" title="Disconnect">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.55.0';
+const APP_VERSION='1.55.1';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
