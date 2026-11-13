@@ -1399,7 +1399,24 @@ function auditCore(S0,today){
     const m=String(t.desc).match(/(?:\.{2,3}|\bending(?:\s+in)?|\bx{2,}|\*{2,}|••|#)\s*(\d{4})\b/i),other=m&&S.accounts.find(a=>a.id!==t.acct&&l4of(a)===m[1]);
     const line=t.date+' · '+A(t.acct)+' · '+usd(t.amount)+' · '+t.desc;
     if(other&&covers(other,t.date)){miss.push(line+'  (expected in '+other.name+')');missR.push({k:'xfer:'+t.id,id:t.id});}
-    else{outside.push(line+(other?'  (before '+other.name+' history starts)':''));outR.push({k:'xfer:'+t.id,id:t.id});}
+    else{
+      // say exactly why the other side isn't here
+      let why;const nd=d=>{const m=String(d).match(/^(\d{4})-(\d\d)-(\d\d)$/);return m?['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+m[2]-1]+' '+(+m[3])+', '+m[1]:d;};
+      // no last 4 digits in the text: a card named in it ("Target Card Srvc Payment") is the other side
+      let oth=other;if(!oth){const nm=normMatch(t.desc);oth=S.accounts.find(a=>a.id!==t.acct&&a.type==='credit'&&/\bcard\b/.test(nm)&&normMatch(a.name).split(' ')[0].length>=4&&nm.includes(normMatch(a.name).split(' ')[0]))||null;}
+      const cover=a=>{const fs=(S.files||[]).filter(f=>f.acct===a.id&&f.start).map(f=>[f.start,f.end]).sort(),sp=span[a.id];return [fs.length?fs[0][0]:sp&&sp[0],fs.length?fs.map(f=>f[1]).sort().pop():sp&&sp[1]];};
+      const isPay=/payment thank|auto ?payment|autopay/i.test(t.desc)&&t.amount>0;
+      if(oth){const [first,lastD]=cover(oth);
+        why=first&&t.date<first?'before '+oth.name+'\'s first statement ('+nd(first)+')':lastD&&t.date>lastD?'after '+oth.name+'\'s last statement ('+nd(lastD)+')':'in a gap between '+oth.name+' statements';}
+      else if(isPay){
+        // which checking account's statements don't reach this date: the payment most likely came from there
+        const C=S.accounts.filter(a=>a.type==='checking').map(a=>[a,...cover(a)]).filter(c=>c[1]&&(t.date<c[1]||t.date>c[2]));
+        const c=C.sort((x,y)=>Math.min(Math.abs(dayNum(t.date)-dayNum(x[1])),Math.abs(dayNum(t.date)-dayNum(x[2])))-Math.min(Math.abs(dayNum(t.date)-dayNum(y[1])),Math.abs(dayNum(t.date)-dayNum(y[2]))))[0];
+        why=c?'probably paid from '+c[0].name+', '+(t.date<c[1]?'before its first statement ('+nd(c[1])+')':'after its last statement ('+nd(c[2])+')'):'paid from an account that is not imported';}
+      else if(/\b(zelle|venmo|cash app|paypal)\b/i.test(t.desc)) why='to or from a person or app, not one of your accounts';
+      else if(/capital one/i.test(t.desc)) why='Capital One is not imported';
+      else why='the other account is not imported, or it is outside your statement dates';
+      outside.push(line+'  ('+why+')');outR.push({k:'xfer:'+t.id,id:t.id});}
   }
   const oddR=odd.filter(t=>!dk('odd:'+t.id));odd.length=0;oddR.forEach(t=>odd.push(t));
   if(odd.length) add('warn',odd.length+' payment'+(odd.length>1?'s':'')+(odd.length>1?' look':' looks')+' like the other half of a transfer but '+(odd.length>1?'are':'is')+' categorized as spending',odd.map(t=>t.date+' · '+A(t.acct)+' · '+usd(t.amount)+' · '+t.desc+'  (now: '+t.cat+')').concat(['Set these to Transfer so they are not counted twice in your spending.']),odd.map(t=>({k:'odd:'+t.id,id:t.id})).concat([null]));
@@ -3417,7 +3434,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" aria-label="Disconnect bank sync" title="Disconnect">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.56.0';
+const APP_VERSION='1.56.1';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
