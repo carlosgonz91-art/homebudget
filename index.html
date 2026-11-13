@@ -1696,6 +1696,7 @@ function balSeries(ids){
   const H=S.balHist||{},done=new Set(),units=[],ds=new Set(),ok=x=>isFinite(dayNum(x[0]))&&isFinite(x[1]);
   const isMain=id=>S.accounts.some(x=>x.sf===id);
   [...ids].sort((x,y)=>isMain(y)-isMain(x)).forEach(id=>{if(done.has(id)) return;
+    if(String(id).startsWith('acct:')){done.add(id);const st=stmtPoints(id.slice(5)).filter(ok);if(st.length){st.forEach(x=>ds.add(x[0]));units.push({sync:[],st,first:null});}return;}
     const a=S.accounts.find(x=>x.sf===id);let mem=[id],whole=true;
     // a savings account with vaults: the statement balance covers the vaults too, so it only stands in for the whole group
     if(a){const G=sfGroup(a);if(G&&G.g.length>1){const all=G.g.map(r=>r.id);mem=[...new Set([id,...all.filter(m=>ids.includes(m))])];whole=all.every(m=>mem.includes(m));}}
@@ -1745,30 +1746,47 @@ function loanHistCard(a){
   const real=L.hist.length>2&&dayNum(L.hist[L.hist.length-1][0])-dayNum(L.hist[0][0])>=60,est=real?null:loanPast(L),P=est||(L.hist.length>1?L.hist:null);if(!P) return L.orig?'':'<section class="card"><h2>Balance over time</h2><p class="sub" style="margin:0">Add the rate and payment to see the balance since the loan started.</p></section>';
   return '<section class="card"><h2>Balance over time</h2><p class="sub" style="margin:-4px 0 4px">'+(est?'Remaining balance since the loan started, about '+new Date(P[0][0]+'T12:00:00').toLocaleDateString('en-US',{month:'long',year:'numeric'})+'.':'Remaining balance from your statements and syncs, since '+new Date(P[0][0]+'T12:00:00').toLocaleDateString('en-US',{month:'long',year:'numeric'})+'.')+'</p>'+histChart(P,{id:'ln'+String(a.id).replace(/\W/g,''),label:'Loan balance',inv:true,col:'#f97316'})+(est?'<p class="sub" style="margin:6px 0 0">The past is estimated from the original amount, your rate and your payment, because the bank only sends today\'s balance. Earlier extra payments are not shown.</p>':'')+'</section>';
 }
-const nwSeries=()=>balSeries([...new Set(S.accounts.filter(a=>a.sf).flatMap(a=>{const G=sfGroup(a);return G?G.g.map(r=>r.id):[a.sf];}))]);
-const invSeries=()=>balSeries(invIds());
-function accountsHTML(){
+// statement-only accounts (no bank link) that are not just the statements of a linked account
+const isTwin=a=>!a.sf&&S.accounts.some(x=>x.sf&&x!==a&&stmtTwins(x,x.sf).includes(a.id));
+const stmtOnly=types=>S.accounts.filter(a=>!a.sf&&(!types||types.includes(a.type))&&!isTwin(a)&&stmtPoints(a.id).length).map(a=>'acct:'+a.id);
+const nwSeries=()=>balSeries([...new Set(S.accounts.filter(a=>a.sf).flatMap(a=>{const G=sfGroup(a);return G?G.g.map(r=>r.id):[a.sf];}))].concat(stmtOnly()));
+const invSeries=()=>balSeries(invIds().concat(stmtOnly(['brokerage'])));
+// ---- looking back: the Overview month picker set to a past month ----
+const pastYM=ym=>!!ym&&ym<todayISO().slice(0,7);
+const ymEnd=ym=>ym+'-'+String(monthDays(ym)).padStart(2,'0');
+const ymShort=ym=>new Date(ym+'-15T12:00:00').toLocaleDateString('en-US',{month:'short',year:'numeric'});
+const valAt=(P,d)=>{let v=null;for(const x of P){if(x[0]<=d)v=x[1];else break;}return v;};
+// an account's balance on a day: bank history + statements for linked accounts, statements alone otherwise
+function acctBalAt(a,d){
+  if(isTwin(a)) return null;
+  const P=a.sf?balSeries((()=>{const G=sfGroup(a);return G?G.g.map(r=>r.id):[a.sf];})()):stmtPoints(a.id);return valAt(P,d);
+}
+// widgets that only know today (positions, CDs): say so when looking at a past month
+const nowOnly=(h,ym)=>h&&pastYM(ym)?h.replace(/<\/section>\s*$/,'<p class="sub mxnote">Shows today. There is no history for '+ymShort(ym)+'.</p></section>'):h;
+const lastStmt=a=>{const P=stmtPoints(a.id),l=P[P.length-1];return l?{v:l[1],at:new Date(l[0]+'T12:00:00').getTime(),stmt:true}:null;};
+function accountsHTML(ym){
   if(!S.accounts.length) return '';
-  const B=S.balSf||{},rows=sortedAccts().map(a=>({a,b:a.sf?B[a.sf]:null}));
+  const pm=pastYM(ym),end=pm?ymEnd(ym):null;
+  const B=S.balSf||{},bOf=a=>{if(pm){const v=acctBalAt(a,end);return v==null?null:{v,past:true};}return a.sf?B[a.sf]:(isTwin(a)?null:lastStmt(a));},rows=sortedAccts().map(a=>({a,b:bOf(a)}));
   const G=[['Cash',['checking','savings'],'var(--good)'],['Credit cards',['credit'],'var(--bad)'],['Loans',['loan'],'#f97316'],['Investments',['brokerage'],'var(--brand)'],['Other',['other'],'var(--mute)']];
   const known=G.flatMap(g=>g[1]),has=rows.some(r=>r.b);let tot=0,body='';
   const money=(v,cls)=>'<span class="agv '+(cls||'')+(v<0?' neg':'')+'">'+fmt(v)+'</span>';
   for(const [gn,ty,col] of G){
     const rs=rows.filter(r=>ty.includes(r.a.type)||(gn==='Other'&&!known.includes(r.a.type)));
     if(!rs.length) continue;
-    rs.forEach(r=>{const G=r.b?sfGroup(r.a):null;if(G){const f=x=>parseFloat(x.balance)||0;r.G=G;r.tv=G.g.reduce((x,y)=>x+f(y),0);r.av=f(G.me);r.vt=r.tv-r.av;}else{r.vt=r.b?vaultTotal(r.a):0;r.tv=r.b?r.b.v+r.vt:0;}});const sub=rs.reduce((x,r)=>x+r.tv,0);tot+=sub;
+    rs.forEach(r=>{const live=r.b&&!r.b.past&&!r.b.stmt,G=live?sfGroup(r.a):null;if(G){const f=x=>parseFloat(x.balance)||0;r.G=G;r.tv=G.g.reduce((x,y)=>x+f(y),0);r.av=f(G.me);r.vt=r.tv-r.av;}else{r.vt=live?vaultTotal(r.a):0;r.tv=r.b?r.b.v+r.vt:0;}});const sub=rs.reduce((x,r)=>x+r.tv,0);tot+=sub;
     body+='<details class="ag" data-ag="'+esc(gn)+'"'+((UI.agOpen||{})[gn]?' open':'')+'><summary><i class="agd" style="background:'+col+'"></i><span class="agt1">'+gn+'</span><span class="agc">'+rs.length+'</span><span class="agsp"></span>'+(has?money(sub,'agsum'):'')+'</summary>'
      +rs.map(r=>{const m=r.a.name.match(/^(.*?)\s*••(\d{4})\s*$/),nm=m?m[1]:r.a.name,l4=m?m[2]:'';
        return (r.G?'<div class="aga">':'')+'<div class="agr"><div class="agn"><span class="agname">'+esc(nm)+'</span>'+(l4?'<span class="agl4">••'+l4+'</span>':'')
-        +(r.b?'<div class="sub">'+(r.G?'':(r.a.vaults?'Available '+fmt(r.b.v)+' · Vaults '+fmt(r.vt)+' · ':''))+'Updated '+new Date(r.b.at).toLocaleDateString([], {month:'short',day:'numeric'})+'</div>':'')+'</div>'
+        +(r.b?'<div class="sub">'+(r.b.past?'End of '+ymShort(ym):r.b.stmt?'Statement '+new Date(r.b.at).toLocaleDateString([], {month:'short',day:'numeric'}):(r.G?'':(r.a.vaults?'Available '+fmt(r.b.v)+' · Vaults '+fmt(r.vt)+' · ':''))+'Updated '+new Date(r.b.at).toLocaleDateString([], {month:'short',day:'numeric'}))+'</div>':(pm?'<div class="sub">No balance for '+ymShort(ym)+'</div>':''))+'</div>'
         +(r.b?money(r.tv):'<span class="mute">–</span>')+'</div>'
         +(r.G?'<details class="agv2"><summary><span>'+(r.G.g.length-1)+' vault'+(r.G.g.length===2?'':'s')+' · '+fmt0(r.vt)+'</span></summary><div class="agr2 main"><span>Main savings</span><span class="agv">'+fmt(r.av)+'</span></div>'+r.G.g.filter(x=>x.id!==r.G.me.id).sort((x,y)=>String(x.name).localeCompare(String(y.name))).map(x=>'<div class="agr2"><span>'+esc(String(x.name).replace(/\s*\(\d{4}\)\s*$/,''))+'</span><span class="agv">'+fmt(parseFloat(x.balance)||0)+'</span></div>').join('')+'</details></div>':'');}).join('')+'</details>';
   }
   const asset=rows.filter(r=>r.tv>0).reduce((t,r)=>t+r.tv,0),owe=-rows.filter(r=>r.tv<0).reduce((t,r)=>t+r.tv,0);
   const nwS=fmt(tot),nwI=nwS.lastIndexOf('.'),apct=asset+owe>0?Math.max(2,Math.min(98,asset/(asset+owe)*100)):100;
-  const head='<div class="agtop"><h2 style="margin:0">Accounts</h2></div>'+(has?'<div class="agnw"><span class="agnwl">Net worth</span><div class="agnwv'+(tot<0?' neg':'')+'">'+(nwI>0?esc(nwS.slice(0,nwI))+'<small>'+esc(nwS.slice(nwI))+'</small>':esc(nwS))+'</div>'
+  const head='<div class="agtop"><h2 style="margin:0">Accounts</h2></div>'+(has?'<div class="agnw"><span class="agnwl">Net worth'+(pm?' · end of '+ymShort(ym):'')+'</span><div class="agnwv'+(tot<0?' neg':'')+'">'+(nwI>0?esc(nwS.slice(0,nwI))+'<small>'+esc(nwS.slice(nwI))+'</small>':esc(nwS))+'</div>'
     +(owe>0.5?'<div class="agbar" role="img" aria-label="Assets '+fmt0(asset)+', owed '+fmt0(owe)+'"><i style="width:'+apct.toFixed(1)+'%"></i><b></b></div>':'')
-    +'<div class="agleg"><span><i class="ga"></i>Assets <b>'+fmt0(asset)+'</b></span>'+(owe>0.5?'<span><i class="go"></i>Owed <b>'+fmt0(owe)+'</b></span>':'')+'</div>'+(S.accounts.some(a=>a.sf)?'<div class="aghist"><span class="agnwl">Over time · linked accounts</span>'+histChart(nwSeries(),{id:'nw',label:'Net worth',empty:'Your net worth chart starts building now. It appears after syncs on two different days.'})+'</div>':'')+'</div>':'');
+    +'<div class="agleg"><span><i class="ga"></i>Assets <b>'+fmt0(asset)+'</b></span>'+(owe>0.5?'<span><i class="go"></i>Owed <b>'+fmt0(owe)+'</b></span>':'')+'</div>'+(S.accounts.some(a=>a.sf)||(S.files||[]).length?'<div class="aghist"><span class="agnwl">Over time'+(pm?' · up to '+ymShort(ym):'')+'</span>'+histChart(pm?nwSeries().filter(p=>p[0]<=end):nwSeries(),{id:'nw',label:'Net worth',empty:'Your net worth chart starts building now. It appears after syncs on two different days.'})+'</div>':'')+'</div>':'');
   return '<section class="card">'+head+(has?'':'<p class="mute" style="margin:8px 0 0">Balances load after your next bank sync.</p>')+body+'</section>';
 }
 // ---------- charts ----------
@@ -2101,7 +2119,9 @@ function seedLoan(){
 }
 function invIds(){const H=S.holdings||{},o=Object.keys(H).filter(i=>H[i]&&H[i].length);S.accounts.forEach(a=>{if(a.type==='brokerage'&&a.sf&&!o.includes(a.sf)&&S.balSf&&S.balSf[a.sf]&&Math.abs(+S.balSf[a.sf].v||0)>=1) o.push(a.sf);});return o;}
 function cashByAcct(){const H=S.holdings||{},L=[];let tot=0;invIds().forEach(id=>{const hs=H[id]||[];const b=S.balSf&&S.balSf[id];let pos=0,c=0;hs.forEach(h=>{pos+=h.value||0;if(isCashPos(h)) c+=h.value||0;});const extra=b&&b.v!=null?Math.max(0,b.v-pos):0,v=c+(extra>=1?extra:0),all=b&&b.v!=null?b.v:pos;if(v>=0.5){L.push({id,name:ivNm(id),v,all});tot+=v;}});L.sort((a,b)=>b.v-a.v);const by={};L.forEach(x=>by[x.id]=x.v);return {tot,L,by};}
-function invWidgetHTML(){
+function invWidgetHTML(ym){
+  if(pastYM(ym)) return invPastHTML(ym);
+  if(!hasInv()&&stmtOnly(['brokerage']).length) return invPastHTML(todayISO().slice(0,7),true);
   if(!hasInv()) return '<section class="card"><h2>Investments</h2><p class="mute" style="margin:0">Positions load after your next bank sync.</p></section>';
   const H=S.holdings||{},ids=invIds();
   const nm=id=>{const a=S.accounts.find(x=>x.sf===id),r=(S.sfRaw||[]).find(x=>x.id===id);return a?a.name:(r?String(r.name||'').replace(/\s*\(\d{4}\)\s*$/,''):id);};
@@ -2118,6 +2138,20 @@ function invWidgetHTML(){
   const at=Math.max(0,...R.map(r=>+r.at||0)),ago=ms=>{const m=Math.round((Date.now()-ms)/6e4);return m<2?'just now':m<60?m+' min ago':m<1440?Math.round(m/60)+' h ago':agoTxt(ms);};
   const foot='<div class="ivf">'+(at?'<span class="sub">Updated '+ago(at)+'</span>':'')+'<span class="spacer"></span><button class="btn ghost small" data-act="invgo">All positions</button></div>';
   return '<section class="card"><h2>Investments</h2>'+tiles+rows+foot+'</section>';
+}
+// Investments as they stood at the end of a past month: account values from statements and bank history
+function invPastHTML(ym,cur){
+  const end=cur?todayISO():ymEnd(ym),wh=cur?'latest statements':'end of '+ymShort(ym),prev=ymEnd(addMonths(ym,-1));
+  const L=invIds().map(id=>({id,a:S.accounts.find(x=>x.sf===id),r:(S.sfRaw||[]).find(x=>x.id===id)})).map(o=>({id:o.id,name:o.a?o.a.name:String((o.r||{}).name||o.id).replace(/\s*\(\d{4}\)\s*$/,''),P:balSeries([o.id])}))
+    .concat(stmtOnly(['brokerage']).map(k=>{const a=S.accounts.find(x=>x.id===k.slice(5));return {id:k,name:a.name,P:balSeries([k])};}));
+  const lastD=L.reduce((m,o)=>o.P.length&&o.P[o.P.length-1][0]>m?o.P[o.P.length-1][0]:m,''),p0=cur&&lastD?ymEnd(addMonths(lastD.slice(0,7),-1)):prev;
+  const R=L.map(o=>({id:o.id,name:o.name,v:valAt(o.P,end),v0:valAt(o.P,p0)})).filter(r=>r.v!=null).sort((a,b)=>b.v-a.v);
+  if(!R.length) return '<section class="card"><h2>Investments</h2><p class="mute" style="margin:0">No values for '+ymShort(ym)+'. Import that month\'s statements to see it.</p></section>';
+  const tot=R.reduce((t,r)=>t+r.v,0),both=R.filter(r=>r.v0!=null),ch=both.reduce((t,r)=>t+r.v-r.v0,0),base=both.reduce((t,r)=>t+r.v0,0),mx=Math.max(1,...R.map(r=>r.v));
+  const sg=d=>(d<0?'-':'+')+fmt0(Math.abs(d)).replace('-','');
+  const tiles=stiles([{k:'Total',v:fmtT(tot),s:cur?wh:ymShort(ym),c:'#6366f1'},both.length?{k:'Change',v:(ch<0?'-':'+')+(Math.abs(ch)>=1e4?'$'+(Math.abs(ch)/1e3).toFixed(1)+'K':fmtT(Math.abs(ch))),s:base>0?pf(ch/base*100):(cur?'last month':'that month'),c:ch<0?'#e11d48':'#10b981'}:{k:'Change',v:'–',s:'no earlier month',c:'#94a3b8'},{k:'Accounts',v:String(R.length),s:'with a value',c:'#0ea5e9'}]);
+  const rows=R.map(r=>{const d=r.v0!=null?r.v-r.v0:null;return '<div class="ivr"><div class="ivn"><b title="'+esc(r.name)+'">'+esc(r.name.replace(/\s*\([^)]*\)/g,'').trim()||r.name)+'</b><span>'+fmt0(r.v)+'</span></div><div class="ivm"><span class="ivbar"><i style="width:'+Math.max(3,r.v/mx*100).toFixed(1)+'%"></i></span>'+(d!=null&&Math.abs(d)>=1?'<em class="'+(d<0?'neg':'pos')+'">'+sg(d)+(cur?' since last month':' this month')+'</em>':'<em>&nbsp;</em>')+'</div></div>';}).join('');
+  return '<section class="card"><h2>Investments</h2>'+tiles+rows+'<p class="sub mxnote">'+(cur?'From your latest statements. Link the account for live positions.':'Values at the end of '+ymShort(ym)+', from your statements and bank history.')+'</p></section>';
 }
 // ---- market watch + AI crash alarm (Finnhub quotes; key stays on this device) ----
 const fhKey=()=>{try{return localStorage.getItem('hb-fhkey')||'';}catch(e){return '';}};
@@ -2535,12 +2569,16 @@ function loanBlock(a,split){
     return '<div class="lnb">'+head+hero+brk+tiles+(L.interest!=null?'<p class="sub" style="margin:-2px 0 12px">About <b>'+fmt0(L.interest)+'</b> more interest until it\'s paid off.</p>':'')+wi+(chart?'<div style="margin-top:10px">'+chart+'</div>':'')+(facts.length?'<div class="sub lnx">'+facts.join(' · ')+'</div>':'')+'</div>';
 }
 // small overview widget: one line per loan, tap to open the Loans page
-function loansHTML(){
-  const A=loanAccts().map(a=>({a,L:loanInfo(a)})).filter(x=>x.L);if(!A.length) return '';
+function loansHTML(ym){
+  const pm=pastYM(ym),end=pm?ymEnd(ym):null;
+  let A=loanAccts().map(a=>({a,L:loanInfo(a)})).filter(x=>x.L);if(!A.length) return '';
+  // a past month: what was owed at its end, from the balance history
+  if(pm) A=A.map(({a,L})=>{const v=valAt(L.hist,end);return v==null?null:{a,L:Object.assign({},L,{owed:v,months:null,past:true})};}).filter(Boolean);
+  if(!A.length) return '<div class="card lnw"><h2 style="margin:0 0 6px">Loans</h2><p class="mute" style="margin:0">No balance for '+ymShort(ym)+'.</p></div>';
   const owed=A.reduce((t,x)=>t+x.L.owed,0);
   return '<div class="card lnw go" role="button" tabindex="0" data-act="goloans"><div class="row" style="align-items:baseline;margin-bottom:8px"><h2 style="margin:0">Loans</h2><span class="spacer"></span><b class="lnwt">'+fmt0(owed)+'</b><i class="bkgo" aria-hidden="true">›</i></div>'
    +A.map(({a,L})=>{const pct=L.orig?Math.max(0,Math.min(100,(L.orig-L.owed)/L.orig*100)):null;
-    return '<div class="lnwr"><div class="lnwn"><span>'+esc(loanName(a))+'</span><em'+(L.months==null&&!(L.owed<0.5)&&L.hr&&L.pay?' class="bad"':'')+'>'+(L.months!=null?inMonths(L.months):L.owed<0.5?'Paid off':L.hr&&L.pay?'Not at this payment':(pct!=null?'':'add rate'))+'</em></div>'+(pct!=null?'<div class="track"><div class="fill" style="width:'+pct.toFixed(1)+'%;background:linear-gradient(90deg,#10b981,#0ea5e9)"></div></div><div class="lnwp">'+Math.round(pct)+'% paid · '+fmt0(L.owed)+' left</div>':'<div class="lnwp">'+fmt0(L.owed)+' left</div>')+'</div>';}).join('')+'</div>';
+    return '<div class="lnwr"><div class="lnwn"><span>'+esc(loanName(a))+'</span><em'+(!L.past&&L.months==null&&!(L.owed<0.5)&&L.hr&&L.pay?' class="bad"':'')+'>'+(L.past?'End of '+ymShort(ym):L.months!=null?inMonths(L.months):L.owed<0.5?'Paid off':L.hr&&L.pay?'Not at this payment':(pct!=null?'':'add rate'))+'</em></div>'+(pct!=null?'<div class="track"><div class="fill" style="width:'+pct.toFixed(1)+'%;background:linear-gradient(90deg,#10b981,#0ea5e9)"></div></div><div class="lnwp">'+Math.round(pct)+'% paid · '+fmt0(L.owed)+' left</div>':'<div class="lnwp">'+fmt0(L.owed)+' left</div>')+'</div>';}).join('')+'</div>';
 }
 // full page (Invest tab → Loans)
 function loansPageHTML(){
@@ -2650,7 +2688,7 @@ function recurring0(){
     const last=L[L.length-1],lastT=new Date(last.date+'T12:00:00');
     if(today-lastT>50*864e5) continue;
     const next=new Date(lastT.getTime()+Math.round(gap)*864e5);
-    out.push({k,amt:mid,last:last.date,next,cat:last.cat});
+    out.push({k,amt:mid,first:L[0].date,last:last.date,next,cat:last.cat});
   }
   return out.sort((a,b)=>b.amt-a.amt);
 }
@@ -2690,11 +2728,22 @@ function billScan0(){
       due=dayNum(iso(nm.getFullYear(),nm.getMonth()+1,Math.min(dom,dim)));if(due-lastD.d<18) due+=30;}
     else due=lastD.d+g;
     const lo=Math.min(...am),hi=Math.max(...am);
-    out.push({k,name:titleCase(k),cat:last.cat,cad,amt:mid,lo,hi,varies:(hi-lo)>mid*0.15&&(hi-lo)>=3,n:D.length,last:lastD.date,lastAmt:lastD.a,lastD:lastD.d,due,monthly:cad==='month'?mid:cad==='quarter'?mid/3:cad==='half'?mid/6:mid/12});
+    out.push({k,first:D[0].date,name:titleCase(k),cat:last.cat,cad,amt:mid,lo,hi,varies:(hi-lo)>mid*0.15&&(hi-lo)>=3,n:D.length,last:lastD.date,lastAmt:lastD.a,lastD:lastD.d,due,monthly:cad==='month'?mid:cad==='quarter'?mid/3:cad==='half'?mid/6:mid/12});
   }
   return out;
 }
-function billsHTML(){
+function merchMonth(ym){const o={};for(const t of S.txns){if(t.date.slice(0,7)!==ym||t.amount>=0||EXCLUDED.includes(t.cat)||isInc(t.cat)) continue;const k=merchantKey(t.desc);if(!k) continue;const x=o[k]||(o[k]={a:0,d:t.date});x.a+=-t.amount;if(t.date>x.d)x.d=t.date;}return o;}
+function billsPastHTML(ym){
+  const end=ymEnd(ym),M=merchMonth(ym),B=billScan().filter(b=>b.first<=end);
+  if(!B.length) return wCard('Bills','',wEmpty('No bills found for '+ymShort(ym)+'.'));
+  const paid=B.filter(b=>M[b.k]).sort((a,b)=>M[b.k].a-M[a.k].a),miss=B.filter(b=>!M[b.k]&&b.cad==='month'&&b.first<ym+'-01');
+  const tot=paid.reduce((t,b)=>t+M[b.k].a,0);
+  const tiles=stiles([{k:'Paid in '+ymShort(ym).split(' ')[0],v:fmtT(tot),s:paid.length+' bill'+(paid.length===1?'':'s'),c:'#6366f1'},{k:'Not paid',v:String(miss.length),s:miss.length?'monthly bill'+(miss.length===1?'':'s'):'all monthly bills paid',c:miss.length?'var(--warn)':'#10b981'},{k:'Per month',v:fmtT(B.reduce((t,b)=>t+b.monthly,0)),s:'usual',c:'#0ea5e9'}]);
+  const row=(b,p)=>'<div class="ip rcr go bl'+(p?' done':'')+'" role="button" tabindex="0" data-act="mergo" data-k="'+esc(b.k)+'">'+avHTML(b.cat)+'<div class="l"><b>'+esc(b.name)+'</b><span>'+esc(b.cat)+'</span></div><div class="r"><b>'+fmt(p?p.a:b.amt)+'</b><span class="rdue'+(p?' paid':' late')+'">'+(p?'✓ Paid '+niceDay(p.d):'No payment')+'</span></div></div>';
+  return wCard('Bills','',tiles+(miss.length?'<h3 class="blh">Not paid in '+ymShort(ym)+'</h3>'+miss.map(b=>row(b,null)).join(''):'')+(paid.length?'<h3 class="blh">Paid in '+ymShort(ym)+'</h3>'+paid.map(b=>row(b,M[b.k])).join(''):'<p class="sub" style="margin:4px 0 0">No bill payments found that month.</p>'));
+}
+function billsHTML(pym){
+  if(pastYM(pym)) return billsPastHTML(pym);
   const B=billScan();
   if(!B.length) return wCard('Bills','',wEmpty('No bills found yet. They show up once a bill, utility or subscription has been paid twice.'));
   const T=dayNum(todayISO()),ym=todayISO().slice(0,7),dstr=n=>new Date(n*864e5).toISOString().slice(0,10),nd=n=>niceDay(dstr(n));
@@ -2711,7 +2760,17 @@ function billsHTML(){
     +(paid.length?'<details class="bld"'+(UI.blPaid?' open':'')+' data-tg="blPaid"><summary>Paid recently <span class="sub">· '+paid.length+'</span></summary>'+paid.map(b=>row(b,true)).join('')+'</details>':'')
     +'<p class="sub mxnote">Found by scanning your transactions for bills, utilities, insurance, loans and subscriptions that repeat. Due dates are estimates from past payments. Credit card payments and transfers are not counted.</p>');
 }
-function recurHTML(){
+function recurPastHTML(ym){
+  const end=ymEnd(ym),M=merchMonth(ym),R=recurring().filter(x=>x.first<=end);
+  if(!R.length) return wCard('Recurring charges','',wEmpty('No monthly charges found for '+ymShort(ym)+'.'));
+  const hit=R.filter(x=>M[x.k]).sort((a,b)=>M[b.k].a-M[a.k].a),tot=hit.reduce((t,x)=>t+M[x.k].a,0);
+  const tiles=stiles([{k:'In '+ymShort(ym).split(' ')[0],v:fmtT(tot),s:hit.length+' charge'+(hit.length===1?'':'s'),c:'#6366f1'},{k:'Per year',v:fmtT(tot*12),s:'at that pace',c:'#0ea5e9'},{k:'Not charged',v:String(R.length-hit.length),s:'that month',c:'#94a3b8'}]);
+  return wCard('Recurring charges','',tiles+R.slice().sort((a,b)=>(M[b.k]?M[b.k].a:-1)-(M[a.k]?M[a.k].a:-1)).slice(0,UI.rcAll?R.length:7).map(x=>{const p=M[x.k];
+      return '<div class="ip rcr go" role="button" tabindex="0" data-act="mergo" data-k="'+esc(x.k)+'">'+avHTML(x.cat)+'<div class="l"><b>'+esc(titleCase(x.k))+'</b><span>'+esc(x.cat)+'</span></div><div class="r"><b>'+(p?fmt(p.a):'–')+'</b><span class="rdue">'+(p?niceDay(p.d):'Not charged')+'</span></div></div>';}).join('')
+    +(R.length>7?'<button type="button" class="btn ghost small rcmore" data-act="rcall" aria-expanded="'+!!UI.rcAll+'">'+(UI.rcAll?'Show less':'Show '+(R.length-7)+' more')+'</button>':''));
+}
+function recurHTML(ym){
+  if(pastYM(ym)) return recurPastHTML(ym);
   const R=recurring();if(!R.length) return wCard('Recurring charges','',wEmpty('No monthly charges found yet. They show up after a charge repeats for three months.'));
   const tot=R.reduce((t,x)=>t+x.amt,0),now=Date.now();
   const dd=x=>Math.round((x.next-now)/864e5),when=x=>{const d=dd(x);return d<0?'Due now':d===0?'Today':d<=7?'In '+d+' day'+(d===1?'':'s'):'~'+shortDate(x.next.toISOString().slice(0,10));};
@@ -2882,7 +2941,7 @@ function viewDash(){
     flow:()=>d.spend>0?'<section class="card"><div class="cardh"><h2>Where the money went</h2><span class="cardha"><button type="button" class="btn ghost small" data-act="flowsave" data-ym="'+UI.month+'">Save picture</button>'+(navigator.share?'<button type="button" class="btn ghost small" data-act="flowshare" data-ym="'+UI.month+'">Share</button>':'')+'</span></div><p class="sub" style="margin:-4px 0 8px">'+fmt0(d.spend)+' spent'+(d.income>0?' of '+fmt0(d.income)+' earned':'')+'</p>'+flowHTML(UI.month)+'</section>':'',
     cal:()=>'<section class="card"><h2>Day by day</h2>'+calHTML(UI.month)+'</section>',
     merch:()=>topSpendHTML(UI.month),
-    accts:accountsHTML,inv:invWidgetHTML,usual:()=>usualHTML(UI.month),recur:recurHTML,bills:billsHTML,bank:bankConnHTML,mix:invMixHTML,cds:cdWidgetHTML,loans:loansHTML,tick:tickHTML,bubble:bubbleHTML};
+    accts:()=>accountsHTML(UI.month),inv:()=>invWidgetHTML(UI.month),usual:()=>usualHTML(UI.month),recur:()=>recurHTML(UI.month),bills:()=>billsHTML(UI.month),bank:bankConnHTML,mix:()=>nowOnly(invMixHTML(),UI.month),cds:()=>nowOnly(cdWidgetHTML(),UI.month),loans:()=>loansHTML(UI.month),tick:tickHTML,bubble:bubbleHTML};
   h+=widgetsHTML(HW,anim);
   return h;
 }
@@ -3187,7 +3246,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" aria-label="Disconnect bank sync" title="Disconnect">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.51.1';
+const APP_VERSION='1.52.0';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
