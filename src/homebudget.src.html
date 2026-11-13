@@ -3097,7 +3097,6 @@ function importCardHTML(){
   if(!UI.impAcct&&S.accounts[0]) UI.impAcct=S.accounts[0].id;
   return '<section class="card" id="s-import"><h2>Import files</h2>'
    +'<div class="drop"><b>Add PDF statements, CSV or OFX/QFX files</b><br><span class="sub">Pick as many as you like, mixed types are fine · or drag them here</span><br><span class="btn pick">Choose files</span><input type="file" multiple data-chg="file" aria-label="Choose files"></div>'
-   +'<label>A single CSV / OFX file goes into<select id="impAcct" data-chg="impAcct">'+sortedAccts().map(a=>'<option value="'+esc(a.id)+'" '+(a.id===UI.impAcct?'selected':'')+'>'+esc(a.name)+'</option>').join('')+'<option value="__new__">+ New account…</option></select></label>'
    +'<details style="margin-top:8px"><summary>How does this work?</summary><p class="mute"><b>PDF statements:</b> Chase (checking, savings, card), Discover savings, Marcus and Fidelity are read automatically. Each statement is matched to its account by account number — new accounts are created for you. Every statement is checked against the totals printed on it. Other banks get a best-guess read you can review.</p><p class="mute"><b>CSV / OFX:</b> log in → open the account → Activity / Transactions → Download or Export. Choose the account above first.</p><p class="mute">Duplicate files and overlapping dates are skipped automatically. The original file is kept in this browser so the Audit tab can re-check it later.</p></details>'
    +(UI.pdf?pdfPreviewHTML():'')+(UI.import?previewHTML():'')+'</section>';
 }
@@ -3140,7 +3139,7 @@ function pdfPreviewHTML(){
 }
 function previewHTML(){
   const I=UI.import;
-  let h='<div class="pv"><h3>'+esc(I.fileName)+' <span class="pill">'+(I.kind==='ofx'?'OFX/QFX':'CSV')+'</span></h3><p class="sub" style="margin:0 0 8px">Going into <b>'+esc((S.accounts.find(a=>a.id===I.acct)||{name:'?'}).name)+'</b>. Not the right account? Pick another above, or choose <b>+ New account…</b>.</p>';
+  let h='<div class="pv"><h3>'+esc(I.fileName)+' <span class="pill">'+(I.kind==='ofx'?'OFX/QFX':'CSV')+'</span></h3><label class="impTo">Going into<select id="impAcct" data-chg="impAcct">'+(I.acct?'':'<option value="" selected disabled>Pick an account…</option>')+sortedAccts().map(a=>'<option value="'+esc(a.id)+'" '+(a.id===I.acct?'selected':'')+'>'+esc(a.name)+'</option>').join('')+'<option value="__new__">+ New account…</option></select></label><p class="sub" style="margin:4px 0 8px">'+(I.acct?(I.why?'Found by the '+esc(I.why)+'. ':'')+'Not right? Pick another.':'<b style="color:var(--warn)">Couldn\'t tell which account this file is for.</b> Pick one, or add a new account.')+'</p>';
   if(I.kind==='csv'){
     const opt=sel=>'<option value="-1">— none —</option>'+I.headers.map((x,i)=>'<option value="'+i+'" '+(sel===i?'selected':'')+'>'+esc(x||'(column '+(i+1)+')')+'</option>').join('');
     const f=[['date','Date'],['desc','Description'],['amount','Amount'],['debit','Debit (if separate)'],['credit','Credit (if separate)']];
@@ -3265,7 +3264,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" aria-label="Disconnect bank sync" title="Disconnect">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.53.2';
+const APP_VERSION='1.53.3';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -3390,7 +3389,7 @@ function profileCardHTML(){
 function viewSettings(){
   const HL=sfHealth();
   return settingsTop()+sfCardHTML()+accountsCardHTML(HL)+importCardHTML()+rulesCardHTML()+profileCardHTML()
-   +'<section class="card" id="s-help"><h2>Troubleshooting</h2>'+diagCardHTML()+rawCardHTML()+'<details class="drow dz"><summary><span>Advanced<small>Reset this app</small></span></summary><p class="mute" style="margin:0 0 10px">Deletes every account, transaction, rule and budget from this browser. Export a profile first if you might want them back.</p><button class="btn danger small" data-act="clearall">Delete everything</button></details></div></section>'
+   +'<section class="card" id="s-help"><h2>Troubleshooting</h2>'+diagCardHTML()+rawCardHTML()+'<details class="drow dz"><summary><span>Advanced<small>Reset this app</small></span></summary><p class="mute" style="margin:0 14px 10px">Deletes every account, transaction, rule and budget from this browser. Export a profile first if you might want them back.</p><button class="btn danger small" data-act="clearall">Delete everything</button></details></div></section>'
    +'<p class="mute" style="text-align:center;font-size:12px">HomeBudget v'+APP_VERSION+'</p>';
 }
 
@@ -3488,18 +3487,36 @@ function newAcctDialog(fileName,then,onCancel){
     if(!n){toast('Give the account a name');if(onCancel)onCancel();return;}
     const a={id:uid(),name:n,type:t||'checking'};S.accounts.push(a);UI.impAcct=a.id;save();toast('Added "'+n+'" as '+(TYPES[a.type]||'Other').toLowerCase());then(a);}});
 }
+// Which account a CSV/OFX file belongs to: the account number inside the file, the last 4 digits in its name,
+// the bank's name when you have one account there, or the account this kind of file went into last time.
+function detectFileAcct(name,text,rows,hi,sig){
+  const L=S.accounts.filter(a=>acctL4(a)),by4=d=>{const m=L.filter(a=>acctL4(a)===d);return m.length===1?m[0]:null;};
+  const ofx=String(text).match(/<ACCTID>\s*([^<\s]+)/i);
+  if(ofx){const a=by4(ofx[1].replace(/\D/g,'').slice(-4));if(a) return {id:a.id,why:'account number in the file'};}
+  if(rows&&hi>=0){const H=rows[hi].map(x=>String(x).toLowerCase()),ci=H.findIndex(h=>/account( number| #|$)|acct/.test(h));
+    if(ci>=0){const v=new Set(rows.slice(hi+1).map(r=>String(r[ci]||'').replace(/\D/g,'').slice(-4)).filter(x=>x.length===4));if(v.size===1){const a=by4([...v][0]);if(a) return {id:a.id,why:'account column in the file'};}}}
+  {const n=acctFromName(name);if(n&&n.existing&&S.accounts.some(a=>a.id===n.existing)) return {id:n.existing,why:'file name'};}
+  for(const d of (String(name).match(/\d{4,}/g)||[])){const a=by4(d.slice(-4));if(a) return {id:a.id,why:'last 4 digits in the file name'};}
+  const nm=normMatch(name),bank=S.accounts.filter(a=>{const b=normMatch((a.ref||'').split(':')[0]||a.name.split(' ')[0]||'');return b.length>=3&&nm.includes(b);});
+  if(bank.length===1) return {id:bank[0].id,why:'bank name in the file name'};
+  const last=sig&&S.mappings[sig]&&S.mappings[sig].acct;if(last&&S.accounts.some(a=>a.id===last)) return {id:last,why:'this kind of file went here last time'};
+  return null;
+}
 async function processFile(file){
-  let acct=UI.impAcct;if(!acct){newAcctDialog(file.name,()=>processFile(file));return;}
+  if(!S.accounts.length){newAcctDialog(file.name,()=>processFile(file));return;}
   UI.pdf=null;
   const text=await file.text(),hash=await sha256(file);
   if(/OFXHEADER|<OFX>/i.test(text)){
-    UI.import={acct,file,hash,fileName:file.name,kind:'ofx',base:parseOFX(text),flip:false};
+    const d=detectFileAcct(file.name,text,null,-1,null);
+    UI.import={acct:d?d.id:'',why:d?d.why:'',file,hash,fileName:file.name,kind:'ofx',base:parseOFX(text),flip:false};
   }else{
     const rows=parseCSV(text,detectDelim(text)),hi=findHeader(rows);
     if(hi<0){toast("Couldn't find a header row with date and amount columns.");return;}
     const headers=rows[hi].map(x=>x.trim()),sig=headers.join('|').toLowerCase(),saved=S.mappings[sig];
-    UI.import={acct,file,hash,fileName:file.name,kind:'csv',rows,hi,headers,sig,map:saved?saved.map:guessMapping(headers),flip:saved?saved.flip:null};
+    const d=detectFileAcct(file.name,text,rows,hi,sig);
+    UI.import={acct:d?d.id:'',why:d?d.why:'',file,hash,fileName:file.name,kind:'csv',rows,hi,headers,sig,map:saved?saved.map:guessMapping(headers),flip:saved?saved.flip:null};
   }
+  dlog('import','Account for '+(UI.import.kind)+' file',{found:!!UI.import.acct,why:UI.import.why||'not detected'});
   recomputeImport();render();
 }
 function recomputeImport(){
@@ -4113,6 +4130,7 @@ const ACT={
   demo(){const a={id:uid(),name:'Demo Checking',type:'checking'};S.accounts.push(a);const {fresh}=assignKeys(a.id,demoTxns(),new Set());S.txns.push(...fresh.map(t=>Object.assign({id:uid(),acct:a.id,cat:categorize(t.desc,t.amount,S.rules)},t)));UI.month=latestMonth();save();render();toast('Demo loaded — delete "Demo Checking" in Settings when done');},
   async importgo(){
     const I=UI.import;if(!I||I.err||I.going) return;
+    if(!I.acct){toast('Pick the account this file is for');document.getElementById('impAcct')?.focus();return;}
     const hasFile=S.files.some(f=>f.hash===I.hash);
     if(!I.fresh.length&&hasFile) return;
     I.going=true;
@@ -4121,7 +4139,7 @@ const ACT={
     const att=await attachOriginal({file:I.file,hash:I.hash,kind:I.kind,acct:I.acct,start:ds[0],end:ds[ds.length-1],flip:!!I.flip,map:I.kind==='csv'?I.map:null});
     S.txns.push(...I.fresh.map(t=>Object.assign({},t,{id:uid(),acct:I.acct,cat:autoCat(t.desc,t.amount,I.acct),...xtra(t.desc),src:att.id||undefined})));
     linkRows(att.id,I.dupKeys||[],keyMap);
-    if(I.kind==='csv') S.mappings[I.sig]={map:I.map,flip:!!I.flip};
+    if(I.kind==='csv') S.mappings[I.sig]={map:I.map,flip:!!I.flip,acct:I.acct};
     const n=I.fresh.length,dup=I.dup;
     UI.import=null;UI.month=latestMonth();UI.tab='dash';save();render();
     const u=S.txns.filter(t=>t.cat==='Uncategorized').length;
@@ -4373,7 +4391,7 @@ const CHG={
     const c=el.value,dl=$('#subList');if(dl) dl.innerHTML=subOpts(c);
     const box=$('#txGrpBox');if(box){const custom=!['Uncategorized','Income','Interest','Transfer','Investing'].includes(c)&&groupOf(c)==='Other';box.hidden=!custom;const g=$('#txGrp');if(g) g.value=groupOf(c);}
   },
-  impAcct(el){if(el.value==='__new__'){newAcctDialog(UI.import&&UI.import.fileName,a=>{if(UI.import){UI.import.acct=a.id;recomputeImport();}render();},()=>render());return;}UI.impAcct=el.value;if(UI.import){UI.import.acct=el.value;recomputeImport();render();}},
+  impAcct(el){if(el.value==='__new__'){newAcctDialog(UI.import&&UI.import.fileName,a=>{if(UI.import){UI.import.acct=a.id;UI.import.why='';recomputeImport();}render();},()=>render());return;}UI.impAcct=el.value;if(UI.import){UI.import.acct=el.value;UI.import.why='';recomputeImport();render();}},
   file(el){const fl=[...el.files];el.value='';handleFiles(fl);},
   pdfacct(el){UI.pdf.items[+el.dataset.i].choice=el.value;recomputePdf();render();},
   pdfflip(el){UI.pdf.items[+el.dataset.i].flip=el.checked;recomputePdf();render();},
