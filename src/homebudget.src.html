@@ -2728,15 +2728,28 @@ function billsHTML(pym){
   const R=B.map(b=>{const paidNow=b.last.slice(0,7)===ym||T-b.lastD<=5,late=!paidNow&&b.due<T-3;return Object.assign({},b,{paidNow,late,inDays:b.due-T});});
   const open=R.filter(b=>!b.paidNow||b.inDays<=7&&b.inDays>=0&&b.last.slice(0,7)!==ym).filter(b=>!b.paidNow).sort((a,b)=>a.due-b.due),paid=R.filter(b=>b.paidNow).sort((a,b)=>b.lastD-a.lastD);
   const soon=open.filter(b=>b.inDays<=7),thisMo=open.filter(b=>dstr(b.due).slice(0,7)<=ym),mon=R.reduce((t,b)=>t+b.monthly,0);
-  const tiles=stiles([{k:'Due in 7 days',v:soon.length?fmtT(soon.reduce((t,b)=>t+b.amt,0)):'$0',s:soon.length?soon.length+' bill'+(soon.length===1?'':'s'):'Nothing due',c:soon.length?'var(--warn)':'#10b981'},{k:'Still due',v:fmtT(thisMo.reduce((t,b)=>t+b.amt,0)),s:paid.length+' paid so far',c:'#6366f1'},{k:'Per month',v:fmtT(mon),s:R.length+' bill'+(R.length===1?'':'s'),c:'#0ea5e9'}]);
+  const tiles=stiles([{k:'Due soon',v:soon.length?fmtT(soon.reduce((t,b)=>t+b.amt,0)):'$0',s:soon.length?soon.length+' bill'+(soon.length===1?'':'s')+' · 7 days':'Nothing due',c:soon.length?'var(--warn)':'#10b981'},{k:'Still due',v:fmtT(thisMo.reduce((t,b)=>t+b.amt,0)),s:paid.length+' paid so far',c:'#6366f1'},{k:'Per month',v:fmtT(mon),s:R.length+' bill'+(R.length===1?'':'s'),c:'#0ea5e9'}]);
   const cadL={month:'Monthly',quarter:'Every 3 months',half:'Twice a year',year:'Yearly'};
-  const when=b=>b.late?'Expected '+nd(b.due):b.inDays===0?'Due today':b.inDays===1?'Due tomorrow':b.inDays<=7?'Due in '+b.inDays+' days':'Due ~'+nd(b.due);
+  const when=b=>b.late?'Expected '+nd(b.due):b.inDays<0?'Was due '+nd(b.due):b.inDays===0?'Due today':b.inDays===1?'Due tomorrow':b.inDays<=7?'Due in '+b.inDays+' days':'Due ~'+nd(b.due);
   const row=(b,done)=>'<div class="ip rcr go bl'+(done?' done':'')+'" role="button" tabindex="0" data-act="mergo" data-k="'+esc(b.k)+'">'+avHTML(b.cat)+'<div class="l"><b>'+esc(b.name)+'</b><span>'+esc(b.cat)+' · '+cadL[b.cad]+(b.varies?' · usually '+fmt0(b.lo)+'–'+fmt0(b.hi):'')+'</span></div><div class="r"><b>'+(done?fmt(b.lastAmt):(b.varies?'≈':'')+fmt(b.amt))+'</b><span class="rdue'+(done?' paid':b.late?' late':b.inDays<=7?' soon':'')+'">'+(done?'✓ Paid '+niceDay(b.last):when(b))+'</span></div></div>';
-  const lim=UI.blAll?open.length:6;
-  return wCard('Bills','',tiles
-    +(open.length?'<h3 class="blh">Coming up</h3>'+open.slice(0,lim).map(b=>row(b,false)).join('')+(open.length>6?'<button type="button" class="btn ghost small rcmore" data-act="blall" aria-expanded="'+!!UI.blAll+'">'+(UI.blAll?'Show less':'Show '+(open.length-6)+' more')+'</button>':''):'<p class="sub" style="margin:4px 0 0">Everything found is paid for now.</p>')
-    +(paid.length?'<details class="bld"'+(UI.blPaid?' open':'')+' data-tg="blPaid"><summary>Paid recently <span class="sub">· '+paid.length+'</span></summary>'+paid.map(b=>row(b,true)).join('')+'</details>':'')
-    +'<p class="sub mxnote">Found by scanning your transactions for bills, utilities, insurance, loans and subscriptions that repeat. Due dates are estimates from past payments. Credit card payments and transfers are not counted.</p>');
+  // Upcoming: grouped by when each bill is next expected. All bills: every bill found, with its usual amount and next date.
+  const tab=UI.blTab==='all'?'all':'up';
+  const seg='<div class="seg2" role="group" aria-label="Bills view"><button type="button" data-act="bltab" data-m="up" class="'+(tab==='up'?'on':'')+'" aria-pressed="'+(tab==='up')+'">Upcoming</button><button type="button" data-act="bltab" data-m="all" class="'+(tab==='all'?'on':'')+'" aria-pressed="'+(tab==='all')+'">All bills · '+R.length+'</button></div>';
+  const head='<div class="row" style="align-items:center;margin-bottom:8px"><h2 style="margin:0">Bills</h2><span class="spacer"></span>'+seg+'</div>';
+  const sumL=L=>L.length?'<span class="sub"> · '+fmt0(L.reduce((t,b)=>t+b.amt,0))+'</span>':'';
+  let body;
+  if(tab==='up'){
+    const nm=addMonths(ym,1),U=R.filter(b=>!b.paidNow||dstr(b.due).slice(0,7)<=nm).sort((a,b)=>a.due-b.due);
+    const G=[['Not paid yet',U.filter(b=>!b.paidNow&&b.inDays<0)],['Due this week',U.filter(b=>b.inDays>=0&&b.inDays<=7)],['Later in '+ymShort(ym).split(' ')[0],U.filter(b=>!b.late&&b.inDays>7&&dstr(b.due).slice(0,7)<=ym)],['Next month',U.filter(b=>!b.late&&b.inDays>7&&dstr(b.due).slice(0,7)===nm)]].filter(g=>g[1].length);
+    const cap=UI.blAll?1e9:8;let shown=0;
+    body=(G.length?G.map(([h,L])=>{const vis=L.slice(0,Math.max(0,cap-shown));shown+=vis.length;return vis.length?'<h3 class="blh">'+h+sumL(L)+'</h3>'+vis.map(b=>row(b,false)).join(''):'';}).join(''):'<p class="sub" style="margin:4px 0 0">Nothing due in the next few weeks.</p>')
+      +(U.length>8?'<button type="button" class="btn ghost small rcmore" data-act="blall" aria-expanded="'+!!UI.blAll+'">'+(UI.blAll?'Show less':'Show '+(U.length-8)+' more')+'</button>':'')
+      +(paid.length?'<details class="bld"'+(UI.blPaid?' open':'')+' data-tg="blPaid"><summary>Paid this month <span class="sub">· '+paid.length+' · '+fmt0(paid.reduce((t,b)=>t+b.lastAmt,0))+'</span></summary>'+paid.map(b=>row(b,true)).join('')+'</details>':'');
+  }else{
+    body=R.slice().sort((a,b)=>b.monthly-a.monthly).map(b=>'<div class="ip rcr go bl" role="button" tabindex="0" data-act="mergo" data-k="'+esc(b.k)+'">'+avHTML(b.cat)+'<div class="l"><b>'+esc(b.name)+'</b><span>'+esc(b.cat)+' · '+cadL[b.cad]+' · last paid '+niceDay(b.last)+'</span></div><div class="r"><b>'+(b.varies?'≈':'')+fmt(b.amt)+'</b><span class="rdue'+(b.paidNow?' paid':b.late?' late':b.inDays<=7?' soon':'')+'">'+(b.paidNow?'✓ Next ~'+nd(b.due):when(b))+'</span></div></div>').join('');
+  }
+  return '<section class="card">'+head+tiles+body
+    +'<p class="sub mxnote">Found by scanning your transactions for bills, utilities, insurance, loans and subscriptions that repeat. Due dates are estimates from past payments. Credit card payments and transfers are not counted.</p></section>';
 }
 function recurPastHTML(ym){
   const end=ymEnd(ym),M=merchMonth(ym),R=recurring().filter(x=>x.first<=end);
@@ -3224,7 +3237,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" aria-label="Disconnect bank sync" title="Disconnect">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.52.1';
+const APP_VERSION='1.53.0';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -4140,6 +4153,7 @@ const ACT={
   audgo(el){jmp();UI.filters={q:'',acct:'',cat:'',month:'',ids:String(el.dataset.ids||'').split(',').filter(Boolean),label:el.dataset.label||'Selected transactions'};UI.limit=200;UI.tab='txns';render();window.scrollTo(0,0);},
   mergo(el){const k=el.dataset.k,ym=el.dataset.m||'';const ids=S.txns.filter(t=>(merchantKey(t.desc)||'other')===k&&(!ym||t.date.startsWith(ym))).map(t=>t.id);jmp();UI.filters={q:'',acct:'',cat:'',month:'',ids,label:titleCase(k)+(ym?' · '+monthLabel(ym):' · all')};UI.limit=200;UI.tab='txns';render();window.scrollTo(0,0);},
   blall(){UI.blAll=!UI.blAll;render();},
+  bltab(el){UI.blTab=el.dataset.m;UI.blAll=false;render();},
   rcall(){UI.rcAll=!UI.rcAll;render();},
   gouncat(){jmp();UI.filters={q:'',acct:'',cat:'Uncategorized',month:''};UI.limit=200;UI.tab='txns';render();},
   invtoggle(el){const id=el.dataset.id,open=el.getAttribute('aria-expanded')!=='true';let o=invOpen().filter(x=>x!==id);if(open)o.push(id);try{FOLD.set('hb-invopen3',JSON.stringify(o));}catch(e){}el.setAttribute('aria-expanded',open);const b=el.closest('section').querySelector('.ipl');if(b)b.hidden=!open;},
@@ -4373,7 +4387,7 @@ document.addEventListener('drop',e=>{e.preventDefault();const fl=[...(e.dataTran
     }
   }catch(e){}
 })();
-(async function(){try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();}catch(e){}await loadState();if(!UI.impAcct&&S.accounts[0])UI.impAcct=S.accounts[0].id;render();if((S.ruleV||0)<CAT_V){S.ruleV=CAT_V;let n=0;for(const t of S.txns){if(t.man||!['Uncategorized','Other'].includes(t.cat)) continue;const c=autoCat(t.desc,t.amount,t.acct);if(c!==t.cat){t.cat=c;n++;}}if(n){save();dlog('rules','Sorted transactions with new built-in rules',{n});render();}}setTimeout(()=>backfillStmtBal().catch(()=>{}),1500);})();
+(async function(){try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();}catch(e){}await loadState();if(!UI.impAcct&&S.accounts[0])UI.impAcct=S.accounts[0].id;render();if(!S.wB1){S.wB1=1;const W=S.widgets;if(W&&Array.isArray(W.hidden)&&W.hidden.includes('bills')){W.hidden=W.hidden.filter(x=>x!=='bills');W.order.splice(Math.min(2,W.order.length),0,'bills');save();render();}}if((S.ruleV||0)<CAT_V){S.ruleV=CAT_V;let n=0;for(const t of S.txns){if(t.man||!['Uncategorized','Other'].includes(t.cat)) continue;const c=autoCat(t.desc,t.amount,t.acct);if(c!==t.cat){t.cat=c;n++;}}if(n){save();dlog('rules','Sorted transactions with new built-in rules',{n});render();}}setTimeout(()=>backfillStmtBal().catch(()=>{}),1500);})();
 
 // swipe a banner sideways to dismiss it (touch or mouse); a small x shows on hover for desktop
 (function(){

@@ -1,5 +1,5 @@
 // HomeBudget service worker: network first (so new versions arrive as soon as you're online), cached copy when offline.
-const CACHE = 'homebudget-shell-16';
+const CACHE = 'homebudget-shell-17';
 const SHELL = ['./', 'index.html', 'manifest.webmanifest?v=7', 'icon7-192.png', 'icon7-512.png', 'icon7-maskable-512.png', 'apple-touch-icon7.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
