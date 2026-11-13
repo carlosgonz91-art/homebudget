@@ -53,6 +53,36 @@ h1{font-size:28px;font-weight:800;letter-spacing:-.03em;margin:2px 0 12px}h2{fon
 .spacer{flex:1}
 /* overview hero */
 .stats{display:block;margin-bottom:16px}
+.hx::before,.hx::after{display:none}
+.hx{padding:22px 22px 16px}
+.hxh{display:flex;gap:18px;align-items:flex-end;justify-content:space-between;flex-wrap:wrap}
+.hxm{min-width:0}
+.hxl{font-size:12.5px;font-weight:650;letter-spacing:.06em;text-transform:uppercase;opacity:.85}
+.hxn{font-size:52px;font-weight:800;letter-spacing:-.04em;line-height:1.05;margin:4px 0 8px;font-variant-numeric:tabular-nums}
+.hxp{display:inline-block;padding:4px 10px;border-radius:99px;background:rgba(255,255,255,.18);font-size:12px;font-weight:700}
+.hxp.warn{background:rgba(255,209,102,.3)}
+.hxg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;flex:1 1 420px;max-width:560px}
+.hxg:has(>.hxt:nth-child(2):last-child){grid-template-columns:repeat(2,minmax(0,1fr))}
+.hxt{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.16);border-radius:14px;padding:10px 12px;cursor:pointer;min-width:0;transition:background .15s}
+.hxt:hover{background:rgba(255,255,255,.2)}.hxt:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.hxt span{display:block;font-size:12px;font-weight:600;opacity:.85}
+.hxt b{display:block;font-size:20px;font-weight:750;font-variant-numeric:tabular-nums;margin:1px 0 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hxt em{display:block;font-style:normal;font-size:11.5px;font-weight:650;opacity:.9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hxt em.ok{color:#b9f6d4}.hxt em.bad{color:#ffd0d0}
+.hxc{margin-top:16px;outline:none}.hxc:focus-visible{box-shadow:0 0 0 2px #fff;border-radius:10px}
+.hxcl{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:11.5px;font-weight:600;opacity:.9;margin-bottom:6px}
+.hxcl i{display:inline-block;width:16px;margin-right:6px;vertical-align:middle;border-top:2.5px solid #fff}
+.hxcl i.s2{border-top:2px dashed rgba(255,255,255,.6)}.hxcl i.s3{border-top:2px dotted rgba(255,255,255,.85)}.hxcl i.s4{border-top:2px dashed #ffd166}
+.hxcw{position:relative;height:150px;cursor:crosshair;touch-action:pan-y}
+.hxcw svg{width:100%;height:100%;display:block;overflow:visible}
+.hxy span{position:absolute;left:0;transform:translateY(-110%);font-size:10.5px;font-weight:600;opacity:.65}
+.hxd,.hxq,.hxq2{position:absolute;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;background:#fff;box-shadow:0 0 0 4px rgba(255,255,255,.28);pointer-events:none}
+.hxq2{width:8px;height:8px;margin:-4px 0 0 -4px;background:rgba(255,255,255,.55);box-shadow:none}
+.hxv{position:absolute;top:0;bottom:0;border-left:1.5px dashed rgba(255,255,255,.7);pointer-events:none}
+.hxtt{position:absolute;top:4px;background:#fff;color:#1e1b4b;border-radius:12px;padding:8px 10px;font-size:12px;line-height:1.35;box-shadow:0 10px 26px rgba(0,0,0,.25);pointer-events:none;z-index:3;display:flex;flex-direction:column;white-space:nowrap}
+.hxtt span{color:#6b7280;font-weight:600}.hxtt b{font-size:14px}.hxtt em{font-style:normal;color:#4b5563}.hxtt i{font-style:normal;font-weight:700}.hxtt i.bad{color:#dc2626}.hxtt i.ok{color:#059669}
+.hxx{display:flex;justify-content:space-between;font-size:11px;font-weight:600;opacity:.7;margin-top:6px}
+@media (max-width:640px){.hxn{font-size:42px}.hxg{grid-template-columns:repeat(3,minmax(0,1fr));flex-basis:100%;max-width:none}.hxt{padding:8px 9px}.hxt b{font-size:16px}.hxt em{font-size:10.5px}.hxcw{height:120px}}
 .hero{position:relative;overflow:hidden;border-radius:26px;padding:22px 22px 18px;color:#fff;background:linear-gradient(135deg,var(--g1),var(--g2));box-shadow:0 18px 40px -18px color-mix(in srgb,var(--g1) 70%,transparent)}
 .hero::before,.hero::after{content:"";position:absolute;border-radius:50%;background:rgba(255,255,255,.1);pointer-events:none}
 .hero::before{width:240px;height:240px;right:-70px;top:-110px}
@@ -1900,6 +1930,69 @@ const smoothPath=pts=>{ // gentle curve through the points that never overshoots
   }
   return d;
 };
+// The month card on the Overview: net for the month, the three totals (each compared with last month),
+// and a chart of spending through the month you can scrub: last month as a ghost, the pace to month end, and your budget line.
+function heroCardHTML(ym,d){
+  const pym=addMonths(ym,-1),pd=md(pym),net=d.income-d.spend,mon=new Date(ym+'-15T12:00:00').toLocaleDateString('en-US',{month:'long'}),pmon=new Date(pym+'-15T12:00:00').toLocaleDateString('en-US',{month:'short'});
+  const tb=plannedExpenses(ym)||0,bs=tb?budgetedSpend(ym,d):0,left=tb-bs;
+  const dl=(a,b,good)=>{if(!(b>0.5)) return '';const ch=(a-b)/b*100;if(Math.abs(ch)<0.5) return '<em>same as '+pmon+'</em>';const up=ch>0,ok=good==='up'?up:!up;return '<em class="'+(ok?'ok':'bad')+'">'+(up?'▲ ':'▼ ')+Math.abs(ch).toFixed(0)+'% vs '+pmon+'</em>';};
+  const pill=d.income>0?'<span class="hxp'+(net<0?' warn':'')+'">'+(net<0?'Spent '+Math.round((d.spend/d.income-1)*100)+'% more than earned':'Kept '+Math.round(net/d.income*100)+'% of income')+'</span>':'';
+  const tile=(k,lab,val,sub)=>'<div class="hxt" role="button" tabindex="0" data-act="herogo" data-k="'+k+'"><span>'+lab+'</span><b>'+val+'</b>'+(sub||'')+'</div>';
+  return '<div class="hero hx"><div class="hxh"><div class="hxm"><div class="hxl">'+esc(mon)+' · net</div><div class="hxn'+(net<0?' neg':'')+'">'+(net<0?'−':'')+fmt0(Math.abs(net)).replace('-','')+'</div>'+pill+'</div>'
+   +'<div class="hxg">'+tile('in','Income',fmt0(d.income),dl(d.income,pd.income,'up'))+tile('out','Spending',fmt0(d.spend),dl(d.spend,pd.spend,'down'))+(tb?tile('left',left<0?'Over budget':'Left in budget',fmt0(Math.abs(left)),'<em class="'+(left<0?'bad':'ok')+'">of '+fmt0(tb)+' budget</em>'):'')+'</div></div>'
+   +heroChart(ym,tb)+'</div>';
+}
+function heroChart(ym,tb){
+  const cur=dailyData(ym),prev=dailyData(addMonths(ym,-1)),n=cur.length,isNow=ym===todayISO().slice(0,7);
+  let last=n;if(isNow) last=Math.min(n,new Date().getDate());else if(ym>todayISO().slice(0,7)) last=0;
+  const cum=a=>{let s=0;return a.map(x=>s+=x.v);},C=cum(cur),P=cum(prev);
+  if(!(C[Math.max(0,last-1)]>0)&&!(P[P.length-1]>0)) return '';
+  const pace=isNow&&last>=3&&last<n?C[last-1]/last*n:null;
+  const max=Math.max(1,C[Math.max(0,last-1)]||0,P[P.length-1]||0,pace||0,tb&&tb<(Math.max(C[last-1]||0,P[P.length-1]||0)*2.2)?tb:0)*1.08;
+  const W=600,H=150,X=i=>i/(n-1||1)*W,Y=v=>H-(Math.max(0,v)/max)*(H-8);
+  const pts=C.slice(0,last).map((v,i)=>[X(i),Y(v)]),pp=P.slice(0,n).map((v,i)=>[X(Math.min(i,n-1)),Y(v)]);
+  const line=pts.length>1?smoothPath(pts):'',area=line?line+' L'+pts[pts.length-1][0].toFixed(1)+','+H+' L0,'+H+' Z':'',e=pts[pts.length-1];
+  const showB=tb>0&&tb<=max;
+  const hp=JSON.stringify({ym,n,last,max,C:C.map(v=>Math.round(v)),P:P.slice(0,n).map(v=>Math.round(v)),dv:cur.map(x=>Math.round(x.v)),pace:pace&&Math.round(pace),tb:Math.round(tb||0)});
+  const yl=[max/1.08,max/2.16].map(v=>'<span style="top:'+(Y(v)/H*100).toFixed(1)+'%">'+(v>=1e4?'$'+(v/1e3).toFixed(0)+'K':v>=1e3?'$'+(v/1e3).toFixed(1)+'K':'$'+Math.round(v))+'</span>').join('');
+  const md0=new Date(ym+'-15T12:00:00').toLocaleDateString('en-US',{month:'short'});
+  return '<div class="hxc" data-hx="'+esc(hp)+'" tabindex="0" aria-label="Spending through '+esc(md0)+'. Hover, touch or use the arrow keys to see each day.">'
+   +'<div class="hxcl"><span class="a"><i class="s1"></i>Spent so far</span><span><i class="s2"></i>Last month</span>'+(pace?'<span><i class="s3"></i>On pace for '+fmt0(pace)+'</span>':'')+(showB?'<span><i class="s4"></i>Budget '+fmt0(tb)+'</span>':'')+'</div>'
+   +'<div class="hxcw"><svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="hxg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>'
+   +[.25,.5,.75].map(f=>'<line x1="0" x2="'+W+'" y1="'+(H*f).toFixed(1)+'" y2="'+(H*f).toFixed(1)+'" stroke="#fff" stroke-opacity=".12" vector-effect="non-scaling-stroke"/>').join('')
+   +(showB?'<line x1="0" x2="'+W+'" y1="'+Y(tb).toFixed(1)+'" y2="'+Y(tb).toFixed(1)+'" stroke="#ffd166" stroke-opacity=".9" stroke-width="1.5" stroke-dasharray="6 5" vector-effect="non-scaling-stroke"/>':'')
+   +(pp.length>1?'<path d="'+smoothPath(pp)+'" fill="none" stroke="#fff" stroke-opacity=".45" stroke-width="1.6" stroke-dasharray="3 4" vector-effect="non-scaling-stroke"/>':'')
+   +(area?'<path d="'+area+'" fill="url(#hxg)"/><path d="'+line+'" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>':'')
+   +(pace&&e?'<line x1="'+e[0].toFixed(1)+'" y1="'+e[1].toFixed(1)+'" x2="'+W+'" y2="'+Y(pace).toFixed(1)+'" stroke="#fff" stroke-opacity=".75" stroke-width="1.6" stroke-dasharray="1 5" stroke-linecap="round" vector-effect="non-scaling-stroke"/>':'')
+   +'</svg><div class="hxy">'+yl+'</div>'+(e?'<i class="hxd" style="left:'+(e[0]/W*100).toFixed(2)+'%;top:'+(e[1]/H*100).toFixed(1)+'%"></i>':'')
+   +'<i class="hxv" hidden></i><i class="hxq" hidden></i><i class="hxq2" hidden></i><div class="hxtt" hidden></div></div>'
+   +'<div class="hxx"><span>'+md0+' 1</span><span>'+md0+' '+Math.ceil(n/2)+'</span><span>'+md0+' '+n+'</span></div></div>';
+}
+function hxShow(w,frac){
+  let D;try{D=w._hx||(w._hx=JSON.parse(w.dataset.hx));}catch(e){return;}
+  const i=Math.max(0,Math.min(D.n-1,Math.round(frac*(D.n-1))));w._i=i;
+  const xf=i/(D.n-1||1),yf=v=>1-(Math.max(0,v)/D.max)*(1-8/150),has=i<D.last;
+  const v=w.querySelector('.hxv'),q=w.querySelector('.hxq'),q2=w.querySelector('.hxq2'),t=w.querySelector('.hxtt');
+  v.style.left=(xf*100)+'%';v.hidden=false;
+  if(has){q.style.left=(xf*100)+'%';q.style.top=(yf(D.C[i])*100)+'%';q.hidden=false;}else q.hidden=true;
+  if(D.P[i]!=null){q2.style.left=(xf*100)+'%';q2.style.top=(yf(D.P[i])*100)+'%';q2.hidden=false;}else q2.hidden=true;
+  const day=D.ym+'-'+String(i+1).padStart(2,'0'),dd=has?D.C[i]-(D.P[i]||0):null;
+  t.innerHTML='<span>'+niceDay(day)+'</span>'+(has?'<b>'+fmt0(D.C[i])+' spent so far</b>'+(D.dv[i]>0?'<em>'+fmt0(D.dv[i])+' that day</em>':'<em>Nothing spent that day</em>'):(D.pace?'<b>Pace: about '+fmt0(Math.round(D.pace*(i+1)/D.n))+'</b>':'<b>Not here yet</b>'))
+    +(D.P[i]!=null?'<em>Last month by now: '+fmt0(D.P[i])+(dd!=null?' <i class="'+(dd>0?'bad':'ok')+'">'+(dd>0?'+':'−')+fmt0(Math.abs(dd)).replace('-','')+'</i>':'')+'</em>':'');
+  t.hidden=false;t.classList.remove('r');{const cw=w.querySelector('.hxcw').clientWidth,tw=t.offsetWidth,x=xf*cw;let L=x+10;if(L+tw>cw) L=x-10-tw;if(L<0) L=Math.max(0,Math.min(cw-tw,x-tw/2));t.style.left=L+'px';}
+  const d0=w.querySelector('.hxd');if(d0) d0.style.opacity='.3';
+}
+function hxHide(w){if(!w) return;['.hxv','.hxq','.hxq2','.hxtt'].forEach(c=>{const e=w.querySelector(c);if(e) e.hidden=true;});const d0=w.querySelector('.hxd');if(d0) d0.style.opacity='';}
+(function(){
+  const fr=(w,e)=>{const c=w.querySelector('.hxcw').getBoundingClientRect();return (e.clientX-c.left)/Math.max(1,c.width);};
+  const pick=e=>e.target.closest&&e.target.closest('.hxc[data-hx]');
+  document.addEventListener('pointermove',e=>{const w=pick(e);if(w) hxShow(w,fr(w,e));});
+  document.addEventListener('pointerdown',e=>{const w=pick(e);if(w) hxShow(w,fr(w,e));});
+  document.addEventListener('pointerout',e=>{const w=pick(e);if(w&&!w.contains(e.relatedTarget)) hxHide(w);});
+  document.addEventListener('focusout',e=>{const w=pick(e);if(w) hxHide(w);});
+  document.addEventListener('keydown',e=>{const w=pick(e);if(!w||!/^Arrow(Left|Right)$|^Escape$/.test(e.key)) return;if(e.key==='Escape'){hxHide(w);return;}
+    let D;try{D=w._hx||(w._hx=JSON.parse(w.dataset.hx));}catch(_){return;}const i=Math.max(0,Math.min(D.n-1,(w._i==null?Math.max(0,D.last-1):w._i)+(e.key==='ArrowLeft'?-1:1)));hxShow(w,i/(D.n-1||1));e.preventDefault();});
+})();
 // running total of spending through the month, drawn inside the blue card, with last month as a dashed ghost
 function heroSpark(ym){
   const cur=dailyData(ym),prev=dailyData(addMonths(ym,-1)),n=cur.length,now=new Date(),isNow=ym===todayISO().slice(0,7);
@@ -3027,9 +3120,7 @@ function viewDash(){
    if(uncat) h+=bn('uncat',String(uncat),uncat+' to categorize','gouncat','Review');
    if(stale) h+=bn('backup',String(wk),'Not backed up recently','backup','Back up');}
   h+='<div class="mprow">'+monthPicker()+(UI.wedit?'':'<button type="button" class="wed" data-act="wedit" title="Edit widgets" aria-label="Edit widgets: rearrange, add or remove"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></button>')+'</div>';
-  h+='<div class="stats chv'+(anim?'':' still')+'"><div class="hero"><div class="htop"><div><div class="hl">Net this month</div><div class="hn">'+(net<0?'−':'')+fmt0(Math.abs(net)).replace('-','')+'</div></div>'+(d.income>0?'<span class="hpill'+(net<0?' warn':'')+'">'+(net<0?'Spent '+Math.round((d.spend/d.income-1)*100)+'% more than earned':'Kept '+Math.round(net/d.income*100)+'% of income')+'</span>':'')+'</div>'
-   +(d.income>0||d.spend>0?'<div class="hbar" role="img" aria-label="Spent '+fmt0(d.spend)+' of '+fmt0(d.income)+' earned"><i style="width:'+(d.income>0?Math.min(100,d.spend/d.income*100):100).toFixed(1)+'%"></i></div><div class="hbl"><span>Spent <b>'+fmt0(d.spend)+'</b></span><span>of <b>'+fmt0(d.income)+'</b> earned</span></div>':'')
-   +heroSpark(UI.month)+'<div class="hrow"><div class="hchip hgo" role="button" tabindex="0" data-act="herogo" data-k="in"><span><i>↓</i>Income</span><b>'+fmt0(d.income)+'</b></div><div class="hchip hgo" role="button" tabindex="0" data-act="herogo" data-k="out"><span><i>↑</i>Spending</span><b>'+fmt0(d.spend)+'</b></div>'+(totalBudget?(()=>{const bs=budgetedSpend(UI.month,d),lf=totalBudget-bs;return '<div class="hchip hgo" role="button" tabindex="0" data-act="herogo" data-k="left"><span><i>◔</i>'+(lf<0?'Over budget':'Left in budget')+'</span><b>'+fmt0(Math.abs(lf))+'</b></div>';})():'')+'</div></div></div>';
+  h+='<div class="stats chv'+(anim?'':' still')+'">'+heroCardHTML(UI.month,d)+'</div>';
   const cats=Object.entries(d.byCat).filter(e=>Math.abs(e[1])>0.005).sort((a,b)=>b[1]-a[1]);
   const catsT=cats.reduce((x,e)=>x+Math.max(0,e[1]),0);
   const catCard='<section class="card"><h2>Spending by category</h2>'+donutHTML(cats.filter(e=>e[1]>0),catsT)+(cats.filter(([c])=>budgetOf(c,UI.month)).length?'<h3 style="margin:14px 0 0">Budgets</h3>':'')+(cats.length?cats.filter(([c])=>budgetOf(c,UI.month)).map(([c,v])=>{
@@ -3347,7 +3438,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" aria-label="Disconnect bank sync" title="Disconnect">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.54.0';
+const APP_VERSION='1.55.0';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
