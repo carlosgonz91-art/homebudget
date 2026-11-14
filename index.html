@@ -243,7 +243,7 @@ label select,label input{display:block;margin-top:4px;color:var(--ink)}
 .cdot{width:10px;height:10px;border-radius:50%;flex:none}
 .track{position:relative;height:9px;background:var(--track);border-radius:99px}
 .fill{height:100%;background:linear-gradient(90deg,var(--fill),color-mix(in srgb,var(--fill) 70%,var(--g2)));border-radius:99px;transition:width .5s cubic-bezier(.2,.8,.2,1)}
-.fill.over{background:linear-gradient(90deg,#dc2626,#ef4444);box-shadow:0 0 0 1px rgba(220,38,38,.35),0 0 10px rgba(239,68,68,.35)}
+.fill.over{background:linear-gradient(90deg,color-mix(in srgb,var(--cout) 80%,#000),var(--cout));box-shadow:0 0 0 1px rgba(220,38,38,.35),0 0 10px rgba(239,68,68,.35)}
 .mark{position:absolute;top:-4px;bottom:-4px;width:3px;border-radius:2px;background:var(--ink);opacity:.5}
 /* donut */
 .dn{display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-bottom:6px}
@@ -369,8 +369,8 @@ label select,label input{display:block;margin-top:4px;color:var(--ink)}
 .lneta{display:grid;grid-template-columns:auto auto auto;justify-content:space-between;column-gap:16px;row-gap:4px;margin:0 0 12px;padding:11px 13px;border-radius:14px;background:linear-gradient(135deg,color-mix(in srgb,#10b981 15%,var(--card)),color-mix(in srgb,#0ea5e9 11%,var(--card)));border:1px solid color-mix(in srgb,#10b981 28%,var(--line))}.lneta>div{min-width:0}.lneta small{display:block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:color-mix(in srgb,#10b981 70%,var(--ink))}.lneta b{display:block;margin-top:2px;font-size:16px;white-space:nowrap}.lneta>div:last-child{text-align:right}@media (max-width:380px){.lneta{column-gap:10px;padding:11px 11px}.lneta b{font-size:15px}.lneta small{font-size:10px;letter-spacing:.04em}}
 .lneta.mute{display:block;color:var(--mute);background:var(--soft);border-color:var(--line);font-size:13.5px}.lneta.mute b{display:inline;color:var(--ink);font-size:inherit}
 .lnms{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:0 0 12px}.lnm{border-radius:12px;padding:7px 8px;background:var(--soft);border:1px solid var(--line);text-align:center;min-width:0}.lnm b{display:block;font-size:13px}.lnm span{display:block;font-size:11px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.lnm.done{background:color-mix(in srgb,#10b981 14%,var(--card));border-color:color-mix(in srgb,#10b981 35%,var(--line))}.lnm.done span{color:#059669;font-weight:700}
-.lnwi{border-radius:14px;padding:10px 12px;background:var(--soft);border:1px solid var(--line);margin:2px 0 4px}.lnwh{font-weight:700;font-size:13.5px;margin-bottom:8px}.lnch{display:flex;gap:6px;flex-wrap:wrap}.lnch button{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:99px;padding:7px 13px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;min-height:36px}.lnch button.on{background:linear-gradient(135deg,#10b981,#0ea5e9);border-color:transparent;color:#fff}.lnres{margin-top:8px;font-size:14px}.lnres b{color:#059669}
-.lnp{height:8px;border-radius:4px;background:var(--track);overflow:hidden;margin:-4px 0 12px}.lnp i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,#10b981,#0ea5e9)}
+.lnwi{border-radius:14px;padding:10px 12px;background:var(--soft);border:1px solid var(--line);margin:2px 0 4px}.lnwh{font-weight:700;font-size:13.5px;margin-bottom:8px}.lnch{display:flex;gap:6px;flex-wrap:wrap}.lnch button{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:99px;padding:7px 13px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;min-height:36px}.lnch button.on{background:linear-gradient(135deg,var(--g1),var(--g2));border-color:transparent;color:#fff}.lnres{margin-top:8px;font-size:14px}.lnres b{color:#059669}
+.lnp{height:8px;border-radius:4px;background:var(--track);overflow:hidden;margin:-4px 0 12px}.lnp i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,var(--cin),color-mix(in srgb,var(--cin) 60%,#fff))}
 .lnx{margin-top:8px;line-height:1.6}.lnx b{color:var(--ink)}
 .tkh{margin:12px 0 2px;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
 .tkx{border:0;background:none;padding:0;font:inherit;font-size:12px;color:var(--mute);cursor:pointer;text-decoration:underline}
@@ -434,7 +434,7 @@ label select,label input{display:block;margin-top:4px;color:var(--ink)}
 .tb:hover::after,.tb:focus::after{content:attr(data-v);position:absolute;left:50%;top:6px;transform:translateX(-50%) rotate(180deg);writing-mode:vertical-rl;font-size:11px;font-weight:700;color:#fff;white-space:nowrap;pointer-events:none}
 .tb.lo:hover::after,.tb.lo:focus::after{writing-mode:horizontal-tb;transform:translateX(-50%);top:auto;bottom:100%;margin-bottom:4px;color:var(--ink);background:var(--card);border:1px solid var(--line);padding:2px 7px;border-radius:7px;font-size:12px;z-index:2;box-shadow:var(--sh)}
 .tb:hover,.tb:focus{filter:brightness(1.1)}
-.tb.i{background:linear-gradient(180deg,color-mix(in srgb,var(--good) 80%,#fff),var(--good))}.tb.s{background:linear-gradient(180deg,color-mix(in srgb,var(--bad) 75%,#fff),var(--bad));opacity:.92}
+.tb.i{background:linear-gradient(180deg,color-mix(in srgb,var(--cin) 80%,#fff),var(--cin))}.tb.s{background:linear-gradient(180deg,color-mix(in srgb,var(--cout) 75%,#fff),var(--cout));opacity:.92}
 .legend{font-size:12.5px;color:var(--mute);display:flex;gap:16px;margin-top:8px;font-weight:600}
 .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}
 table{width:100%;border-collapse:collapse}
@@ -667,7 +667,7 @@ html{scroll-padding-top:76px;scroll-padding-bottom:calc(104px + env(safe-area-in
 .ivh:focus-visible{outline:2px solid var(--brand);outline-offset:4px;border-radius:8px}
 .mpf .mpb:focus-visible{box-shadow:0 0 0 3px color-mix(in srgb,var(--brand) 45%,transparent);border-color:var(--brand)}
 .lneta small{color:color-mix(in srgb,#10b981 48%,var(--ink))}
-.lnch button.on{background:linear-gradient(90deg,#047857,#0369a1)}
+.lnch button.on{background:linear-gradient(135deg,var(--g1),var(--g2))}
 .bbh b{color:color-mix(in srgb,var(--lvc) 70%,var(--ink))}
 .cc.fut{opacity:1;color:var(--mute)}.lnpd{color:var(--good)}
 .pill.rt{background:color-mix(in srgb,var(--good) 9%,var(--card))}
@@ -2914,7 +2914,7 @@ function loanBlock(a,split){
     const chart=(L.hist.length>1||L.proj.length>1)?loanChart(L,XA?projOf(XA.path):null)+'<div class="legend">'+(L.hist.length>1?'<span><i class="dot" style="background:#f97316"></i>Balance</span>':'')+(L.proj.length>1?'<span><i class="dot" style="background:#6366f1"></i>Your plan</span>':'')+(XA?'<span><i class="dot" style="background:#10b981"></i>With +$'+ex+'</span>':'')+'</div>':'';
     if(split){
       const st=(l,v,c)=>'<div><small>'+l+'</small><b'+(c?' class="'+c+'"':'')+'>'+v+'</b></div>';
-      const hero2='<div class="sub" style="margin:12px 0 0">Still owed</div><div class="invtot">'+fmt0(L.owed)+'</div>'+(pct!=null?'<div class="track lnpt" role="img" aria-label="'+Math.round(pct)+'% paid off"><div class="fill" style="width:'+pct.toFixed(1)+'%;background:linear-gradient(90deg,#10b981,#0ea5e9)"></div></div>':'')
+      const hero2='<div class="sub" style="margin:12px 0 0">Still owed</div><div class="invtot">'+fmt0(L.owed)+'</div>'+(pct!=null?'<div class="track lnpt" role="img" aria-label="'+Math.round(pct)+'% paid off"><div class="fill" style="width:'+pct.toFixed(1)+'%;background:linear-gradient(90deg,var(--cin),color-mix(in srgb,var(--cin) 60%,#fff))"></div></div>':'')
         +'<div class="ivst">'+(L.orig&&L.orig>L.owed?st('Paid off',fmt0(L.orig-L.owed)+' ('+Math.round(pct)+'%)','rdyc'):'')+(left!=null?st('Debt-free',inMonths(left))+st('Time left',monthsTxt(left))+st('Payments left',String(left)):'')+'</div>'+(left==null?eta:'');
       return '<section class="card lnb">'+head+hero2+'<div style="height:12px"></div>'+tiles+(L.interest!=null?'<p class="sub" style="margin:-2px 0 0">About <b>'+fmt0(L.interest)+'</b> more interest until it\'s paid off.</p>':'')+'</section>'
        +(brk?'<section class="card"><h2>'+payLbl+'</h2>'+brk.replace('<div class="lnbkh"><span>'+payLbl+'</span>','<div class="lnbkh"><span>Total each month</span>')+'</section>':'')
@@ -2932,7 +2932,7 @@ function loansHTML(ym){
   const owed=A.reduce((t,x)=>t+x.L.owed,0);
   return '<div class="card lnw go" role="button" tabindex="0" data-act="goloans"><div class="row" style="align-items:baseline;margin-bottom:8px"><h2 style="margin:0">Loans</h2><span class="spacer"></span><b class="lnwt">'+fmt0(owed)+'</b><i class="bkgo" aria-hidden="true">›</i></div>'
    +A.map(({a,L})=>{const pct=L.orig?Math.max(0,Math.min(100,(L.orig-L.owed)/L.orig*100)):null;
-    return '<div class="lnwr"><div class="lnwn"><span>'+esc(loanName(a))+'</span><em'+(!L.past&&L.months==null&&!(L.owed<0.5)&&L.hr&&L.pay?' class="bad"':'')+'>'+(L.past?'End of '+ymShort(ym):L.months!=null?inMonths(L.months):L.owed<0.5?'Paid off':L.hr&&L.pay?'Not at this payment':(pct!=null?'':'add rate'))+'</em></div>'+(pct!=null?'<div class="track"><div class="fill" style="width:'+pct.toFixed(1)+'%;background:linear-gradient(90deg,#10b981,#0ea5e9)"></div></div><div class="lnwp">'+Math.round(pct)+'% paid · '+fmt0(L.owed)+' left</div>':'<div class="lnwp">'+fmt0(L.owed)+' left · <u>set the original amount</u> to see progress</div>')+'</div>';}).join('')+'</div>';
+    return '<div class="lnwr"><div class="lnwn"><span>'+esc(loanName(a))+'</span><em'+(!L.past&&L.months==null&&!(L.owed<0.5)&&L.hr&&L.pay?' class="bad"':'')+'>'+(L.past?'End of '+ymShort(ym):L.months!=null?inMonths(L.months):L.owed<0.5?'Paid off':L.hr&&L.pay?'Not at this payment':(pct!=null?'':'add rate'))+'</em></div>'+(pct!=null?'<div class="track"><div class="fill" style="width:'+pct.toFixed(1)+'%;background:linear-gradient(90deg,var(--cin),color-mix(in srgb,var(--cin) 60%,#fff))"></div></div><div class="lnwp">'+Math.round(pct)+'% paid · '+fmt0(L.owed)+' left</div>':'<div class="lnwp">'+fmt0(L.owed)+' left · <u>set the original amount</u> to see progress</div>')+'</div>';}).join('')+'</div>';
 }
 // full page (Invest tab → Loans)
 function loansPageHTML(){
@@ -2977,7 +2977,8 @@ function holdClass(h){
   if(/\b(ETF|FUND|INDEX|TRUST|ISHARES|SPDR|VANGUARD|MINISHARES)\b/.test(t)||/^[A-Z]{4}X$/.test((h.sym||'').toUpperCase())) return 'Funds & ETFs';
   return 'Stocks';
 }
-const MIXCOL={'Cash & CDs':'#10b981','Funds & ETFs':'#14b8a6','Stocks':'#f59e0b','Cash in accounts':'#22c55e','Other':'#94a3b8'};
+// same colors as the holdings pies on the Invest tab, so a group looks the same everywhere
+const MIXCOL={'Cash & CDs':SECCOL['CDs & bonds'],'Funds & ETFs':SECCOL['Funds & ETFs'],'Stocks':'#f59e0b','Cash in accounts':SECCOL['Cash'],'Other':SECCOL['Other']};
 function invMixBar(){
   const H=S.holdings||{},m={};
   invIds().forEach(id=>{let p=0;(H[id]||[]).forEach(h=>{if(!(h.value>0))return;const c=holdClass(h);m[c]=(m[c]||0)+h.value;p+=h.value;});const b=S.balSf&&S.balSf[id];if(b&&b.v-p>=1)m['Cash in accounts']=(m['Cash in accounts']||0)+(b.v-p);});
@@ -3786,7 +3787,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.65.0';
+const APP_VERSION='1.65.1';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
