@@ -635,7 +635,7 @@ td.ds{max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #toast.t-ok{background:#ecfdf3;color:#065f46;border-color:#a7f3d0}#toast.t-ok .tico{background:#16a34a;color:#fff}
 #toast.t-warn{background:#fffbeb;color:#78350f;border-color:#fcd34d}#toast.t-warn .tico{background:#f59e0b;color:#fff}
 #toast.t-bad{background:#fef2f2;color:#7f1d1d;border-color:#fca5a5}#toast.t-bad .tico{background:#dc2626;color:#fff}
-#toast.t-info{background:color-mix(in srgb,var(--ink) 92%,transparent);color:var(--bg)}#toast.t-info .tico{background:rgba(255,255,255,.18);color:inherit}
+#toast.t-info{background:color-mix(in srgb,var(--brand) 10%,var(--card));color:var(--ink);border-color:color-mix(in srgb,var(--brand) 35%,transparent)}#toast.t-info .tico{background:linear-gradient(135deg,var(--brand),var(--brand2,#7c3aed));color:#fff}
 #toast[class*="t-"] button{background:rgba(0,0,0,.08);color:inherit}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) #toast.t-ok{background:#052e1c;color:#bbf7d0;border-color:#166534}:root:not([data-theme="light"]) #toast.t-warn{background:#2e2103;color:#fde68a;border-color:#92400e}:root:not([data-theme="light"]) #toast.t-bad{background:#2f0b0b;color:#fecaca;border-color:#991b1b}:root:not([data-theme="light"]) #toast[class*="t-"] button{background:rgba(255,255,255,.12)}}
 :root[data-theme="dark"] #toast.t-ok{background:#052e1c;color:#bbf7d0;border-color:#166534}:root[data-theme="dark"] #toast.t-warn{background:#2e2103;color:#fde68a;border-color:#92400e}:root[data-theme="dark"] #toast.t-bad{background:#2f0b0b;color:#fecaca;border-color:#991b1b}:root[data-theme="dark"] #toast[class*="t-"] button{background:rgba(255,255,255,.12)}
@@ -1659,11 +1659,13 @@ function busySub(sub){const e=document.querySelector('#busy .bsub');if(e)e.textC
 function busyHide(){const b=$('#busy');if(!b)return;b.classList.remove('show');clearTimeout(busyT);busyT=setTimeout(()=>{b.hidden=true;},260);}
 // tone: ok (green ✓), warn (yellow ⚠), bad (red ✕), info (neutral i). Left out, it is read from the wording.
 const TOAST_BAD=/couldn.?t|could not|can.?t |failed|fail\b|error|rejected|blocked|too long|unreadable|doesn.?t look|no longer in/i;
-const TOAST_WARN=/attention|synced, but|needed\b|warning|auth required|skipped|missing|expired|not available|first\b|^(type|enter|give|paste|pick|add your)\b|nothing to|no new files|nothing new to suggest|returned no accounts/i;
+const TOAST_WARN=/attention|synced, but|needed\b|warning|auth required|(?<!duplicates )skipped|missing|expired|not available|first\b|^(type|enter|give|paste|pick|add your)\b|nothing to|no new files|nothing new to suggest|returned no accounts/i;
+// green only for something that worked; anything else that isn't a problem uses the app's own colors
+const TOAST_OK=/^(synced|saved|imported|merged|connected to|added|renamed|payment saved|key saved|rate saved|profile (saved|imported)|export saved|backup shared|picture saved|debug log (copied|saved)|prices updated|removed one|vaults (saved|cleared)|smarter categories|your saved rules|set \d|set to|\d+ (new file|transaction)|already up to date|google drive disconnected)|marked (closed|as ok)|reopened$|budget removed|a month( \(this month only\))?$/i;
 const TOAST_ICO={ok:'<path d="M5 12.5l4.5 4.5L19 7.5"/>',warn:'<path d="M12 3.5L2.8 19.5h18.4z"/><path d="M12 10v4.2"/><circle cx="12" cy="17" r=".6" fill="currentColor"/>',bad:'<path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/>',info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/><circle cx="12" cy="7.8" r=".6" fill="currentColor"/>'};
 function toast(msg,act,tone){
   const t=$('#toast');
-  tone=tone||(TOAST_BAD.test(msg)?'bad':TOAST_WARN.test(msg)?'warn':'ok');
+  tone=tone||(TOAST_BAD.test(msg)?'bad':TOAST_WARN.test(msg)?'warn':TOAST_OK.test(msg)?'ok':'info');
   t.className=t.className.replace(/\bt-(ok|warn|bad|info)\b/g,'').trim()+' t-'+tone;
   t.innerHTML='<i class="tico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">'+TOAST_ICO[tone]+'</svg></i><span>'+esc(msg)+'</span>'+(act?'<button id="toastBtn">'+esc(act.label)+'</button>':'');
   t.classList.add('show');
@@ -3762,7 +3764,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.64.1';
+const APP_VERSION='1.64.2';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
