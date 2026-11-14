@@ -3462,7 +3462,9 @@ function viewDash(){
   const fresh=UI._okAt&&Date.now()-UI._okAt<5000;
   // ✓ stays while the last sync worked; ⚠ when the last try failed (the time shown is still the last good sync)
   const sOk=SF.last&&(Date.now()/1000-SF.last)<86400&&!UI._syncErr;
-  if(SF.access&&sfOnline()) h+='<div class="banner row sy'+(UI._syncErr?' warn':sOk?' ok':'')+'"><span>'+(SF.last?(UI._syncErr?'':sOk?'<i class="okck'+(fresh?' pop':'')+'" aria-hidden="true">✓</i>':'')+'Synced '+syncWhen(SF.last*1000)+(UI._syncErr?'<small class="syerr">Last try failed. Tap Sync to retry.</small>':''):'Not synced yet')+'</span><span class="spacer"></span><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button></div>';
+  // yellow once the last good sync is more than a day old, with a nudge to sync
+  const sOld=SF.last&&!sOk&&!UI._syncErr;
+  if(SF.access&&sfOnline()) h+='<div class="banner row sy'+(UI._syncErr||sOld?' warn':sOk?' ok':'')+'"><span>'+(SF.last?(UI._syncErr?'':sOk?'<i class="okck'+(fresh?' pop':'')+'" aria-hidden="true">✓</i>':'')+'Synced '+syncWhen(SF.last*1000)+(UI._syncErr?'<small class="syerr">Last try failed. Tap Sync to retry.</small>':sOld?'<small class="syerr">Not synced in over a day. Tap Sync.</small>':''):'Not synced yet')+'</span><span class="spacer"></span><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button></div>';
   if(UI.pdf&&UI.pdf.sync&&!UI.pdf.busy){const nn=(UI.pdf.items||[]).filter(it=>it.choice==='new'&&(it.fresh||[]).length).length;h+='<div class="banner row"><span><b>'+(nn>1?nn+' new accounts':'New account')+' found.</b> Review to finish the sync.</span><span class="spacer"></span><button class="btn small" data-act="goimport">Review</button></div>';}
   // announcements: sit with the sync banner and can be dismissed (each comes back if its situation changes)
   {const DS=dismissed(),day=Math.floor(Date.now()/864e5),wk=Math.floor(Date.now()/(7*864e5)),HH=sfHealth(),nn=HH.bad+HH.general.length;
@@ -3970,7 +3972,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.72.2';
+const APP_VERSION='1.72.3';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
