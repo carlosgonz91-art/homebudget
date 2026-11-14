@@ -2924,7 +2924,7 @@ function loansHTML(ym){
 // full page (Invest tab → Loans)
 function loansPageHTML(){
   const A=loanAccts().map(a=>({a,L:loanInfo(a)})).filter(x=>x.L);
-  if(!A.length) return '<section class="card"><p class="mute" style="margin:0">No loans linked yet. Add your loan in SimpleFIN and press Sync now.</p></section>';
+  if(!A.length) return '<section class="card"><p class="mute" style="margin:0">No loans linked yet. Add your loan in SimpleFIN and press Sync.</p></section>';
   const owed=A.reduce((t,x)=>t+x.L.owed,0),pay=A.reduce((t,x)=>t+(x.L.pay||0),0),orig=A.reduce((t,x)=>t+(x.L.orig||0),0),owedO=A.reduce((t,x)=>t+(x.L.orig?x.L.owed:0),0);
   const last=Math.max(0,...A.map(x=>x.L.months||0)),hasM=A.every(x=>x.L.months!=null);
   let h='';
@@ -3175,7 +3175,7 @@ function topSpendHTML(ym){
 function bankConnHTML(){
   const H=sfHealth();
   if(!SF.access) return wCard('Bank connections','',wEmpty('No bank link yet. Connect SimpleFIN in Settings to see the status of each bank here.')+'<p style="margin:10px 0 0"><button class="btn ghost small" data-act="setgo" data-to="s-sync">Open Settings</button></p>');
-  if(!H.on) return wCard('Bank connections','',wEmpty('Waiting for the first sync.')+'<p style="margin:10px 0 0"><button class="btn small" data-act="sfsync">Sync now</button></p>');
+  if(!H.on) return wCard('Bank connections','',wEmpty('Waiting for the first sync.')+'<p style="margin:10px 0 0"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button></p>');
   const by={};
   for(const a of S.accounts){
     if(!a.sf) continue;
@@ -3186,10 +3186,10 @@ function bankConnHTML(){
     if(!h.ok&&(!o.bad||(h.err&&!o.bad.err))) o.bad=h;
   }
   const L=Object.values(by).sort((a,b)=>(b.bad?1:0)-(a.bad?1:0)||a.nm.localeCompare(b.nm));
-  if(!L.length) return wCard('Bank connections','',wEmpty('No linked accounts yet. Press Sync now.')+'<p style="margin:10px 0 0"><button class="btn small" data-act="sfsync">Sync now</button></p>');
+  if(!L.length) return wCard('Bank connections','',wEmpty('No linked accounts yet. Press Sync.')+'<p style="margin:10px 0 0"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button></p>');
   const nBad=L.filter(x=>x.bad).length,gen=H.general;
   const head=nBad?'<span class="neg"><i class="wi"></i>'+nBad+' of '+L.length+' need'+(nBad===1?'s':'')+' attention</span>':gen.length?'<span class="neg"><i class="wi"></i>Check your connection</span>':'<span class="pos">● All '+L.length+' connected</span>';
-  return '<section class="card bkw"><div class="row" style="align-items:center;gap:8px"><div class="bkt"><h2 style="margin:0">Bank connections</h2><span class="sub bkh">'+head+(H.last?' · '+agoTxt(H.last):'')+'</span></div><button class="btn ghost small bks" data-act="sfsync" aria-label="Sync now">Sync</button></div>'
+  return '<section class="card bkw"><div class="row" style="align-items:center;gap:8px"><div class="bkt"><h2 style="margin:0">Bank connections</h2><span class="sub bkh">'+head+(H.last?' · '+agoTxt(H.last):'')+'</span></div><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button></div>'
    +'<div class="bkc">'+L.map(x=>x.bad?'<button type="button" class="bkp bad" data-act="goaccts" title="'+esc(x.bad.msg||x.bad.short||x.bad.label)+'"><i class="bkd warn"></i>'+esc(x.nm)+'<em>'+esc(String(x.bad.why||x.bad.label).slice(0,30))+'</em><span class="vh"> – open Settings to fix it</span></button>':(x.url?'<a class="bkp ok go" href="'+esc(x.url)+'" target="_blank" rel="noopener noreferrer" title="'+esc('Open '+x.nm+' sign-in · '+x.n+' account'+(x.n===1?'':'s')+(x.at?' · updated '+agoTxt(x.at):''))+'"><i class="bkd ok"></i>'+esc(x.nm)+'<span class="bkx">'+EXTI+'</span><span class="vh"> (opens sign-in page in a new tab)</span></a>':'<span class="bkp ok" title="'+esc(x.nm+' · '+x.n+' account'+(x.n===1?'':'s')+(x.at?' · updated '+agoTxt(x.at):''))+'"><i class="bkd ok"></i>'+esc(x.nm)+'</span>')).join('')+'</div>'
    +gen.map(m=>'<div class="hnote" title="'+esc(m)+'">'+esc(shortNote(m))+'</div>').join('')+'</section>';
 }
@@ -3276,7 +3276,7 @@ function viewDash(){
   const fresh=UI._okAt&&Date.now()-UI._okAt<5000;
   // ✓ stays while the last sync worked; ⚠ when the last try failed (the time shown is still the last good sync)
   const sOk=SF.last&&(Date.now()/1000-SF.last)<86400&&!UI._syncErr;
-  if(SF.access&&sfOnline()) h+='<div class="banner row sy'+(UI._syncErr?' warn':sOk?' ok':'')+'"><span>'+(SF.last?(UI._syncErr?'':sOk?'<i class="okck'+(fresh?' pop':'')+'" aria-hidden="true">✓</i>':'')+'Synced '+syncWhen(SF.last*1000)+(UI._syncErr?'<small class="syerr">Last try failed. Tap Sync to retry.</small>':''):'Not synced yet')+'</span><span class="spacer"></span><button class="btn small" data-act="sfsync" data-ico="lead">Sync</button></div>';
+  if(SF.access&&sfOnline()) h+='<div class="banner row sy'+(UI._syncErr?' warn':sOk?' ok':'')+'"><span>'+(SF.last?(UI._syncErr?'':sOk?'<i class="okck'+(fresh?' pop':'')+'" aria-hidden="true">✓</i>':'')+'Synced '+syncWhen(SF.last*1000)+(UI._syncErr?'<small class="syerr">Last try failed. Tap Sync to retry.</small>':''):'Not synced yet')+'</span><span class="spacer"></span><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button></div>';
   if(UI.pdf&&UI.pdf.sync&&!UI.pdf.busy){const nn=(UI.pdf.items||[]).filter(it=>it.choice==='new'&&(it.fresh||[]).length).length;h+='<div class="banner row"><span><b>'+(nn>1?nn+' new accounts':'New account')+' found.</b> Review to finish the sync.</span><span class="spacer"></span><button class="btn small" data-act="goimport">Review</button></div>';}
   // announcements: sit with the sync banner and can be dismissed (each comes back if its situation changes)
   {const DS=dismissed(),day=Math.floor(Date.now()/864e5),wk=Math.floor(Date.now()/(7*864e5)),HH=sfHealth(),nn=HH.bad+HH.general.length;
@@ -3771,9 +3771,9 @@ function sfCardHTML(){
   const hd='<section class="card" id="s-sync"><h2>Banks &amp; accounts</h2>';
   if(!sfOnline()) return hd+'<p class="mute" style="margin:0">Automatic sync with SimpleFIN works in the desktop copy of HomeBudget, a file saved on your computer. This online viewer blocks network access, so use import here.</p></section>';
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
-  return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
+  return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.64.6';
+const APP_VERSION='1.64.7';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -3836,7 +3836,7 @@ function viewInvest(){
 const ivSwitchWrap=(html,sw)=>sw+html;
 function viewInvest0(){
   const H=S.holdings||{},ids=invIds();
-  if(!ids.length)return '<section class="card"><p class="mute" style="margin:0">No positions loaded yet. Your investment accounts are linked, so press Sync now and the positions will appear here.</p>'+(SF.access?'<p style="margin:12px 0 0"><button class="btn" data-act="sfsync">Sync now</button></p>':'')+'</section>';
+  if(!ids.length)return '<section class="card"><p class="mute" style="margin:0">No positions loaded yet. Your investment accounts are linked, so press Sync and the positions will appear here.</p>'+(SF.access?'<p style="margin:12px 0 0"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button></p>':'')+'</section>';
   const info=id=>{const a=S.accounts.find(x=>x.sf===id),r=(S.sfRaw||[]).find(x=>x.id===id),b=S.balSf&&S.balSf[id];return {name:a?a.name:(r?String(r.name||'').replace(/\s*\(\d{4}\)\s*$/,''):id),org:(r&&r.org&&(r.org.name||r.org.domain))||'',bal:b?b.v:(r&&hnum(r.balance))};};
   const rows=ids.map(id=>{const L=(H[id]||[]).slice().sort((x,y)=>(y.value||0)-(x.value||0)),inf=info(id),pos=L.reduce((t,h)=>t+(h.value||0),0);let gv=0,gc=0,gn=0;L.forEach(h=>{if(h.value!=null&&h.cost!=null&&!fixedInc(h)){gv+=h.value;gc+=h.cost;gn++;}});return {id,L,inf,pos,gl:gc>0?{d:gv-gc,p:(gv-gc)/gc*100,n:gn}:null};}).sort((x,y)=>(y.inf.bal||y.pos)-(x.inf.bal||x.pos));
   const tot=rows.reduce((t,r)=>t+(r.inf.bal!=null?r.inf.bal:r.pos),0),inPos=rows.reduce((t,r)=>t+r.pos,0);
@@ -4435,7 +4435,7 @@ function sfHealth(){
     let h={ok:true,label:at?'Updated '+agoTxt(at):'Linked',msg:''};
     const cn=(r&&r.conn_id)||(S.sfOwn||{})[a.sf],org=String((r&&r.org&&(r.org.name||r.org.domain))||(S.sfOrgOf||{})[a.sf]||'').toLowerCase().replace(/\.(com|org|net)$/,'').trim();
     const e=errs.find(x=>(x.acct&&x.acct===a.sf)||(x.conn&&cn&&x.conn===cn))||errs.find(x=>org.length>=4&&String(x.msg).toLowerCase().includes(org));
-    if(e){const pl=plainSfMsg(e.msg);h={err:e,ok:false,label:'Needs attention',msg:pl.why+'. Fix it at SimpleFIN, then press Sync now.',short:pl.why+'.',bank:pl.bank,why:pl.why};}
+    if(e){const pl=plainSfMsg(e.msg);h={err:e,ok:false,label:'Needs attention',msg:pl.why+'. Fix it at SimpleFIN, then press Sync.',short:pl.why+'.',bank:pl.bank,why:pl.why};}
     else if(!r&&!((S.sfMiss||{})[a.sf]&&S.sfMiss[a.sf].n>=3)){h={ok:true,label:at?'Updated '+agoTxt(at):'Linked',msg:'SimpleFIN left this account out of the latest update. That usually fixes itself. Your last balance is kept.'};}
     else if(!r){h={ok:false,label:'Not reported',msg:'SimpleFIN no longer lists this account. It may have been unlinked or closed. Re-link it at SimpleFIN, or ignore this if it was closed.',short:'Not listed by SimpleFIN. Re-link, or ignore if closed.'};}
     else if(at&&ageDays(at)>=STALE_DAYS&&!(out.last&&ageDays(out.last)>=STALE_DAYS)){h={ok:false,label:'Stale · '+agoTxt(at),msg:'The bank has not updated this account since '+new Date(at).toLocaleDateString([], {month:'short',day:'numeric'})+'. It may need to be re-linked at SimpleFIN.',short:'No bank update since '+new Date(at).toLocaleDateString([], {month:'short',day:'numeric'})+'.'};}
@@ -4448,7 +4448,7 @@ function sfHealth(){
   const placed=new Set();
   for(const a of S.accounts){ if(!a.sf) continue;const h=out.by[a.id];if(h&&h.err) placed.add(h.err); }
   for(const e of errs){ if(placed.has(e)) continue;const pl=plainSfMsg(e.msg),bank=pl.bank||((e.conn&&S.sfConn&&S.sfConn[e.conn])?NICEBANK(S.sfConn[e.conn]):'');out.general.push((bank?bank+': ':'')+pl.why);out.issues.push({key:'g'+out.issues.length,bank:bank||'SimpleFIN',why:pl.why,n:0,gen:true}); }
-  if(out.last&&ageDays(out.last)>=3){out.general.push('Not synced in '+ageDays(out.last)+' days. Press Sync now.');out.issues.push({key:'old',bank:'Last sync',why:ageDays(out.last)+' days ago',n:0,gen:true});}
+  if(out.last&&ageDays(out.last)>=3){out.general.push('Not synced in '+ageDays(out.last)+' days. Press Sync.');out.issues.push({key:'old',bank:'Last sync',why:ageDays(out.last)+' days ago',n:0,gen:true});}
   return out;
 }
 const acctChip=(h,id)=>{const x=h.by[id];return x?'<span class="hchipx '+(x.ok?'ok':'warn')+'" title="'+esc(x.msg||'Healthy')+'">'+(x.ok?'● ':'')+esc(x.label)+'</span>':'';};
@@ -4459,7 +4459,7 @@ function healthCardHTML(h){
   const title=onlyOld?'Not synced in '+ageDays(h.last)+' days':n?(h.bad?h.bad+' of '+h.linked+' accounts '+(h.bad===1?'needs':'need')+' attention':'Bank connection needs attention'):'All '+h.linked+' linked accounts look healthy';
   return '<div class="hcard hc2 '+(n?'warn':'ok')+'"><div class="hch"><span class="hci" aria-hidden="true">'+(n?'!':'✓')+'</span><div><b>'+esc(title)+'</b><div class="sub">'+esc(last)+'</div></div></div>'
    +(n?(onlyOld?'':'<ul class="hcl">'+h.issues.map(x=>'<li><span class="hcn"><b>'+esc(x.bank)+'</b>'+(x.n>1?' <span class="mute">· '+x.n+' accounts</span>':'')+'</span><span class="hchipx warn">'+esc(x.why)+'</span></li>').join('')+'</ul>')
-     +'<div class="row hca">'+(onlyOld?'<button type="button" class="btn small" data-act="sfsync">Sync now</button><span class="sub">Your banks have not been checked from this device since then.</span>':'<a class="btn small" href="https://bridge.simplefin.org" target="_blank" rel="noopener">Fix at SimpleFIN '+EXTI+'</a><button type="button" class="btn ghost small" data-act="sfsync">Sync now</button>')+'</div>':'')+'</div>';
+     +'<div class="row hca">'+(onlyOld?'<button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><span class="sub">Your banks have not been checked from this device since then.</span>':'<a class="btn small" href="https://bridge.simplefin.org" target="_blank" rel="noopener">Fix at SimpleFIN '+EXTI+'</a><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button>')+'</div>':'')+'</div>';
 }
 const sfType=s=>{s=String(s).replace(/credit union/ig,'cu');return LOANRE.test(s)?'loan':/saving|money market|\bcd\b|certificate/i.test(s)?'savings':/check|debit/i.test(s)?'checking':/credit|card|visa|mastercard|amex|freedom|sapphire/i.test(s)?'credit':/\b(ira|401k?|403b?|roth|brokerage|invest\w*|retire\w*|stock)\b/i.test(s)?'brokerage':'other';};
 // A bank timestamp in seconds (milliseconds are tolerated). Anything that is not a real date between 1990 and a month from now is rejected.
