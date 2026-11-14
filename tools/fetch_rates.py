@@ -55,12 +55,12 @@ def main():
     pts.sort(key=lambda x: x['d'])
     last = pts[-1]
     data = {'asOf': last['d'], 'r30': last['r30'], 'r15': last['r15'], 'src': src + ' (US weekly average)',
-            'hist': [{'d': p['d'], 'r30': p['r30']} for p in pts[-104:]]}
+            'hist': [{'d': p['d'], 'r30': p['r30']} for p in pts if p['d'] >= '2019-01-01']}
     try:
         old = json.load(open('rates.json'))
     except Exception:
         old = None
-    if old and old.get('asOf') == data['asOf'] and len(old.get('hist', [])) >= len(data['hist']):
+    if old and old.get('asOf') == data['asOf'] and len(old.get('hist', [])) == len(data['hist']):
         print('no new week'); return
     json.dump(data, open('rates.json', 'w'), separators=(',', ':'))
     print('rates.json updated', data['asOf'], data['r30'])
