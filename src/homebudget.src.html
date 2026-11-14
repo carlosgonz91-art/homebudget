@@ -1366,9 +1366,14 @@ function statementExtras(lines,r){
 // ---------- audit (pure: takes saved state, returns findings) ----------
 function dayNum(s){const m=/^(\d{4})-(\d\d)-(\d\d)$/.exec(typeof s==='string'?s:'');if(!m) return NaN;const u=Date.UTC(+m[1],+m[2]-1,+m[3]),d=new Date(u);return d.getUTCFullYear()===+m[1]&&d.getUTCMonth()===+m[2]-1&&d.getUTCDate()===+m[3]?Math.round(u/864e5):NaN;}
 // A statement/CSV row and a bank-synced row are the same transaction when they sit in one account with the same amount and dates within 3 days (the bank words the description differently each time). Pair one-to-one, closest date first.
+const sidFeed=t=>String(t.sid||'').split('|')[0];
 function stmtSyncPairs(S){
   const out=[],G=new Map();
-  for(const t of S.txns){let g=G.get(t.acct);if(!g){g={sf:[],man:[]};G.set(t.acct,g);}(t.sf?g.sf:g.man).push(t);}
+  // a row from an older bank feed of the same account counts as the "other copy", like a statement row
+  const curF=new Map(S.accounts.map(a=>[a.id,a.sf?String(a.sf):'']));
+  const live=new Set((S.sfRaw||[]).map(x=>String(x.id)));
+  const old=t=>t.sf&&t.sid&&curF.get(t.acct)&&live.size&&!live.has(sidFeed(t));
+  for(const t of S.txns){let g=G.get(t.acct);if(!g){g={sf:[],man:[]};G.set(t.acct,g);}(t.sf&&!old(t)?g.sf:g.man).push(t);}
   for(const a of S.accounts){
     const g=G.get(a.id);if(!g) continue;const sf=g.sf,man=g.man;
     if(!sf.length||!man.length) continue;
@@ -3791,7 +3796,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.65.12';
+const APP_VERSION='1.65.13';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -4270,7 +4275,10 @@ function recomputePdf(){
       let f=fuzzyPair(it.choice,r.fresh,r.dupKeys,it.kind!=='sync');r.fresh=f.fresh;r.dup+=f.dup;
       if(it.kind!=='sync') it.upd=f.pairs.filter(([row,t])=>t.sf&&((row.date&&t.date!==row.date)||(row.desc&&t.desc!==row.desc))).length;
       // Rows synced by an older version carry no bank id; pair those by amount and date if the bank changed them.
-      if(it.kind==='sync'){f=fuzzyPair(it.choice,r.fresh,r.dupKeys,true,t=>!t.sid);r.fresh=f.fresh;r.dup+=f.dup;}
+      if(it.kind==='sync'){f=fuzzyPair(it.choice,r.fresh,r.dupKeys,true,t=>!t.sid);r.fresh=f.fresh;r.dup+=f.dup;
+        // the same payment from another bank feed (a bank moved the account, e.g. Discover → Capital One): new ids, a day or two apart
+        // (only feeds this sync no longer reports, so SoFi vaults and other live sub-accounts are never touched)
+        if(it.sfId){const live=new Set(((UI.pdf&&UI.pdf.items)||[]).map(x=>String(x.sfId||'')));f=fuzzyPair(it.choice,r.fresh,r.dupKeys,true,t=>!!t.sid&&!live.has(sidFeed(t)));r.fresh=f.fresh;r.dup+=f.dup;}}
     }
     r.fresh.forEach(t=>keys.add(t.key));it.fresh=r.fresh;it.dup=r.dup;
   }
