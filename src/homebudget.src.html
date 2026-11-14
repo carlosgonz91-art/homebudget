@@ -158,6 +158,7 @@ h1{font-size:28px;font-weight:800;letter-spacing:-.03em;margin:2px 0 12px}h2{fon
 .hcleg{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--mute);margin:6px 0 0}.hcleg span{display:inline-flex;align-items:center;gap:6px}.hcleg i{width:14px;height:3px;border-radius:2px;display:inline-block}.hcleg i.d{height:0;background:none!important;border-top:2px dashed}.hctx{display:flex!important;align-items:center;gap:5px;font-size:11.5px}.hctx i{width:8px;height:8px;border-radius:50%;display:inline-block}
 .alk{display:block;font-size:11.5px;color:var(--mute);margin-top:1px;overflow:hidden;text-overflow:ellipsis}
 .hccs{margin:2px 0 0;font-size:12px}
+.alcl{margin-top:10px}.alcl>summary{cursor:pointer;color:var(--mute);font-size:13px;font-weight:600}.alr.closed{opacity:.75}.alr.closed .ald{background:var(--mute)!important}.alr.closed .btn{justify-self:end}.pill.clp{background:var(--track);color:var(--mute)}
 .tlnk{background:none;border:0;padding:0;font:inherit;color:var(--accent,#6366f1);text-decoration:underline;cursor:pointer}
 .npop{position:fixed;z-index:60;top:calc(env(safe-area-inset-top,0px) + 62px);right:max(12px,env(safe-area-inset-right,0px));width:min(380px,calc(100vw - 24px));background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 18px 40px rgba(0,0,0,.25);padding:8px 8px 10px}
 .nph{display:flex;align-items:center;justify-content:space-between;padding:4px 6px 8px}
@@ -1684,6 +1685,9 @@ let _acK=null,_acV=null,_coK=null,_coV=null;
 const allCats=()=>{const k=(S.customCats||[]).join('\u0001');if(k!==_acK){_acK=k;_acV=[...new Set(CATS.concat(S.customCats||[]))].sort(COLL.compare);}return _acV.slice();};
 const acctHay=a=>(a.name+' '+String(a.ref||'').replace(/[:_]/g,' ')+' '+(a.type||'')).toLowerCase();
 const sortedAccts=()=>S.accounts.slice().sort((a,b)=>COLLN.compare(a.name,b.name));
+// closed accounts keep their history but leave the account lists and stop sync warnings. a.closed = the day it was marked closed.
+const openAccts=()=>sortedAccts().filter(a=>!a.closed);
+const closedDay=d=>new Date(d+'T12:00:00').toLocaleDateString([], {month:'short',day:'numeric',year:'numeric'});
 const catOpts=sel=>{const k=(S.customCats||[]).join('\u0001');if(k!==_coK){_coK=k;_coV=['Uncategorized'].concat(allCats()).map(c=>'<option>'+esc(c)+'</option>').join('');}const o='<option>'+esc(sel)+'</option>';return sel!=null&&_coV.includes(o)?_coV.replace(o,'<option selected>'+esc(sel)+'</option>'):_coV;};
 const acctName=id=>{const a=S.accounts.find(x=>x.id===id);return a?a.name:'(deleted)';};
 function months(){
@@ -1934,7 +1938,7 @@ const lastStmt=a=>{const P=stmtPoints(a.id),l=P[P.length-1];return l?{v:l[1],at:
 function accountsHTML(ym){
   if(!S.accounts.length) return '';
   const pm=pastYM(ym),end=pm?ymEnd(ym):null;
-  const B=S.balSf||{},bOf=a=>{if(pm){const v=acctBalAt(a,end);return v==null?null:{v,past:true};}return a.sf?B[a.sf]:(isTwin(a)?null:lastStmt(a));},rows=sortedAccts().map(a=>({a,b:bOf(a)}));
+  const B=S.balSf||{},bOf=a=>{if(pm){const v=acctBalAt(a,end);return v==null?null:{v,past:true};}return a.sf?B[a.sf]:(isTwin(a)?null:lastStmt(a));},rows=sortedAccts().filter(a=>!a.closed||(pm&&end<a.closed)).map(a=>({a,b:bOf(a)}));
   const G=[['Cash',['checking','savings'],'var(--good)'],['Credit cards',['credit'],'var(--bad)'],['Loans',['loan'],'#f97316'],['Investments',['brokerage'],'var(--brand)'],['Other',['other'],'var(--mute)']];
   const known=G.flatMap(g=>g[1]),has=rows.some(r=>r.b);let tot=0,body='';
   const money=(v,cls)=>'<span class="agv '+(cls||'')+(v<0?' neg':'')+'">'+fmt(v)+'</span>';
@@ -3304,7 +3308,7 @@ function acctPred(v){
   return t=>t.acct===v;
 }
 const CB={
-  acct:{ph:'All accounts',all:'All accounts',opts:()=>sortedAccts().map(a=>({v:a.id,l:a.name,h:acctHay(a)})).concat(vaultOpts()),ex:'acct',q:'acctq'},
+  acct:{ph:'All accounts',all:'All accounts',opts:()=>sortedAccts().map(a=>({v:a.id,l:a.name+(a.closed?' (closed)':''),h:acctHay(a)})).concat(vaultOpts()),ex:'acct',q:'acctq'},
   cat:{ph:'All categories',all:'All categories',opts:()=>['Uncategorized'].concat(allCats()).map(c=>({v:c,l:c,h:c.toLowerCase()})),ex:'cat',q:'catq'}
 };
 function cbLabel(k){const f=UI.filters,c=CB[k];if(f[c.q])return f[c.q];const o=c.opts().find(x=>x.v===f[c.ex]);return o?o.l:'';}
@@ -3408,15 +3412,16 @@ function acctBank(a){
 }
 function accountsCardHTML(HL){
   let av='min';try{av=FOLD.get('hb-acctview')||'min';}catch(e){}
-  const n=S.accounts.length,mn=av==='min'&&n;
-  let h='<section class="card" id="acctcard">'+(n?'<div class="row ach"><button type="button" class="ivh" data-act="acctview" data-v="'+(mn?'compact':'min')+'" aria-expanded="'+!mn+'"><i class="chv2">›</i><h2 style="margin:0">Accounts <span class="sub">'+n+(mn&&HL.on&&!HL.issues.length?' · <span class="okg">✓ all healthy</span>':'')+'</span></h2></button>'+(mn?'':'<button type="button" class="btn ghost small" data-act="acctview" data-v="'+(av==='full'?'compact':'full')+'">'+(av==='full'?'Compact':'Details')+'</button>')+'</div>':'<h2>Accounts</h2>')+(mn&&HL.on&&!HL.issues.length?'':healthCardHTML(HL));
+  const n=S.accounts.filter(a=>!a.closed).length,CL=sortedAccts().filter(a=>a.closed),mn=av==='min'&&(n||CL.length);
+  let h='<section class="card" id="acctcard">'+(n||CL.length?'<div class="row ach"><button type="button" class="ivh" data-act="acctview" data-v="'+(mn?'compact':'min')+'" aria-expanded="'+!mn+'"><i class="chv2">›</i><h2 style="margin:0">Accounts <span class="sub">'+n+(CL.length?' · '+CL.length+' closed':'')+(mn&&HL.on&&!HL.issues.length?' · <span class="okg">✓ all healthy</span>':'')+'</span></h2></button>'+(mn?'':'<button type="button" class="btn ghost small" data-act="acctview" data-v="'+(av==='full'?'compact':'full')+'">'+(av==='full'?'Compact':'Details')+'</button>')+'</div>':'<h2>Accounts</h2>')+(mn&&HL.on&&!HL.issues.length?'':healthCardHTML(HL));
   if(mn){}
   else if(n&&av!=='full'){
-    h+='<div class="alc">'+sortedAccts().map(a=>{const bal=a.sf&&S.balSf&&S.balSf[a.sf],bad=HL.by[a.id]&&!HL.by[a.id].ok;return '<div class="alr'+(bad?' bad':'')+'"><i class="ald" aria-hidden="true"></i><span class="aln">'+esc(a.name)+(acctBank(a)?'<small class="alk">'+esc(acctBank(a))+'</small>':'')+'</span><span class="pill">'+(isCD(a)?'CD':TYPES[a.type])+'</span><b class="alb">'+(bal?fmt0(bal.v):'')+'</b></div>';}).join('')+'</div>';
+    h+='<div class="alc">'+openAccts().map(a=>{const bal=a.sf&&S.balSf&&S.balSf[a.sf],bad=HL.by[a.id]&&!HL.by[a.id].ok;return '<div class="alr'+(bad?' bad':'')+'"><i class="ald" aria-hidden="true"></i><span class="aln">'+esc(a.name)+(acctBank(a)?'<small class="alk">'+esc(acctBank(a))+'</small>':'')+'</span><span class="pill">'+(isCD(a)?'CD':TYPES[a.type])+'</span><b class="alb">'+(bal?fmt0(bal.v):'')+'</b></div>';}).join('')+'</div>'
+      +(CL.length?'<details class="alcl" data-tg="acctClosed"'+(UI.acctClosed?' open':'')+'><summary>Closed accounts ('+CL.length+')</summary><div class="alc">'+CL.map(a=>'<div class="alr closed"><i class="ald" aria-hidden="true"></i><span class="aln">'+esc(a.name)+'<small class="alk">Closed '+esc(closedDay(a.closed))+(acctBank(a)?' · '+esc(acctBank(a)):'')+'</small></span><button type="button" class="btn ghost small" data-act="reopenacct" data-id="'+esc(a.id)+'">Reopen</button></div>').join('')+'</div></details>':'');
   }
-  else if(n){
+  else if(n||CL.length){
     const TBA=new Map();S.txns.forEach(t=>{let g=TBA.get(t.acct);if(!g){g=[];TBA.set(t.acct,g);}g.push(t);});
-    h+=sortedAccts().map(a=>{const ts=TBA.get(a.id)||[],nf=S.files.filter(f=>f.acct===a.id).length;const last=ts.reduce((m,t)=>t.date>m?t.date:m,''),bal=a.sf&&S.balSf&&S.balSf[a.sf];return '<div class="al'+((HL.by[a.id]&&!HL.by[a.id].ok)?' bad':'')+'"><div><b>'+esc(a.name)+'</b>'+(acctBank(a)?' <span class="sub">· '+esc(acctBank(a))+'</span>':'')+' <span class="pill">'+(isCD(a)?'CD':TYPES[a.type])+'</span> '+rateChip(a)+acctChip(HL,a.id)+'<div class="sub">'+(bal?'<b>'+fmt(bal.v)+'</b> · ':'')+(yearlyInterest(a)!=null?'≈ '+fmt0(yearlyInterest(a))+'/yr interest · ':'')+ts.length+' txns'+(last?' · latest '+last:'')+(nf?' · '+nf+' original'+(nf>1?'s':'')+' kept':'')+'</div>'+acctNote(HL,a.id)+'</div> <span class="row" style="gap:6px"><button class="btn ghost small" data-act="renacct" data-id="'+esc(a.id)+'" aria-label="Rename '+esc(a.name)+'">Rename</button><button class="btn danger small" data-act="delacct" data-id="'+esc(a.id)+'" aria-label="Delete '+esc(a.name)+'">Delete</button></span></div>';}).join('');
+    h+=openAccts().concat(CL).map(a=>{const ts=TBA.get(a.id)||[],nf=S.files.filter(f=>f.acct===a.id).length;const last=ts.reduce((m,t)=>t.date>m?t.date:m,''),bal=a.sf&&S.balSf&&S.balSf[a.sf];return '<div class="al'+((HL.by[a.id]&&!HL.by[a.id].ok)?' bad':'')+'"><div><b>'+esc(a.name)+'</b>'+(acctBank(a)?' <span class="sub">· '+esc(acctBank(a))+'</span>':'')+' <span class="pill">'+(isCD(a)?'CD':TYPES[a.type])+'</span> '+(a.closed?'<span class="pill clp">Closed '+esc(closedDay(a.closed))+'</span>':rateChip(a)+acctChip(HL,a.id))+'<div class="sub">'+(bal?'<b>'+fmt(bal.v)+'</b> · ':'')+(yearlyInterest(a)!=null?'≈ '+fmt0(yearlyInterest(a))+'/yr interest · ':'')+ts.length+' txns'+(last?' · latest '+last:'')+(nf?' · '+nf+' original'+(nf>1?'s':'')+' kept':'')+'</div>'+acctNote(HL,a.id)+'</div> <span class="row" style="gap:6px"><button class="btn ghost small" data-act="renacct" data-id="'+esc(a.id)+'" aria-label="Rename '+esc(a.name)+'">Rename</button>'+(a.closed?'<button class="btn ghost small" data-act="reopenacct" data-id="'+esc(a.id)+'">Reopen</button>':'<button class="btn ghost small" data-act="closeacct" data-id="'+esc(a.id)+'">Mark closed</button>')+'<button class="btn danger small" data-act="delacct" data-id="'+esc(a.id)+'" aria-label="Delete '+esc(a.name)+'">Delete</button></span></div>';}).join('');
   } else h+='<p class="mute">No accounts yet. Add your first one below.</p>';
   if(!mn) h+='<details style="margin-top:10px" '+(S.accounts.length?'':'open')+'><summary>Add an account manually</summary><div class="row" style="margin-top:10px"><input type="text" id="newName" placeholder="e.g. Chase Checking" style="flex:1;min-width:150px"><select id="newType" aria-label="Account type">'+Object.entries(TYPES).map(([k,v])=>'<option value="'+k+'">'+v+'</option>').join('')+'</select><button class="btn" data-act="addacct">Add account</button></div></details>';
   h+='</section>';
@@ -3700,7 +3705,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.62.1';
+const APP_VERSION='1.63.0';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -4357,7 +4362,7 @@ function sfHealth(){
   if(!on) return out;
   const errs=(S.sfErrs||[]).filter(e=>!SF_INFO.test(e&&e.msg||''));
   for(const a of S.accounts){
-    if(!a.sf) continue;out.linked++;
+    if(!a.sf||a.closed) continue;out.linked++;
     const r=S.sfRaw.find(x=>x.id===a.sf),bal=(S.balSf||{})[a.sf],at=bal&&bal.at;
     let h={ok:true,label:at?'Updated '+agoTxt(at):'Linked',msg:''};
     const cn=(r&&r.conn_id)||(S.sfOwn||{})[a.sf],org=String((r&&r.org&&(r.org.name||r.org.domain))||(S.sfOrgOf||{})[a.sf]||'').toLowerCase().replace(/\.(com|org|net)$/,'').trim();
@@ -4601,6 +4606,10 @@ const ACT={
       save();render();toast('Rate saved');}});},
   renacct(el){const a=S.accounts.find(x=>x.id===el.dataset.id);if(!a)return;
     dialog({msg:'Rename this account',input:true,value:a.name,ok:'Save',onOk:v=>{if(!v)return;a.name=v.slice(0,80);save();render();toast('Renamed.');}});},
+  closeacct(el){const a=S.accounts.find(x=>x.id===el.dataset.id);if(!a) return;
+    const bal=a.sf&&S.balSf&&S.balSf[a.sf]?S.balSf[a.sf].v:null;
+    dialog({msg:'Mark "'+a.name+'" as closed? Its past transactions stay in your history and reports. It leaves your account lists and stops sync warnings.'+(bal&&Math.abs(bal)>=1?' Its last balance is '+fmt(bal)+'. Make sure that’s paid off or moved out first.':''),ok:'Mark closed',onOk:()=>{a.closed=todayISO();dlog('app','Account marked closed',{account:a.name});save();render();toast(a.name+' marked closed');}});},
+  reopenacct(el){const a=S.accounts.find(x=>x.id===el.dataset.id);if(!a) return;delete a.closed;dlog('app','Account reopened',{account:a.name});save();render();toast(a.name+' reopened');},
   delacct(el){const a=S.accounts.find(x=>x.id===el.dataset.id);const n=S.txns.filter(t=>t.acct===a.id).length;dialog({msg:'Delete "'+a.name+'" and its '+n+' transactions?',ok:'Delete',bad:true,onOk:()=>{{const gone=S.files.filter(f=>f.acct===a.id);S.files=S.files.filter(f=>f.acct!==a.id);const keep=new Set(S.files.map(f=>f.blob||f.id));gone.forEach(f=>{const k=f.blob||f.id;if(!keep.has(k)) blobDel(k);});}S.accounts=S.accounts.filter(x=>x!==a);S.txns=S.txns.filter(t=>t.acct!==a.id);if(UI.impAcct===a.id)UI.impAcct='';UI.import=null;UI.pdf=null;save();render();}});},
   demo(){const a={id:uid(),name:'Demo Checking',type:'checking'};S.accounts.push(a);const {fresh}=assignKeys(a.id,demoTxns(),new Set());S.txns.push(...fresh.map(t=>Object.assign({id:uid(),acct:a.id,cat:categorize(t.desc,t.amount,S.rules)},t)));UI.month=latestMonth();save();render();toast('Demo loaded — delete "Demo Checking" in Settings when done');},
   async importgo(){
