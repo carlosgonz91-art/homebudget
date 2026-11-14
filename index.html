@@ -1672,6 +1672,9 @@ function toast(msg,act,tone){
   tone=tone||(TOAST_BAD.test(msg)?'bad':TOAST_WARN.test(msg)?'warn':TOAST_OK.test(msg)?'ok':'info');
   t.className=t.className.replace(/\bt-(ok|warn|bad|info)\b/g,'').trim()+' t-'+tone;
   t.innerHTML='<i class="tico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">'+TOAST_ICO[tone]+'</svg></i><span>'+esc(msg)+'</span>'+(act?'<button id="toastBtn">'+esc(act.label)+'</button>':'');
+  // shrink the bubble to the text: a wrapped line leaves the box at full width, so measure the longest line and size to it
+  try{const sp=t.querySelector('span');sp.style.width='';const r=document.createRange();r.selectNodeContents(sp);const L=[...r.getClientRects()];const tops=new Set(L.map(x=>Math.round(x.top)));
+    if(tops.size>1){const w=Math.max(...L.map(x=>x.width));if(w>0) sp.style.width=Math.ceil(w+1)+'px';}}catch(e){}
   t.classList.add('show');
   if(act) $('#toastBtn').onclick=()=>{t.classList.remove('show');act.fn();};
   clearTimeout(toastT);const hide=()=>{if(t.matches(':hover')||t.contains(document.activeElement)){toastT=setTimeout(hide,1500);return;}t.classList.remove('show');};toastT=setTimeout(hide,act?9000:3500);
@@ -3768,7 +3771,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.64.4';
+const APP_VERSION='1.64.5';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
