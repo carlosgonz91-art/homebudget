@@ -780,7 +780,7 @@ html,body{touch-action:pan-x pan-y}
 .bnm{display:flex!important;align-items:center;min-width:0}.ip .l .bnm>span{color:inherit;font:inherit;margin:0;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}.bpill{flex:none;display:inline-block;font-style:normal;font-size:11px;font-weight:650;line-height:1;padding:3px 7px;margin-left:6px;border-radius:99px;vertical-align:2px;color:var(--brand);background:color-mix(in srgb,var(--brand) 14%,transparent);white-space:nowrap}
 .bcnav{display:flex;align-items:center;justify-content:space-between;margin:2px 0 8px}.bcnav b{font-size:14px}
 .bcw,.bcg{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}.bcw span{text-align:center;font-size:10.5px;font-weight:700;color:var(--mute)}.bcg{margin-top:5px}
-.bcd{min-width:0;min-height:56px;border:1px solid transparent;border-radius:10px;background:var(--soft);color:var(--mute);font:inherit;padding:4px 1px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:3px;cursor:pointer}
+.bcd{min-width:0;min-height:48px;border:1px solid transparent;border-radius:10px;background:var(--soft);color:var(--mute);font:inherit;padding:4px 1px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:3px;cursor:pointer}
 .bcd b{font-size:11.5px;font-weight:650}.bcd span{font-size:9.5px;font-weight:700;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;padding:0 2px}
 .bcd.due{background:color-mix(in srgb,var(--brand) 22%,var(--soft));color:var(--ink)}.bcd.due span{color:var(--brand)}
 .bcd.paid{background:color-mix(in srgb,var(--cin) 16%,var(--soft));color:var(--ink)}.bcd.paid span{color:var(--cin)}
@@ -3186,7 +3186,7 @@ function billCalHTML(R,row){
   const sel=UI.blCalD&&UI.blCalD.slice(0,7)===ym?UI.blCalD:null;
   let cells='';for(let i=0;i<first;i++) cells+='<i></i>';
   for(let i=1;i<=nd;i++){const ds=ym+'-'+String(i).padStart(2,'0'),L=day[ds]||[],tot=L.reduce((t,e)=>t+e.a,0),allPaid=L.length&&L.every(e=>e.paid);
-    cells+='<button type="button" class="bcd'+(L.length?(allPaid?' paid':' due'):'')+(ds===today?' today':'')+(sel===ds?' sel':'')+'" data-act="blcald" data-d="'+ds+'" aria-label="'+esc(niceDay(ds)+(L.length?', '+L.length+' bill'+(L.length>1?'s':'')+' '+fmt0(tot):''))+'"><b>'+i+'</b>'+(L.length?L.slice(0,L.length>2?1:2).map(e=>'<span>'+esc(bShort(e.b))+'</span>').join('')+(L.length>2?'<span>+'+(L.length-1)+' more</span>':''):'')+'</button>';}
+    cells+='<button type="button" class="bcd'+(L.length?(allPaid?' paid':' due'):'')+(ds===today?' today':'')+(sel===ds?' sel':'')+'" data-act="blcald" data-d="'+ds+'" aria-label="'+esc(niceDay(ds)+(L.length?', '+L.length+' bill'+(L.length>1?'s':'')+' '+fmt0(tot):''))+'"><b>'+i+'</b>'+(L.length?'<span>'+L.length+' bill'+(L.length>1?'s':'')+'</span>':'')+'</button>';}
   const mt=Object.values(day).flat(),pT=mt.filter(e=>e.paid).reduce((t,e)=>t+e.a,0),dT=mt.filter(e=>!e.paid).reduce((t,e)=>t+e.a,0);
   const nav='<div class="bcnav"><button type="button" class="btn ghost small icon" data-act="blcalm" data-n="-1" aria-label="Previous month">‹</button><b>'+new Date(y,m-1,15).toLocaleDateString('en-US',{month:'long',year:'numeric'})+'</b><button type="button" class="btn ghost small icon" data-act="blcalm" data-n="1" aria-label="Next month">›</button></div>';
   const leg='<div class="bcleg"><span><i class="lp"></i>Paid '+fmt0(pT)+'</span><span><i class="ld"></i>Expected '+fmt0(dT)+'</span></div>';
@@ -3888,7 +3888,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.69.1';
+const APP_VERSION='1.69.2';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
