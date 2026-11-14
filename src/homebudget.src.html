@@ -736,6 +736,14 @@ html,body{touch-action:pan-x pan-y}
 
 /* backup buttons: a tidy 2-by-2 grid, primary actions on top */
 .bkgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.bkgrid>.btn{width:100%;margin:0;justify-self:stretch;min-width:0;white-space:nowrap}.bkgrid.one>.btn:first-child{grid-column:1/-1}
+/* page switches (Invest: Investments/Loans, Settings: section jumps) use the same pill track as the card tabs */
+.ivsw{display:flex;width:100%;box-sizing:border-box}.ivsw button{flex:1 1 0;min-height:36px;font-size:13.5px}
+.snav{display:flex;gap:2px;width:100%;box-sizing:border-box;margin:0 0 14px;padding:3px;border-radius:99px;background:var(--track);overflow-x:auto;scrollbar-width:none;scroll-behavior:smooth}
+.snav button{flex:1 0 auto;border:0!important;background:none!important;color:var(--mute)!important;font:inherit;font-weight:650;font-size:13.5px;padding:6px 14px;border-radius:99px;min-height:36px!important;cursor:pointer;white-space:nowrap}
+.snav button.on{background:var(--card)!important;color:var(--ink)!important;box-shadow:0 1px 4px rgba(20,24,60,.16)}
+.snav button:hover:not(.on){color:var(--ink)!important}
+.snav.ovf{-webkit-mask-image:linear-gradient(90deg,#000 85%,transparent);mask-image:linear-gradient(90deg,#000 85%,transparent)}
+.snav.ovf.end{-webkit-mask-image:linear-gradient(90deg,transparent,#000 15%);mask-image:linear-gradient(90deg,transparent,#000 15%)}
 /* one button height across the app: 42px regular, 34px small; borders on every kind so filled and outlined buttons line up */
 .btn{border:1px solid transparent}
 .btn:not(.bo):not(.mp .btn){display:inline-flex;align-items:center;justify-content:center;gap:6px;box-sizing:border-box;line-height:1.2;vertical-align:middle}
@@ -1771,7 +1779,8 @@ function render(){
   document.querySelectorAll('[data-tab]').forEach(b=>{const on=b.dataset.tab===UI.tab;b.classList.toggle('on',on);if(b.closest('nav')){if(on) b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');}});
   {const nb=document.getElementById('navInv');if(nb)nb.hidden=!(hasInv()||hasLoans()||S.accounts.some(a=>a.type==='brokerage'&&a.sf));}
   try{notesPaint();}catch(e){}
-  try{document.querySelectorAll('.wtc .wts').forEach(w=>{const o=w.scrollWidth>w.clientWidth+2;w.classList.toggle('ovf',o);if(!o) return;
+  try{setNavMark();}catch(e){}
+  try{document.querySelectorAll('.wtc .wts,.snav').forEach(w=>{const o=w.scrollWidth>w.clientWidth+2;w.classList.toggle('ovf',o);if(!o) return;
     const on=w.querySelector('.on');if(on&&(on.offsetLeft+on.offsetWidth>w.clientWidth||on.offsetLeft<w.scrollLeft)) w.scrollLeft=on.offsetLeft-12;
     const f=()=>w.classList.toggle('end',w.scrollLeft+w.clientWidth>=w.scrollWidth-4);f();if(!w._sc){w._sc=1;w.addEventListener('scroll',f,{passive:true});}});}catch(e){}
   const v={dash:viewDash,txns:viewTxns,budgets:viewBudgets,invest:viewInvest,audit:viewAudit,settings:viewSettings}[UI.tab]||viewDash;
@@ -3472,6 +3481,12 @@ function acctBank(a){
   for(const k in BANKN) if(r.startsWith(k)) return BANKN[k];
   return '';
 }
+// Settings section bar: highlight the section you're looking at
+function setNavMark(){const nav=document.querySelector('.snav');if(!nav) return;const B=[...nav.querySelectorAll('button')];
+  let cur=UI.setOn||(B[0]&&B[0].dataset.to);
+  if(!(UI._setClick>Date.now())){const lim=Math.max(140,innerHeight*.35);for(const b of B){const e=document.getElementById(b.dataset.to);if(e&&e.getBoundingClientRect().top<=lim) cur=b.dataset.to;}}
+  B.forEach(b=>{const on=b.dataset.to===cur;b.classList.toggle('on',on);if(on&&(b.offsetLeft<nav.scrollLeft||b.offsetLeft+b.offsetWidth>nav.scrollLeft+nav.clientWidth)) nav.scrollLeft=b.offsetLeft-12;});UI.setOn=cur;}
+window.addEventListener('scroll',()=>{if(UI.tab!=='settings') return;clearTimeout(UI._snT);UI._snT=setTimeout(()=>{setNavMark();},80);},{passive:true});
 function accountsCardHTML(HL){
   let av='min';try{av=FOLD.get('hb-acctview')||'min';}catch(e){}
   const n=S.accounts.filter(a=>!a.closed).length,CL=sortedAccts().filter(a=>a.closed),mn=av==='min'&&(n||CL.length);
@@ -3767,7 +3782,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.65.3';
+const APP_VERSION='1.65.4';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -3877,7 +3892,7 @@ function viewInvest0(){
 }
 const SETNAV=[['s-sync','Banks & accounts'],['s-import','Import'],['s-rules','Rules'],['s-data','Backup & help']];
 function settingsTop(){
-  return '<div class="snav" role="navigation" aria-label="Jump to a section">'+SETNAV.map(([id,l])=>'<button type="button" data-act="setgo" data-to="'+id+'">'+l+'</button>').join('')+'</div>';
+  return '<div class="snav" role="navigation" aria-label="Jump to a section">'+SETNAV.map(([id,l],i)=>'<button type="button" data-act="setgo" data-to="'+id+'" class="'+((UI.setOn||SETNAV[0][0])===id?'on':'')+'">'+l+'</button>').join('')+'</div>';
 }
 const RULE_PG=8;
 function rulesCardHTML(){
@@ -4632,7 +4647,7 @@ const ACT={
   _wrem(el){const st=wState();st.order=st.order.filter(i=>i!==el.dataset.id);st.hidden.push(el.dataset.id);wSave(st);render();},
   wadd(el){const st=wState();st.hidden=st.hidden.filter(i=>i!==el.dataset.id);st.order.push(el.dataset.id);wSave(st);render();
     requestAnimationFrame(()=>{const n=document.querySelector('.wgrid>.w[data-w="'+el.dataset.id+'"]');if(n) n.scrollIntoView({behavior:'instant',block:'center'});});},
-  setgo(el){const e=document.getElementById(el.dataset.to);if(e)e.scrollIntoView({behavior:'smooth',block:'start'});else{UI.tab='settings';UI.goto=el.dataset.to;render();}},
+  setgo(el){UI.setOn=el.dataset.to;UI._setClick=Date.now()+1500;setNavMark();const e=document.getElementById(el.dataset.to);if(e)e.scrollIntoView({behavior:'smooth',block:'start'});else{UI.tab='settings';UI.goto=el.dataset.to;render();}},
   goimport(){UI.tab='settings';UI.goto='s-import';render();},
   gdconnect(){const cid=($('#gdCid')||{}).value||'',fi=($('#gdFolder')||{}).value||'';
     if(!/\.apps\.googleusercontent\.com$/.test(cid.trim())){UI.gdErr='That client ID doesn’t look right. It ends in .apps.googleusercontent.com';render();return;}
