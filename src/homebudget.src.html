@@ -157,6 +157,7 @@ h1{font-size:28px;font-weight:800;letter-spacing:-.03em;margin:2px 0 12px}h2{fon
 .gdf{display:grid;gap:8px;margin-top:10px}.gdf .btn{justify-self:start}.gdh ol{padding-left:20px;margin:8px 0;display:grid;gap:6px}.gdh code{font-size:12px;word-break:break-all;background:var(--track);padding:1px 5px;border-radius:5px}.gdq{background:var(--soft);border-radius:12px;padding:10px 12px;margin:0 0 10px}
 .hcleg{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--mute);margin:6px 0 0}.hcleg span{display:inline-flex;align-items:center;gap:6px}.hcleg i{width:14px;height:3px;border-radius:2px;display:inline-block}.hcleg i.d{height:0;background:none!important;border-top:2px dashed}.hctx{display:flex!important;align-items:center;gap:5px;font-size:11.5px}.hctx i{width:8px;height:8px;border-radius:50%;display:inline-block}
 .alk{display:block;font-size:11.5px;color:var(--mute);margin-top:1px;overflow:hidden;text-overflow:ellipsis}
+.hccs{margin:2px 0 0;font-size:12px}
 .tlnk{background:none;border:0;padding:0;font:inherit;color:var(--accent,#6366f1);text-decoration:underline;cursor:pointer}
 .npop{position:fixed;z-index:60;top:calc(env(safe-area-inset-top,0px) + 62px);right:max(12px,env(safe-area-inset-right,0px));width:min(380px,calc(100vw - 24px));background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 18px 40px rgba(0,0,0,.25);padding:8px 8px 10px}
 .nph{display:flex;align-items:center;justify-content:space-between;padding:4px 6px 8px}
@@ -1854,6 +1855,14 @@ function histChart(P0,o){
   const pts=P.map(p=>X(p[0]).toFixed(1)+','+Y(p[1]).toFixed(1)),d0=P[0][1],d1=P[P.length-1][1],ch=d1-d0,up=ch>=0,good=o.inv?!up:up,col=o.col||(good?'#10b981':'#ef4444'),id='hc'+(o.id||'x');
   const kf=v=>{const a=Math.abs(v),sg=v<0?'-':'';return sg+(a>=1e6?'$'+(a/1e6).toFixed(2)+'M':a>=1e4?'$'+(a/1e3).toFixed(1)+'K':a>=1e3?'$'+(a/1e3).toFixed(2)+'K':'$'+Math.round(a));};
   const G=[hi,(hi+lo)/2,lo];
+  // investments: money you added is not return. Growth = change minus net deposits; % uses the Modified Dietz method (deposits weighted by how long they were invested).
+  const sg=v=>(v<0?'-':'+')+fmt0(Math.abs(v)).replace('-','');
+  const hcFoot=()=>{
+    const F=(o.flows||[]).filter(f=>f[0]>P[0][0]&&f[0]<=P[P.length-1][0]),net=F.reduce((t,f)=>t+f[1],0);
+    if(!o.flows||Math.abs(net)<1) return '<p class="hcc '+(good?'pos':'neg')+'">'+sg(ch)+(Math.abs(d0)>=1&&Math.abs(d0)>=Math.abs(d1)*.1?' ('+pf(ch/Math.abs(d0)*100)+')':'')+' since '+niceDay(P[0][0])+(o.note?' <span class="mute" style="font-weight:500">· '+o.note+'</span>':'')+'</p>';
+    const gr=ch-net,den=d0+F.reduce((t,f)=>t+f[1]*(x1-dayNum(f[0]))/Math.max(1,x1-x0),0),r=den>1?gr/den*100:null;
+    return '<p class="hcc '+(gr>=0?'pos':'neg')+'">'+sg(gr)+(r!=null?' ('+pf(r)+')':'')+' growth since '+niceDay(P[0][0])+'</p><p class="sub hccs">'+sg(ch)+' total change · '+sg(net)+' '+(net>=0?'you added':'you took out')+'</p>';
+  };
   const span=x1-x0,isoOf=n=>{const d=new Date(Date.UTC(1970,0,1)+n*864e5);return d.toISOString().slice(0,10);},dn0=dayNum('1970-01-01'),TK=(span<=5?Array.from({length:span+1},(_,i)=>x0+i):[0,1,2,3].map(i=>Math.round(x0+span*i/3))).map(n=>({x:pd+(n-x0)/Math.max(1,span)*(W-2*pd),d:isoOf(n-dn0)}));
   const hp=JSON.stringify({x0,x1,lo,sp,pd,W,H:Hh,p:P.map(q=>ex?[dayNum(q[0])-x0,Math.round(q[1]*100)/100,Math.round(q[2]),Math.round(q[3])]:[dayNum(q[0])-x0,Math.round(q[1]*100)/100]),c:col});
   const exL=ex?[[2,'var(--asset,#38bdf8)'],[3,'var(--owed,#f43f5e)']].map(([k,c])=>'<polyline points="'+P.map(p=>X(p[0]).toFixed(1)+','+Y(p[k]).toFixed(1)).join(' ')+'" fill="none" stroke="'+c+'" stroke-width="1.6" stroke-dasharray="5 3" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>').join(''):'';
@@ -1862,7 +1871,7 @@ function histChart(P0,o){
    +TK.map(t=>'<line y1="0" y2="'+Hh+'" x1="'+t.x.toFixed(1)+'" x2="'+t.x.toFixed(1)+'" stroke="var(--mute)" stroke-opacity=".38" stroke-width="1" stroke-dasharray="2 4" vector-effect="non-scaling-stroke"/>').join('')
    +'<path d="M'+pts.join(' L')+' L'+X(P[P.length-1][0]).toFixed(1)+','+Hh+' L'+X(P[0][0]).toFixed(1)+','+Hh+' Z" fill="url(#'+id+')"/>'+exL+'<polyline points="'+pts.join(' ')+'" fill="none" stroke="'+col+'" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg>'
    +'<div class="hcy" aria-hidden="true">'+G.map(v=>'<span style="top:'+(Y(v)/Hh*100).toFixed(1)+'%">'+kf(v)+'</span>').join('')+'</div><i class="hcdot" style="left:calc((100% - 50px)*'+(X(P[P.length-1][0])/W).toFixed(4)+');top:'+(Y(d1)/Hh*100).toFixed(1)+'%;background:'+col+'"></i><i class="hcx" hidden></i><i class="hcp" hidden style="background:'+col+'"></i><div class="hct" hidden></div></div>'
-   +'<div class="hcax hcax2"><div>'+TK.map((t,i)=>'<span class="'+(i===0?'a':i===TK.length-1?'z':'')+'" style="left:'+(t.x/W*100).toFixed(2)+'%">'+(span>300?new Date(t.d+'T12:00:00').toLocaleDateString('en-US',{month:'short',year:'2-digit'}).replace(' ',' \u2019'):shortDate(t.d))+'</span>').join('')+'</div></div>'+(ex?'<div class="hcleg"><span><i style="background:'+col+'"></i>Net worth</span><span><i class="d" style="border-color:var(--asset,#38bdf8)"></i>Assets</span><span><i class="d" style="border-color:var(--owed,#f43f5e)"></i>Owed</span></div>':'')+'<p class="hcc '+(good?'pos':'neg')+'">'+(up?'+':'-')+fmt0(Math.abs(ch)).replace('-','')+(Math.abs(d0)>=1&&Math.abs(d0)>=Math.abs(d1)*.1?' ('+pf(ch/Math.abs(d0)*100)+')':'')+' since '+niceDay(P[0][0])+(o.note?' <span class="mute" style="font-weight:500">· '+o.note+'</span>':'')+'</p></div>';
+   +'<div class="hcax hcax2"><div>'+TK.map((t,i)=>'<span class="'+(i===0?'a':i===TK.length-1?'z':'')+'" style="left:'+(t.x/W*100).toFixed(2)+'%">'+(span>300?new Date(t.d+'T12:00:00').toLocaleDateString('en-US',{month:'short',year:'2-digit'}).replace(' ',' \u2019'):shortDate(t.d))+'</span>').join('')+'</div></div>'+(ex?'<div class="hcleg"><span><i style="background:'+col+'"></i>Net worth</span><span><i class="d" style="border-color:var(--asset,#38bdf8)"></i>Assets</span><span><i class="d" style="border-color:var(--owed,#f43f5e)"></i>Owed</span></div>':'')+''+hcFoot()+'</div>';
 }
 // hover / touch / arrow keys on an over-time chart: a line, a dot and the value on that day
 function hcShow(w,frac){
@@ -1905,6 +1914,9 @@ function loanHistCard(a){
 const isTwin=a=>!a.sf&&S.accounts.some(x=>x.sf&&x!==a&&stmtTwins(x,x.sf).includes(a.id));
 const stmtOnly=types=>S.accounts.filter(a=>!a.sf&&(!types||types.includes(a.type))&&!isTwin(a)&&stmtPoints(a.id).length).map(a=>'acct:'+a.id);
 const nwSeries=split=>balSeries([...new Set(S.accounts.filter(a=>a.sf).flatMap(a=>{const G=sfGroup(a);return G?G.g.map(r=>r.id):[a.sf];}))].concat(stmtOnly()),split);
+// money you put in or took out of investment accounts (contributions, transfers): not growth
+function invFlows(ids){const A=new Set(ids&&ids.length?ids:S.accounts.filter(a=>a.type==='brokerage').map(a=>a.id));return S.txns.filter(t=>A.has(t.acct)&&t.cat==='Transfer').map(t=>[t.date,t.amount]);}
+const invAcctOf=id=>{const s=String(id);if(s.startsWith('acct:')) return s.slice(5);const a=S.accounts.find(x=>x.sf===s);return a?a.id:null;};
 const invSeries=()=>balSeries(invIds().concat(stmtOnly(['brokerage'])));
 // ---- looking back: the Overview month picker set to a past month ----
 const pastYM=ym=>!!ym&&ym<todayISO().slice(0,7);
@@ -3688,7 +3700,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.61.5';
+const APP_VERSION='1.62.0';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -3761,7 +3773,7 @@ function viewInvest0(){
   const RDY=CB.tot>=1?'<section class="card rdy"><h2 style="margin:0"><span class="rdyv">'+fmt0(CB.tot)+'</span> ready to invest</h2><p class="sub" style="margin:4px 0 8px">Uninvested cash (like SPAXX). CDs not included.</p>'+CB.L.map(x=>'<div class="ivr go" role="button" tabindex="0" data-act="invgo" data-id="'+esc(x.id)+'"><div class="ivn"><b>'+esc(x.name.replace(/\s*\([^)]*\)/g,'').trim()||x.name)+'</b><span>'+fmt(x.v)+'<i class="ivgo" aria-hidden="true">›</i></span></div><div class="ivm"><span class="ivbar"><i style="width:'+Math.max(3,x.v/CB.L[0].v*100).toFixed(1)+'%"></i></span><em>'+(x.all>0&&x.v/x.all>=.01?Math.round(x.v/x.all*100)+'% of account':'&nbsp;')+'</em></div></div>').join('')+'</section>':'';
   const st=(l,v,c)=>'<div><small>'+l+'</small><b'+(c?' class="'+c+'"':'')+'>'+v+'</b></div>';
   let h='<section class="card"><div class="ivtop"><span class="sub">Total value</span>'+(S.holdingsAt?(()=>{const H=S.holdings||{},ats=Object.keys(H).filter(i=>H[i]&&H[i].length).map(i=>S.balSf&&S.balSf[i]&&S.balSf[i].at).filter(Boolean),asOf=ats.length?Math.min(...ats):null,f=(t,w)=>new Date(t).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});return '<span class="ivas" title="Prices from '+(asOf?f(asOf):'')+' · synced '+f(S.holdingsAt)+'">'+(asOf?'Prices '+f(asOf):'Synced '+f(S.holdingsAt))+'</span>';})():'')+'</div><div class="invtot">'+fmt0(tot)+'</div><div class="ivst">'+st('In positions',fmt0(Math.max(0,Math.round(tot)-Math.round(CB.tot))))+(CB.tot>=1?st('Ready to invest',fmt0(CB.tot),'rdyc'):'')+(gc>0?st('Gain / loss',(gl<0?'-':'+')+fmt0(Math.abs(gl)).replace('-','')+' ('+pf(gl/gc*100)+')',gl<0?'neg':'pos'):'')+(fiN?st('CD &amp; bond interest','≈'+fmt0(fiInt)+'/yr'):'')+'</div>'+'</section>';
-  h=h.replace(/<\/section>$/,invMixBar()+'<div class="aghist"><span class="agnwl">Value over time</span>'+histChart(invSeries(),{id:'iv',label:'Investments',empty:'Your investments chart starts building now. It appears after syncs on two different days.'})+'</div></section>');
+  h=h.replace(/<\/section>$/,invMixBar()+'<div class="aghist"><span class="agnwl">Value over time</span>'+histChart(invSeries(),{id:'iv',label:'Investments',flows:invFlows(),empty:'Your investments chart starts building now. It appears after syncs on two different days.'})+'</div></section>');
   // biggest positions across accounts
   const l4=id=>{const a=S.accounts.find(x=>x.sf===id),r=(S.sfRaw||[]).find(x=>x.id===id),m=((a&&a.name)||'').match(/••(\d{4})/)||String((r&&r.name)||'').match(/\((\d{4})\)\s*$/)||String((r&&r.name)||'').match(/(\d{4})\s*$/);return m?'••'+m[1]:'';};
   const mode=posMode(),pa=!!UI._posAnim,agg={};UI._posAnim=false;
@@ -3784,7 +3796,7 @@ function viewInvest0(){
        // one spot, two views: balance over time or what it holds (switch with the tabs)
        const pie=acctSecPie(r.id),vw=(UI.ivVw||{})[r.id]==='pie'&&pie?'pie':'bal';
        const sw=pie?'<div class="seg2 ivvw" role="group" aria-label="Show"><button type="button" data-act="ivvw" data-id="'+esc(r.id)+'" data-v="bal" class="'+(vw==='bal'?'on':'')+'" aria-pressed="'+(vw==='bal')+'">Balance over time</button><button type="button" data-act="ivvw" data-id="'+esc(r.id)+'" data-v="pie" class="'+(vw==='pie'?'on':'')+'" aria-pressed="'+(vw==='pie')+'">What it holds</button></div>':'<span class="agnwl">Balance over time</span>';
-       const body=vw==='pie'?pie.replace('<span class="agnwl">What it holds</span>',''):histChart(balSeries([r.id]),{id:'a'+String(r.id).replace(/\W/g,''),label:r.inf.name,empty:'No history yet. Import this account\'s statements (Settings → Import) to fill in the past, or it builds up with each daily sync.'});
+       const body=vw==='pie'?pie.replace('<span class="agnwl">What it holds</span>',''):histChart(balSeries([r.id]),{id:'a'+String(r.id).replace(/\W/g,''),label:r.inf.name,flows:invAcctOf(r.id)?invFlows([invAcctOf(r.id)]):null,empty:'No history yet. Import this account\'s statements (Settings → Import) to fill in the past, or it builds up with each daily sync.'});
        return '<div class="ipl" data-sort="'+PS+'"'+(open?'':' hidden')+'><div class="ivhc">'+sw+body+'</div>';})()
      // positions: 8 at a time
      +(()=>{const all=!!(UI.ivAll||{})[r.id],LL=all?r.L:r.L.slice(0,8);return LL;})().map(x=>{const fi=fixedInc(x),g=(x.value!=null&&x.cost!=null&&!fi)?x.value-x.cost:null;
