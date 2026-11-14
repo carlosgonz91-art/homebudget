@@ -1405,7 +1405,9 @@ function auditCore(S0,today){
     if(chk.length>bad.length) add('ok',(chk.length-bad.length)+' of '+files.length+' saved files match the totals printed on them');
     // a statement with no transactions (e.g. an investment account that only changed in value) has nothing to add up
     const hasRows=new Set(S.txns.map(t=>t.src).filter(Boolean)),quiet=none.filter(f=>f.kind==='pdf'&&!hasRows.has(f.id)),none2=none.filter(f=>!quiet.includes(f));
-    if(quiet.length) add('ok',quiet.length+' statement'+(quiet.length>1?'s have':' has')+' no transactions, so there is nothing to add up',quiet.map(f=>A(f.acct)+' · '+f.name));
+    // a combined statement (Fidelity lists several accounts in one PDF) can have activity for one account and none for another
+    const others=f=>(S.files||[]).filter(g=>g!==f&&g.name===f.name&&g.acct!==f.acct).map(g=>A(g.acct));
+    if(quiet.length) add('ok',quiet.length+' statement'+(quiet.length>1?'s show':' shows')+' no activity for '+(quiet.length>1?'their account':'its account')+' that month',quiet.map(f=>{const o=others(f);return A(f.acct)+' · '+f.name+' · nothing was bought, sold, deposited or withdrawn in this account'+(o.length?'. The transactions in this file belong to '+o.join(', ')+' and are counted there':'')+'.';}));
     if(none2.length) add('info',none2.length+' file'+(none2.length>1?'s have':' has')+' no printed totals to check against (CSV/OFX or an unrecognized layout)',none2.map(f=>A(f.acct)+' · '+f.name),null,'noprint');
   }
   // 2. missing months, overlaps, balance hand-off between consecutive statements
@@ -3802,7 +3804,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.65.16';
+const APP_VERSION='1.65.17';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
