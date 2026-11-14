@@ -789,6 +789,7 @@ html,body{touch-action:pan-x pan-y}
 .mkcmp{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.mkcmp>div{background:var(--soft);border-radius:12px;padding:8px 10px;min-width:0}.mkcmp span{display:block;font-size:11.5px}.mkcmp b{font-size:16px}.mkcmp b.good{color:var(--cin);font-size:13px}.mkcmp b.bad{color:var(--cout);font-size:13px}.mksp{width:100%;height:auto;margin-top:10px;display:block;overflow:visible}.mksp text{fill:var(--mute);font-size:10px;font-family:inherit}.mklg{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--mute);margin-top:4px}.mklg span{display:inline-flex;align-items:center;gap:6px}.mklg i{width:14px;height:3px;border-radius:2px;display:inline-block}.mklg i.d{background:repeating-linear-gradient(90deg,var(--cin) 0 5px,transparent 5px 8px)}.mksl{display:flex;justify-content:space-between;font-size:11px;margin-top:2px}
 .dvp{display:inline-block;font-style:normal;font-size:10.5px;font-weight:700;line-height:1;padding:3px 6px;margin-left:6px;border-radius:99px;vertical-align:1px;color:var(--cin);background:color-mix(in srgb,var(--cin) 14%,transparent);white-space:nowrap}.dvp.soon{color:#fff;background:var(--cin)}
 .dvup{background:var(--soft);border-radius:14px;padding:10px 12px;margin:10px 0}.dvr{display:flex;align-items:baseline;gap:8px;padding:3px 0}.dvr .sub{flex:1;min-width:0}.dva{color:var(--cin)}
+.hxt>span{white-space:nowrap}
 </style>
 <header><div class="bar"><span class="logo"><span class="mk mkc" aria-hidden="true"></span>HomeBudget <span class="ver" id="ver"></span></span>
 <nav>
@@ -2110,7 +2111,7 @@ function heroCardHTML(ym,d){
   const pill=d.income>0?'<span class="hxp'+(net<0?' warn':'')+'">'+(net<0?'Spent '+Math.round((d.spend/d.income-1)*100)+'% more than earned':'Kept '+Math.round(net/d.income*100)+'% of income')+'</span>':'';
   const tile=(k,lab,val,sub)=>'<div class="hxt" role="button" tabindex="0" data-act="herogo" data-k="'+k+'"><span>'+lab+'</span><b>'+val+'</b>'+(sub||'')+'</div>';
   return '<div class="hero hx"><div class="hxh"><div class="hxm"><div class="hxl">'+esc(mon)+' · net</div><div class="hxn'+(net<0?' neg':'')+'">'+(net<0?'−':'')+fmt0(Math.abs(net)).replace('-','')+'</div>'+pill+'</div>'
-   +'<div class="hxg">'+tile('in','Income',fmt0(d.income),dl(d.income,pd.income,'up'))+tile('out','Spending',fmt0(d.spend),dl(d.spend,pd.spend,'down'))+(tb?tile('left',left<0?'Over':'Left',fmt0(Math.abs(left)),'<em class="'+(left<0?'bad':'ok')+'">of '+fmt0(tb)+' budget</em>'):'')+'</div></div>'
+   +'<div class="hxg">'+tile('in','Income',fmt0(d.income),dl(d.income,pd.income,'up'))+tile('out','Spending',fmt0(d.spend),dl(d.spend,pd.spend,'down'))+(tb?tile('left',left<0?'Over budget':'Budget left',fmt0(Math.abs(left)),'<em class="'+(left<0?'bad':'ok')+'">/ '+fmt0(tb)+'</em>'):'')+'</div></div>'
    +heroChart(ym,tb)+'</div>';
 }
 function heroChart(ym,tb){
@@ -3948,7 +3949,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.72.4';
+const APP_VERSION='1.72.5';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
