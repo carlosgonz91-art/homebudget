@@ -3749,7 +3749,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.64.7';
+const APP_VERSION='1.64.8';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -4271,9 +4271,10 @@ function icoBtns(root){
     else{const m=BMAP[a];if(!m) return;ic=m[0];only=m[2]&&(!m[1]||raw===m[1]);if(a==='sfsync'){only=raw==='Sync'||b.classList.contains('small')&&/^Sync/.test(raw);}if(b.dataset.ico==='lead') only=false;if(a==='bdclose'&&raw!=='Close') return;}
     const svg='<svg class="bi" viewBox="0 0 24 24" aria-hidden="true">'+BIC[ic]+'</svg>';
     const txt=raw.replace(/^＋\s*/,'');
-    if(b.tagName==='SPAN'){b.classList.add('bl');b.insertAdjacentHTML('afterbegin',svg);return;}
+    // icons sit after the label on every button, like the "SimpleFIN ↗" link
+    if(b.tagName==='SPAN'){b.classList.add('bl');b.insertAdjacentHTML('beforeend',svg);return;}
     if(only){b.classList.add('bo');if(!b.getAttribute('aria-label')) b.setAttribute('aria-label',raw);b.title=b.title||raw;b.innerHTML=svg+'<span class="vh">'+esc(raw)+'</span>';}
-    else{b.classList.add('bl');b.innerHTML=svg+'<span>'+esc(txt)+'</span>';}
+    else{b.classList.add('bl');b.innerHTML='<span>'+esc(txt)+'</span>'+svg;}
   });
 }
 try{new MutationObserver(()=>icoBtns()).observe(document.body,{childList:true,subtree:true});}catch(e){}
