@@ -1566,7 +1566,11 @@ function addMonths(ym,n){let y=+ym.slice(0,4),m=+ym.slice(5)-1+n;y+=Math.floor(m
 const TYPES={checking:'Checking',savings:'Savings',credit:'Credit card',loan:'Loan',brokerage:'Brokerage',other:'Other'};
 const LOANRE=/mortgage|\bloan\b|heloc|line of credit|student|installment|\bauto (?:finance|loan)\b/i;
 // loans are money owed: whatever sign the bank sends, the balance counts against you
-function fixLoans(){let ch=false;for(const a of S.accounts){if(!a.sf) continue;if(a.type==='other'&&LOANRE.test(a.name||'')){a.type='loan';ch=true;}if(a.type==='loan'){const b=S.balSf&&S.balSf[a.sf];if(b&&b.v>0){b.v=-b.v;}}}if(ch)save();}
+function fixLoans(){let ch=false;for(const a of S.accounts){
+  // a loan named by its address ("9344 SUNRISE TRAIL") is still a loan when its bank or servicer says so
+  const hay=(a.name||'')+' '+((a.sf&&S.sfOrgOf&&S.sfOrgOf[a.sf])||'')+' '+(a.ref||'')+' '+(a.sub||'');
+  if(a.type==='other'&&(LOANRE.test(hay)||/\(orig\.?\s*\$/i.test(a.name||'')||/servicing/i.test(hay))){a.type='loan';ch=true;}
+  if(!a.sf) continue;if(a.type==='loan'){const b=S.balSf&&S.balSf[a.sf];if(b&&b.v>0){b.v=-b.v;}}}if(ch)save();}
 
 let dbp=null;
 function idb(){return dbp||(dbp=new Promise((res,rej)=>{const r=indexedDB.open('homebudget',2);
@@ -3763,7 +3767,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.65.1';
+const APP_VERSION='1.65.2';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -4823,7 +4827,8 @@ const ACT={
         id=made[k];
       }else{const a=S.accounts.find(x=>x.id===id);if(a&&!a.ref&&it.res.ref) a.ref=it.res.ref;
         // a bank statement knows the account type better than the bank-sync guess; this keeps both import orders the same
-        if(a&&it.kind!=='sync'&&it.res.ref&&['checking','savings','credit','brokerage'].includes(it.res.type)&&['checking','savings','credit','brokerage','other'].includes(a.type)&&a.type!==it.res.type) a.type=it.res.type;}
+        if(a&&it.kind!=='sync'&&it.res.ref&&['checking','savings','credit','brokerage'].includes(it.res.type)&&['checking','savings','credit','brokerage','other'].includes(a.type)&&a.type!==it.res.type) a.type=it.res.type;
+        if(a&&it.res.type==='loan'&&a.type==='other') a.type='loan';}
       if(it.sfId){const a=S.accounts.find(x=>x.id===id);if(a&&(!a.sf||sfIsMain(it.sfId))) a.sf=it.sfId;}
       {const rt=it.res.apy!=null?it.res.apy:it.res.apr,a=S.accounts.find(x=>x.id===id),at=it.res.end||'';
        if(rt!=null&&a&&a.rateSrc!=='manual'&&(!a.rateAt||at>=a.rateAt)){a.rate=rt;a.rateSrc='statement';a.rateAt=at||todayISO();}
