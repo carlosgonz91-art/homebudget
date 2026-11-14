@@ -791,6 +791,7 @@ html,body{touch-action:pan-x pan-y}
 .dvp{display:inline-block;font-style:normal;font-size:10.5px;font-weight:700;line-height:1;padding:3px 6px;margin-left:6px;border-radius:99px;vertical-align:1px;color:var(--cin);background:color-mix(in srgb,var(--cin) 14%,transparent);white-space:nowrap}.dvp.soon{color:#fff;background:var(--cin)}
 .dvup{background:var(--soft);border-radius:14px;padding:10px 12px;margin:10px 0}.dvr{display:flex;align-items:baseline;gap:8px;padding:3px 0}.dvr .sub{flex:1;min-width:0}.dva{color:var(--cin)}
 .hxt>span{white-space:nowrap}
+.itip{margin-top:8px}.itip>summary{list-style:none;cursor:pointer;display:inline-flex;width:fit-content}.itip>summary::-webkit-details-marker{display:none}.itip>summary i{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;border:1.5px solid var(--mute);color:var(--mute);font:italic 700 11px/1 Georgia,serif}.itip[open]>summary i{border-color:var(--brand);color:var(--brand)}.itip>p{margin:6px 0 0;font-size:12.5px}
 </style>
 <header><div class="bar"><span class="logo"><span class="mk mkc" aria-hidden="true"></span>HomeBudget <span class="ver" id="ver"></span></span>
 <nav>
@@ -3305,7 +3306,7 @@ function billsHTML(pym){
     body=R.slice().sort((a,b)=>b.monthly-a.monthly).map(b=>'<div class="ip rcr go bl" role="button" tabindex="0" data-act="mergo" data-k="'+esc(b.k)+'">'+avHTML(b.cat)+'<div class="l"><b class="bnm"><span>'+esc(b.name)+'</span>'+kindPill(b)+'</b><span>'+esc(b.cat)+' · '+cadL[b.cad]+' · last paid '+niceDay(b.last)+'</span></div><div class="r"><b>'+(b.varies?'≈':'')+fmt(b.amt)+'</b><span class="rdue'+(b.paidNow?' paid':b.late?' late':b.inDays<=7?' soon':'')+'">'+(b.paidNow?'✓ Next ~'+nd(b.due):when(b))+'</span></div></div>').join('');
   }
   return '<section class="card">'+head+tiles+(tab==='up'?billAskHTML():'')+body
-    +'<p class="sub mxnote">Found by scanning your transactions for bills, utilities, insurance, loans and subscriptions that repeat. Due dates are estimates from past payments. Credit card payments and transfers are not counted.</p></section>';
+    +'<details class="itip"><summary aria-label="How bills are found"><i>i</i></summary><p class="sub">Found by scanning your transactions for bills, utilities, insurance, loans and subscriptions that repeat. Due dates are estimates from past payments. Credit card payments and transfers are not counted.</p></details></section>';
 }
 function recurPastHTML(ym){
   const end=ymEnd(ym),M=merchMonth(ym),R=recurring().filter(x=>x.first<=end);
@@ -3974,7 +3975,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.72.6';
+const APP_VERSION='1.72.7';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
