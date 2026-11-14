@@ -788,6 +788,8 @@ html,body{touch-action:pan-x pan-y}
 .bcd.today{border-color:var(--brand)}.bcd.sel{outline:2px solid var(--ink);outline-offset:1px}
 .bcleg{display:flex;gap:14px;margin:10px 0 4px;font-size:12px;color:var(--mute)}.bcleg span{display:inline-flex;align-items:center;gap:5px}.bcleg i{width:11px;height:11px;border-radius:4px}.bcleg .lp{background:color-mix(in srgb,var(--cin) 40%,var(--soft))}.bcleg .ld{background:color-mix(in srgb,var(--brand) 45%,var(--soft))}
 .mkcmp{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.mkcmp>div{background:var(--soft);border-radius:12px;padding:8px 10px;min-width:0}.mkcmp span{display:block;font-size:11.5px}.mkcmp b{font-size:16px}.mkcmp b.good{color:var(--cin);font-size:13px}.mkcmp b.bad{color:var(--cout);font-size:13px}.mksp{width:100%;height:54px;margin-top:10px;display:block}.mksl{display:flex;justify-content:space-between;font-size:11px;margin-top:2px}
+.dvp{display:inline-block;font-style:normal;font-size:10.5px;font-weight:700;line-height:1;padding:3px 6px;margin-left:6px;border-radius:99px;vertical-align:1px;color:var(--cin);background:color-mix(in srgb,var(--cin) 14%,transparent);white-space:nowrap}.dvp.soon{color:#fff;background:var(--cin)}
+.dvup{background:var(--soft);border-radius:14px;padding:10px 12px;margin:10px 0}.dvr{display:flex;align-items:baseline;gap:8px;padding:3px 0}.dvr .sub{flex:1;min-width:0}.dva{color:var(--cin)}
 </style>
 <header><div class="bar"><span class="logo"><span class="mk mkc" aria-hidden="true"></span>HomeBudget <span class="ver" id="ver"></span></span>
 <nav>
@@ -2576,6 +2578,25 @@ function tickHeld(){
   return Object.values(m);
 }
 const isFundSym=s=>/^[A-Z]{4}X$/.test(s);
+// next dividend per stock, from the dividends you already received: how often it pays (monthly, quarterly...) and when it last paid.
+// The bank shortens the company name ("Dividend Received: ELI LILLY &"), so it is matched to the holding's name, and only when one holding fits.
+let _dvN=null,_dvK='';
+function divNext(){const k=DATA_V+'|'+todayISO();if(_dvK===k&&_dvN) return _dvN;_dvK=k;
+  const H=tickHeld(),nm=x=>String(x||'').toUpperCase().replace(/[^A-Z0-9 ]+/g,' ').replace(/\s+/g,' ').trim(),by={};
+  for(const t of S.txns){if(!(t.amount>0)||!/dividend/i.test(t.desc||'')||/interest/i.test(t.desc||'')) continue;
+    let sym=null;const m=String(t.desc).match(/\(([A-Z]{1,5})\)/);if(m&&H.some(h=>h.s===m[1])) sym=m[1];
+    if(!sym){const STOP=new Set(['AND','INC','CO','CORP','THE','COM','LTD','PLC','AS']),core=x=>nm(x).split(' ').filter(w=>w&&!STOP.has(w));
+      const f=core(String(t.desc).replace(/^.*?dividend( received)?:?/i,''));if(!f.length) continue;
+      // same first word (Ford, Alphabet, Eli...); if several holdings share it (iShares, Vanguard), all of the holding's words must be in the description
+      let hit=H.filter(h=>core(h.d)[0]===f[0]);if(hit.length>1) hit=hit.filter(h=>core(h.d).every(w=>f.includes(w)));if(hit.length===1) sym=hit[0].s;}
+    if(!sym) continue;(by[sym]=by[sym]||{}) [t.date]=((by[sym]||{})[t.date]||0)+t.amount;}
+  const T=dayNum(todayISO()),out={};
+  for(const sym in by){const D=Object.keys(by[sym]).sort();if(D.length<2) continue;const N=D.map(dayNum),g=[];for(let i=1;i<N.length;i++) if(N[i]-N[i-1]>10) g.push(N[i]-N[i-1]);if(!g.length) continue;
+    const gm=g.sort((a,b)=>a-b)[g.length>>1];const step=gm>=25&&gm<=38?30.4:gm>=75&&gm<=105?91.3:gm>=160&&gm<=200?182.6:gm>=330&&gm<=395?365.25:null;if(!step) continue;
+    let nx=N[N.length-1]+step;while(nx<T-3) nx+=step;
+    out[sym]={d:new Date(Math.round(nx)*864e5).toISOString().slice(0,10),inD:Math.round(nx-T),amt:by[sym][D[D.length-1]],cad:step<40?'monthly':step<100?'quarterly':step<200?'twice a year':'yearly'};}
+  return _dvN=out;}
+const divPill=s=>{const n=divNext()[s];if(!n||n.inD>100) return '';const soon=n.inD<=14;return ' <i class="dvp'+(soon?' soon':'')+'" title="Pays '+n.cad+'. Last payment '+fmt(n.amt)+'. Date estimated from past payments.">'+(n.inD<=0?'Due now':soon?'Div in '+n.inD+'d':'Div ~'+niceDay(n.d).replace(/,? \d{4}$/,''))+'</i>';};
 function marketSyms(){
   const a=new Set();
   if(wOn('tick')){tickHeld().forEach(x=>a.add(x.s));(S.watch||[]).forEach(s=>a.add(s));}
@@ -2694,6 +2715,9 @@ function insightsHTML(noFetch){
   const SD=secData(c,UI.secAcct||'');
   const secL=SD.L,secT=SD.tot,SECM=SD.M,PAL=['#6366f1','#0ea5e9','#10b981','#f59e0b','#ec4899','#8b5cf6','#14b8a6','#f97316','#64748b'];
   const T=[];
+  // what actually came in: every dividend deposit in the last 12 months, all accounts (stocks, ETFs and funds)
+  {const c0=new Date(Date.now()-365*864e5).toISOString().slice(0,10);let got=0,gy=0;const y=todayISO().slice(0,4);for(const t of S.txns){if(t.amount>0&&/dividend/i.test(t.desc||'')&&!/money market|interest/i.test(t.desc||'')){if(t.date>c0) got+=t.amount;if(t.date.slice(0,4)===y) gy+=t.amount;}}
+   if(got>0) T.push({k:'Received',v:fmt0(got),s:'dividends, past year · '+fmt0(gy)+' in '+y,c:'#10b981'});}
   T.push({k:'Dividends a year',v:dvBase>0?'≈'+fmt0(dv):'…',s:dvBase>0?(dvN?'≈'+fmt0(dv/12)+' a month · '+pf(dv/dvBase*100).replace('+','')+' yield':'None pay dividends'):'Loading',c:'#10b981'});
   T.push({k:'Earnings',v:E.length?esc(E[0].s):(c.earn?'None':'…'),s:E.length?wd(E[0].d):(c.earn?(c.earn.na?'Not on the free plan':'In the next 45 days'):'Loading'),c:'#f59e0b'});
   const AN=rated.reduce((t,o)=>{const r=c.rec[o.x.s];t.b+=r.b;t.h+=r.h;t.s+=r.s;return t;},{b:0,h:0,s:0}),ANn=AN.b+AN.h+AN.s;
@@ -2706,7 +2730,9 @@ function insightsHTML(noFetch){
   if(E.length) h+='<h3 class="insh">Upcoming earnings</h3><div class="insl">'+E.slice(0,6).map(e=>'<div class="insr"><span><b>'+esc(e.s)+'</b></span><b>'+wd(e.d)+'</b><em>'+esc(e.h)+'</em></div>').join('')+'</div>';
   // only stocks with a dividend or an analyst rating; ones with neither are hidden
   const rows=H.filter(x=>{const d=c.div[x.s],r=c.rec[x.s];return (d&&d.dy>0)||(r&&lab(r));});
-  if(rows.length) h+='<details class="insd" data-k="st"><summary>Dividends and ratings by stock <span class="sub">· '+rows.length+'</span></summary><p class="sub" style="margin:6px 0 8px"><b>Dividend</b>: about how much your shares pay you in a year (today\'s yield × what you hold), with the yield in brackets. <b>Rating</b>: what analysts recommend. The bar shows how many say Buy (green), Hold (grey) and Sell (red). Stocks and ETFs with no dividend and no rating are not listed.</p><div class="insl">'+rows.map(x=>{const d=c.div[x.s],r=c.rec[x.s],l=r&&lab(r),n=r?r.b+r.h+r.s:0;return '<div class="insr"><span><b>'+esc(x.s)+'</b><small>'+fmt0(x.v)+'</small></span><b>'+(d&&d.dy>0?'≈'+fmt0(x.v*d.dy/100)+' a year <span class="mute">('+d.dy.toFixed(1)+'%)</span>':'<span class="mute">'+(d?'No dividend':'Loading…')+'</span>')+'</b><em'+(l&&l[1]?' class="'+l[1]+'"':'')+(l?' title="'+r.b+' buy · '+r.h+' hold · '+r.s+' sell"':'')+'>'+(l?l[0]+'<i class="insrb" role="img" aria-label="'+r.b+' buy, '+r.h+' hold, '+r.s+' sell"><u style="flex:'+r.b+';background:var(--cin)"></u><u style="flex:'+r.h+';background:var(--mute)"></u><u style="flex:'+r.s+';background:var(--cout)"></u></i><small>'+n+' analysts</small>':'<span class="mute">'+(r?'No analyst ratings':'Loading…')+'</span>')+'</em></div>';}).join('')+'</div><p class="sub" style="margin:8px 0 0">Only stocks that pay a dividend or have analyst coverage are listed'+(H.length>rows.length?' ('+(H.length-rows.length)+' hidden)':'')+'. Ratings count the latest buy, hold and sell calls from Wall Street brokerage analysts, as collected by Finnhub: green is buy, grey is hold, red is sell. <b>Buy</b> means most say buy; <b>Lean buy</b> means more buys than sells; <b>Hold</b> means they are split.'+(ANn?' Across your stocks: '+AN.b+' buy, '+AN.h+' hold, '+AN.s+' sell.':'')+'</p></details>';
+  const up=Object.entries(divNext()).filter(([s,n])=>n.inD>=0&&n.inD<=30&&H.some(x=>x.s===s)).sort((a,b)=>a[1].inD-b[1].inD);
+  if(up.length) h+='<div class="dvup"><div class="sub" style="margin:0 0 6px"><b>Dividends coming up</b> · next 30 days, estimated from past payments</div>'+up.map(([s,n])=>'<div class="dvr"><b>'+esc(s)+'</b><span class="sub">'+(n.inD===0?'Today':niceDay(n.d).replace(/,? \d{4}$/,''))+' · '+n.cad+'</span><b class="dva">≈'+fmt(n.amt)+'</b></div>').join('')+'</div>';
+  if(rows.length) h+='<details class="insd" data-k="st"><summary>Dividends and ratings by stock <span class="sub">· '+rows.length+'</span></summary><p class="sub" style="margin:6px 0 8px"><b>Dividend</b>: about how much your shares pay you in a year (today\'s yield × what you hold), with the yield in brackets. <b>Rating</b>: what analysts recommend. The bar shows how many say Buy (green), Hold (grey) and Sell (red). Stocks and ETFs with no dividend and no rating are not listed.</p><div class="insl">'+rows.map(x=>{const d=c.div[x.s],r=c.rec[x.s],l=r&&lab(r),n=r?r.b+r.h+r.s:0;return '<div class="insr"><span><b>'+esc(x.s)+divPill(x.s)+'</b><small>'+fmt0(x.v)+'</small></span><b>'+(d&&d.dy>0?'≈'+fmt0(x.v*d.dy/100)+' a year <span class="mute">('+d.dy.toFixed(1)+'%)</span>':'<span class="mute">'+(d?'No dividend':'Loading…')+'</span>')+'</b><em'+(l&&l[1]?' class="'+l[1]+'"':'')+(l?' title="'+r.b+' buy · '+r.h+' hold · '+r.s+' sell"':'')+'>'+(l?l[0]+'<i class="insrb" role="img" aria-label="'+r.b+' buy, '+r.h+' hold, '+r.s+' sell"><u style="flex:'+r.b+';background:var(--cin)"></u><u style="flex:'+r.h+';background:var(--mute)"></u><u style="flex:'+r.s+';background:var(--cout)"></u></i><small>'+n+' analysts</small>':'<span class="mute">'+(r?'No analyst ratings':'Loading…')+'</span>')+'</em></div>';}).join('')+'</div><p class="sub" style="margin:8px 0 0">Only stocks that pay a dividend or have analyst coverage are listed'+(H.length>rows.length?' ('+(H.length-rows.length)+' hidden)':'')+'. Ratings count the latest buy, hold and sell calls from Wall Street brokerage analysts, as collected by Finnhub: green is buy, grey is hold, red is sell. <b>Buy</b> means most say buy; <b>Lean buy</b> means more buys than sells; <b>Hold</b> means they are split.'+(ANn?' Across your stocks: '+AN.b+' buy, '+AN.h+' hold, '+AN.s+' sell.':'')+'</p></details>';
   const news=H.slice(0,3).flatMap(x=>((c.news[x.s]||{}).items||[]).map(n=>Object.assign({s:x.s},n))).sort((a,b)=>b.dt-a.dt).slice(0,6);
   if(news.length) h+='<h3 class="insh">News on your biggest stocks</h3><div class="insn">'+news.map(n=>'<a href="'+esc(n.u)+'" target="_blank" rel="noopener noreferrer"><b>'+esc(n.s)+'</b> '+esc(n.h)+'<span class="sub"> · '+esc(n.src)+(n.dt?' · '+agoTxt(n.dt*1000):'')+' '+EXTI+'</span></a>').join('')+'</div>';
   h+='<p class="sub mxnote">Covers '+H.length+' stocks and ETFs ('+fmt0(tot)+'). Mutual funds and CDs are not included. Dividend figures are estimates from current yields. Ratings are analyst opinions, not advice.</p></section>';
@@ -3939,7 +3965,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.71.1';
+const APP_VERSION='1.72.0';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
