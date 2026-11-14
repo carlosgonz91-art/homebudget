@@ -777,6 +777,7 @@ html,body{touch-action:pan-x pan-y}
 :root[data-theme="dark"]{--h1:color-mix(in srgb,var(--brand) 22%,var(--soft));--h2:color-mix(in srgb,var(--brand) 50%,var(--soft));--h3:var(--brand);--h4:color-mix(in srgb,var(--brand) 55%,#fff);--h5:color-mix(in srgb,var(--brand) 18%,#fff);--hf1:#fff;--hf2:#fff;--hf3:#fff;--hf4:#141833;--hf5:#141833}
 .hleg{display:flex;flex-wrap:wrap;gap:6px 12px;margin:10px 0 2px;font-size:12px;color:var(--mute)}.hleg span{display:inline-flex;align-items:center;gap:5px}.hleg i{width:12px;height:12px;border-radius:4px;display:inline-block}
 .blask{margin:6px 0 10px;padding:10px 12px;border:1px dashed var(--line);border-radius:14px}.bla{margin-bottom:8px}.blbtn{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 0 46px}
+.bnm{display:flex!important;align-items:center;min-width:0}.ip .l .bnm>span{color:inherit;font:inherit;margin:0;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}.bpill{flex:none;display:inline-block;font-style:normal;font-size:11px;font-weight:650;line-height:1;padding:3px 7px;margin-left:6px;border-radius:99px;vertical-align:2px;color:var(--brand);background:color-mix(in srgb,var(--brand) 14%,transparent);white-space:nowrap}
 </style>
 <header><div class="bar"><span class="logo"><span class="mk mkc" aria-hidden="true"></span>HomeBudget <span class="ver" id="ver"></span></span>
 <nav>
@@ -3100,13 +3101,13 @@ function billScan0(){
     // a bill you confirmed (yearly, every 6 months...) counts from a single payment, on the schedule you picked
     const said=CADD[ANS[k]]?ANS[k]:null,lastD0=D[D.length-1];
     if(said){const mid=med(D.slice(-3).map(x=>x.a)),g=CADD[said];if(T-lastD0.d>g*1.6+30) continue;
-      out.push({k,first:D[0].date,name:titleCase(k),cat:last.cat,cad:said,amt:lastD0.a,typ:mid,lo:mid,hi:mid,varies:false,n:D.length,last:lastD0.date,lastAmt:lastD0.a,lastD:lastD0.d,due:lastD0.d+g,monthly:mid*30/g,said:true});continue;}
+      out.push({k,desc:last.desc,first:D[0].date,name:titleCase(k),cat:last.cat,cad:said,amt:lastD0.a,typ:mid,lo:mid,hi:mid,varies:false,n:D.length,last:lastD0.date,lastAmt:lastD0.a,lastD:lastD0.d,due:lastD0.d+g,monthly:mid*30/g,said:true});continue;}
     const gaps=[];for(let i=1;i<D.length;i++) gaps.push(D[i].d-D[i-1].d);
     const g=D.length>1?med(gaps):0;let cad=null;
     // infrequent bills drift (a policy paid early or renewed late), so the longer schedules allow a wider window
     if(g>=25&&g<=36) cad='month';else if(g>=75&&g<=110) cad='quarter';else if(g>=150&&g<=215) cad='half';else if(g>=330&&g<=400) cad='year';
     // not sure: a bill-like payment seen once (or far apart) and big enough to matter is asked about instead of guessed
-    if(!cad){if(like&&!/fee|interest/i.test(last.cat||'')&&lastD0.a>=40&&T-lastD0.d<=400&&(D.length===1||g>45)&&!ANS[k]) ask.push({k,name:titleCase(k),cat:last.cat,amt:lastD0.a,last:lastD0.date,n:D.length,guess:D.length>1?(g>270?'year':'half'):'year'});continue;}
+    if(!cad){if(like&&!/fee|interest/i.test(last.cat||'')&&lastD0.a>=40&&T-lastD0.d<=400&&(D.length===1||g>45)&&!ANS[k]) ask.push({k,desc:last.desc,name:titleCase(k),cat:last.cat,amt:lastD0.a,last:lastD0.date,n:D.length,guess:D.length>1?(g>270?'year':'half'):'year'});continue;}
     const am=D.slice(-6).map(x=>x.a),mid=med(am);if(!(mid>=1)) continue;
     const steady=am.filter(a=>Math.abs(a-mid)<=mid*0.2).length>=am.length*0.6;
     // bill-like names only need to repeat; everything else must also be a steady amount seen at least 3 times
@@ -3121,7 +3122,7 @@ function billScan0(){
     // amount: the last payment is the best guess for the next one (prices change, utilities vary month to month);
     // only a one-off far from the usual amount (a catch-up or double payment) falls back to the usual amount
     const vary=(hi-lo)>mid*0.15&&(hi-lo)>=3,est=Math.abs(lastD.a-mid)<=mid*0.5?lastD.a:mid;
-    out.push({k,first:D[0].date,name:titleCase(k),cat:last.cat,cad,amt:est,typ:mid,lo,hi,varies:(hi-lo)>mid*0.15&&(hi-lo)>=3,n:D.length,last:lastD.date,lastAmt:lastD.a,lastD:lastD.d,due,monthly:cad==='month'?mid:cad==='quarter'?mid/3:cad==='half'?mid/6:mid/12});
+    out.push({k,desc:last.desc,first:D[0].date,name:titleCase(k),cat:last.cat,cad,amt:est,typ:mid,lo,hi,varies:(hi-lo)>mid*0.15&&(hi-lo)>=3,n:D.length,last:lastD.date,lastAmt:lastD.a,lastD:lastD.d,due,monthly:cad==='month'?mid:cad==='quarter'?mid/3:cad==='half'?mid/6:mid/12});
   }
   out.ask=ask.sort((a,b)=>b.amt-a.amt);
   return out;
@@ -3137,7 +3138,7 @@ function billsPastHTML(ym){
   const paid=B.filter(b=>M[b.k]).sort((a,b)=>M[b.k].a-M[a.k].a),miss=B.filter(b=>!M[b.k]&&!near.has(b.k)&&b.cad==='month'&&b.first<ym+'-01');
   const tot=paid.reduce((t,b)=>t+M[b.k].a,0);
   const tiles=stiles([{k:'Paid in '+ymShort(ym).split(' ')[0],v:fmtT(tot),s:paid.length+' bill'+(paid.length===1?'':'s'),c:'#6366f1'},{k:'Not paid',v:String(miss.length),s:miss.length?'monthly bill'+(miss.length===1?'':'s'):'all monthly bills paid',c:miss.length?'var(--warn)':'#10b981'},{k:'Per month',v:fmtT(B.reduce((t,b)=>t+b.monthly,0)),s:'usual',c:'#0ea5e9'}]);
-  const row=(b,p)=>'<div class="ip rcr go bl'+(p?' done':'')+'" role="button" tabindex="0" data-act="mergo" data-k="'+esc(b.k)+'">'+avHTML(b.cat)+'<div class="l"><b>'+esc(b.name)+'</b><span>'+esc(b.cat)+'</span></div><div class="r"><b>'+fmt(p?p.a:b.amt)+'</b><span class="rdue'+(p?' paid':' late')+'">'+(p?'✓ Paid '+niceDay(p.d):'No payment')+'</span></div></div>';
+  const row=(b,p)=>'<div class="ip rcr go bl'+(p?' done':'')+'" role="button" tabindex="0" data-act="mergo" data-k="'+esc(b.k)+'">'+avHTML(b.cat)+'<div class="l"><b class="bnm"><span>'+esc(b.name)+'</span>'+kindPill(b)+'</b><span>'+esc(b.cat)+'</span></div><div class="r"><b>'+fmt(p?p.a:b.amt)+'</b><span class="rdue'+(p?' paid':' late')+'">'+(p?'✓ Paid '+niceDay(p.d):'No payment')+'</span></div></div>';
   return wCard('Bills &amp; subscriptions','',tiles+(miss.length?'<h3 class="blh">Not paid in '+ymShort(ym)+'</h3>'+miss.map(b=>row(b,null)).join(''):'')+(paid.length?'<h3 class="blh">Paid in '+ymShort(ym)+'</h3>'+paid.map(b=>row(b,M[b.k])).join(''):'<p class="sub" style="margin:4px 0 0">No bill payments found that month.</p>'));
 }
 // payments that look like a bill but were only seen once (or too far apart to tell): ask instead of guessing
@@ -3145,10 +3146,14 @@ function billAskHTML(){
   const A=(billScan().ask||[]);if(!A.length) return '';
   const L=A.slice(0,UI.blAskAll?A.length:3);
   return '<div class="blask"><h3 class="blh">Is this a bill? <span class="sub">· '+A.length+'</span></h3><p class="sub" style="margin:0 0 6px">Looks like a bill, but it was paid only once (or too far apart to tell). Pick how often it repeats and it will show up here when it is due.</p>'
-    +L.map(b=>'<div class="bla"><div class="ip rcr go" role="button" tabindex="0" data-act="mergo" data-k="'+esc(b.k)+'">'+avHTML(b.cat)+'<div class="l"><b>'+esc(b.name)+'</b><span>'+esc(b.cat)+' · paid '+niceDay(b.last)+(b.n>1?' · '+b.n+' times':'')+'</span></div><div class="r"><b>'+fmt(b.amt)+'</b></div></div>'
+    +L.map(b=>'<div class="bla"><div class="ip rcr go" role="button" tabindex="0" data-act="mergo" data-k="'+esc(b.k)+'">'+avHTML(b.cat)+'<div class="l"><b class="bnm"><span>'+esc(b.name)+'</span>'+kindPill(b)+'</b><span>'+esc(b.cat)+' · paid '+niceDay(b.last)+(b.n>1?' · '+b.n+' times':'')+'</span></div><div class="r"><b>'+fmt(b.amt)+'</b></div></div>'
       +'<div class="blbtn">'+[['month','Monthly'],['quarter','Every 3 mo'],['half','Every 6 mo'],['year','Yearly'],['no','Not a bill']].map(([c,t])=>'<button type="button" class="btn small ghost" data-act="blans" data-k="'+esc(b.k)+'" data-c="'+c+'">'+t+'</button>').join('')+'</div></div>').join('')
     +(A.length>3?'<button type="button" class="btn ghost small rcmore" data-act="blaskall">'+(UI.blAskAll?'Show less':'Show '+(A.length-3)+' more')+'</button>':'')+'</div>';
 }
+// a short label for what a bill is for (AT&T → Internet, Farmers → Auto insurance), from the merchant name
+const BILLKIND=[['Internet',/\b(at ?&? ?t|att|xfinity|comcast|spectrum|frontier|fiber|internet|google fi(ber)?|starlink|cox)\b/],['Phone',/\b(t ?mobile|verizon|wireless|mint mobile|visible|cricket|boost)\b/],['Gas',/\b(atmos|gas co|natural gas|centerpoint)\b/],['Water',/\bwater|\bsewer\b/],['Electricity',/\b(electric|energy|power|txu|reliant|oncor|direct energy|green mountain)\b/],['Utilities',/\b(city of|utility|utilities)\b/],['Trash',/\b(trash|waste|republic services|recycl)\b/],['Auto insurance',/\b(farmers|geico|progressive|allstate|state farm|usaa|liberty mutual|auto ins)\b/],['Insurance',/\binsurance|\bins\b/],['Mortgage',/mortgage|loansphere|firstunited|first united/],['Loan',/\bloan\b/],['HOA',/\bhoa\b|homeowners assoc/],['Rent',/\brent\b/],['TV',/\b(youtube ?tv|hulu|netflix|disney|hbo|max|peacock|paramount|sling|apple tv)\b/],['Music',/\b(spotify|pandora(?! karaoke)|apple music|tidal|sirius)\b/],['Pets',/\b(banfield|vet|petco|chewy|rover)\b/],['VPN',/\bnord|vpn\b/],['Audiobooks',/\b(audible)\b/],['Membership',/\b(amazon prime|prime|costco|sams club|walmart plus)\b/],['Cloud',/\b(icloud|google one|dropbox|onedrive|google storage)\b/],['Movies',/\b(cinemark|amc|regal)\b/],['Health',/\b(health|medical|clinic|dental|vision|texashealth)\b/],['Gym',/\b(gym|fitness|planet fitness|ymca)\b/],['Childcare',/\b(daycare|child ?care|preschool)\b/],['School',/\b(tuition|school|college|community)\b/],['Security',/\b(adt|simplisafe|ring|security)\b/]];
+const billKind=b=>{const t=(b.k+' '+(b.desc||'')).toLowerCase();for(const [n,re] of BILLKIND) if(re.test(t)) return n;return /subscri/i.test(b.cat||'')?'Subscription':'';};
+const kindPill=b=>{const n=billKind(b);return n?' <i class="bpill">'+esc(n)+'</i>':'';};
 function billsHTML(pym){
   if(pastYM(pym)) return billsPastHTML(pym);
   const B=billScan();
@@ -3160,7 +3165,7 @@ function billsHTML(pym){
   const tiles=stiles([{k:'Due soon',v:soon.length?fmtT(soon.reduce((t,b)=>t+b.amt,0)):'$0',s:soon.length?soon.length+' bill'+(soon.length===1?'':'s')+' · 7 days':'Nothing due',c:soon.length?'var(--warn)':'#10b981'},{k:'Still due',v:fmtT(thisMo.reduce((t,b)=>t+b.amt,0)),s:paid.length+' paid so far',c:'#6366f1'},{k:'Per month',v:fmtT(mon),s:R.length+' bill'+(R.length===1?'':'s'),c:'#0ea5e9'}]);
   const cadL={month:'Monthly',quarter:'Every 3 months',half:'Twice a year',year:'Yearly'};
   const when=b=>b.late?'Expected '+nd(b.due):b.inDays<0?'Was due '+nd(b.due):b.inDays===0?'Due today':b.inDays===1?'Due tomorrow':b.inDays<=7?'Due in '+b.inDays+' days':'Due ~'+nd(b.due);
-  const row=(b,done)=>'<div class="ip rcr go bl'+(done?' done':'')+'" role="button" tabindex="0" data-act="mergo" data-k="'+esc(b.k)+'">'+avHTML(b.cat)+'<div class="l"><b>'+esc(b.name)+'</b><span>'+esc(b.cat)+' · '+cadL[b.cad]+(b.varies?' · changes, last one '+fmt(b.lastAmt)+' · range '+fmt0(b.lo)+'–'+fmt0(b.hi):'')+'</span></div><div class="r"><b>'+(done?fmt(b.lastAmt):(b.varies?'≈':'')+fmt(b.amt))+'</b><span class="rdue'+(done?' paid':b.late?' late':b.inDays<=7?' soon':'')+'">'+(done?'✓ Paid '+niceDay(b.last):when(b))+'</span></div></div>';
+  const row=(b,done)=>'<div class="ip rcr go bl'+(done?' done':'')+'" role="button" tabindex="0" data-act="mergo" data-k="'+esc(b.k)+'">'+avHTML(b.cat)+'<div class="l"><b class="bnm"><span>'+esc(b.name)+'</span>'+kindPill(b)+'</b><span>'+esc(b.cat)+' · '+cadL[b.cad]+(b.varies?' · changes, last one '+fmt(b.lastAmt)+' · range '+fmt0(b.lo)+'–'+fmt0(b.hi):'')+'</span></div><div class="r"><b>'+(done?fmt(b.lastAmt):(b.varies?'≈':'')+fmt(b.amt))+'</b><span class="rdue'+(done?' paid':b.late?' late':b.inDays<=7?' soon':'')+'">'+(done?'✓ Paid '+niceDay(b.last):when(b))+'</span></div></div>';
   // Upcoming: grouped by when each bill is next expected. All bills: every bill found, with its usual amount and next date.
   const tab=UI.blTab==='all'?'all':'up';
   const seg='<div class="seg2" role="group" aria-label="Bills view"><button type="button" data-act="bltab" data-m="up" class="'+(tab==='up'?'on':'')+'" aria-pressed="'+(tab==='up')+'">Upcoming</button><button type="button" data-act="bltab" data-m="all" class="'+(tab==='all'?'on':'')+'" aria-pressed="'+(tab==='all')+'">All bills · '+R.length+'</button></div>';
@@ -3175,7 +3180,7 @@ function billsHTML(pym){
       +(U.length>8?'<button type="button" class="btn ghost small rcmore" data-act="blall" aria-expanded="'+!!UI.blAll+'">'+(UI.blAll?'Show less':'Show '+(U.length-8)+' more')+'</button>':'')
       +(paid.length?'<details class="bld"'+(UI.blPaid?' open':'')+' data-tg="blPaid"><summary>Paid this month <span class="sub">· '+paid.length+' · '+fmt0(paid.reduce((t,b)=>t+b.lastAmt,0))+'</span></summary>'+paid.map(b=>row(b,true)).join('')+'</details>':'');
   }else{
-    body=R.slice().sort((a,b)=>b.monthly-a.monthly).map(b=>'<div class="ip rcr go bl" role="button" tabindex="0" data-act="mergo" data-k="'+esc(b.k)+'">'+avHTML(b.cat)+'<div class="l"><b>'+esc(b.name)+'</b><span>'+esc(b.cat)+' · '+cadL[b.cad]+' · last paid '+niceDay(b.last)+'</span></div><div class="r"><b>'+(b.varies?'≈':'')+fmt(b.amt)+'</b><span class="rdue'+(b.paidNow?' paid':b.late?' late':b.inDays<=7?' soon':'')+'">'+(b.paidNow?'✓ Next ~'+nd(b.due):when(b))+'</span></div></div>').join('');
+    body=R.slice().sort((a,b)=>b.monthly-a.monthly).map(b=>'<div class="ip rcr go bl" role="button" tabindex="0" data-act="mergo" data-k="'+esc(b.k)+'">'+avHTML(b.cat)+'<div class="l"><b class="bnm"><span>'+esc(b.name)+'</span>'+kindPill(b)+'</b><span>'+esc(b.cat)+' · '+cadL[b.cad]+' · last paid '+niceDay(b.last)+'</span></div><div class="r"><b>'+(b.varies?'≈':'')+fmt(b.amt)+'</b><span class="rdue'+(b.paidNow?' paid':b.late?' late':b.inDays<=7?' soon':'')+'">'+(b.paidNow?'✓ Next ~'+nd(b.due):when(b))+'</span></div></div>').join('');
   }
   return '<section class="card">'+head+tiles+billAskHTML()+body
     +'<p class="sub mxnote">Found by scanning your transactions for bills, utilities, insurance, loans and subscriptions that repeat. Due dates are estimates from past payments. Credit card payments and transfers are not counted.</p></section>';
@@ -3842,7 +3847,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.68.0';
+const APP_VERSION='1.68.1';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
