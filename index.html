@@ -787,6 +787,7 @@ html,body{touch-action:pan-x pan-y}
 .bcd.paid{background:color-mix(in srgb,var(--cin) 16%,var(--soft));color:var(--ink)}.bcd.paid span{color:var(--cin)}
 .bcd.today{border-color:var(--brand)}.bcd.sel{outline:2px solid var(--ink);outline-offset:1px}
 .bcleg{display:flex;gap:14px;margin:10px 0 4px;font-size:12px;color:var(--mute)}.bcleg span{display:inline-flex;align-items:center;gap:5px}.bcleg i{width:11px;height:11px;border-radius:4px}.bcleg .lp{background:color-mix(in srgb,var(--cin) 40%,var(--soft))}.bcleg .ld{background:color-mix(in srgb,var(--brand) 45%,var(--soft))}
+.mkcmp{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.mkcmp>div{background:var(--soft);border-radius:12px;padding:8px 10px;min-width:0}.mkcmp span{display:block;font-size:11.5px}.mkcmp b{font-size:16px}.mkcmp b.good{color:var(--cin);font-size:13px}.mkcmp b.bad{color:var(--cout);font-size:13px}.mksp{width:100%;height:54px;margin-top:10px;display:block}.mksl{display:flex;justify-content:space-between;font-size:11px;margin-top:2px}
 </style>
 <header><div class="bar"><span class="logo"><span class="mk mkc" aria-hidden="true"></span>HomeBudget <span class="ver" id="ver"></span></span>
 <nav>
@@ -3008,7 +3009,24 @@ function loansPageHTML(){
   const last=Math.max(0,...A.map(x=>x.L.months||0)),hasM=A.every(x=>x.L.months!=null);
   let h='';
   if(A.length>1) h+='<section class="card"><div class="sub" style="margin:0">Total owed</div><div class="invtot">'+fmt0(owed)+'</div><div class="row" style="gap:18px;flex-wrap:wrap">'+(orig>owedO?'<span class="sub">Paid off <b>'+fmt0(orig-owedO)+'</b></span>':'')+(pay?'<span class="sub">Monthly <b>'+fmt0(pay)+'</b></span>':'')+(hasM?'<span class="sub">All debt-free <b>'+inMonths(last)+'</b></span>':'')+'</div></section>';
-  return h+A.map(({a})=>loanBlock(a,true)).join('');
+  return h+A.map(({a})=>loanBlock(a,true)).join('')+mktRateHTML(A);
+}
+// today's 30-year mortgage rate (US weekly average from Freddie Mac, refreshed weekly into rates.json on this site) next to your own rate
+function mktLoad(){const m=S.mkt;if(m&&Date.now()-(m.at||0)<12*36e5) return;if(UI.mktBusy) return;UI.mktBusy=1;
+  fetch('rates.json?'+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{if(j&&j.r30){j.at=Date.now();const ch=!S.mkt||S.mkt.asOf!==j.asOf;S.mkt=j;save();if(ch) loansRefresh();}}).catch(()=>{}).finally(()=>{UI.mktBusy=0;});}
+function mktRateHTML(A){
+  mktLoad();const m=S.mkt;if(!m||!m.r30) return '';
+  const own=A.map(x=>x.a).filter(a=>a.rate>0).sort((x,y)=>(loanInfo(y).owed||0)-(loanInfo(x).owed||0))[0];
+  const H=(m.hist||[]).filter(x=>x.r30>0),wk=new Date(m.asOf+'T12:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  let cmp='',tip='';
+  if(own){const d=m.r30-own.rate,pts=Math.abs(d).toFixed(2);
+    cmp='<div class="mkcmp"><div><span class="sub">Your rate</span><b>'+own.rate+'%</b></div><div><span class="sub">Today, 30-year</span><b>'+m.r30.toFixed(2)+'%</b></div><div><span class="sub">Difference</span><b class="'+(d>=0?'good':'bad')+'">'+(d>=0?pts+' pts lower':pts+' pts higher')+'</b></div></div>';
+    tip=d>=1?'Your rate is well below today\'s, so keep this loan. Extra payments earn you a guaranteed '+own.rate+'%: if your savings account pays more than that, saving beats paying the loan down early.'
+      :d>-0.75?'Today\'s rate is close to yours. Refinancing would not save much yet.'
+      :'Today\'s rate is well below yours. A refinance could lower your payment: get a quote.';}
+  let sp='';if(H.length>2){const lo=Math.min(...H.map(x=>x.r30),own?own.rate:99),hi=Math.max(...H.map(x=>x.r30)),W=300,Hh=54,y=v=>Hh-4-(v-lo)/((hi-lo)||1)*(Hh-8),xs=i=>i/(H.length-1)*W;
+    sp='<svg class="mksp" viewBox="0 0 '+W+' '+Hh+'" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="var(--brand)" stroke-width="2" vector-effect="non-scaling-stroke" points="'+H.map((x,i)=>xs(i).toFixed(1)+','+y(x.r30).toFixed(1)).join(' ')+'"/>'+(own?'<line x1="0" x2="'+W+'" y1="'+y(own.rate).toFixed(1)+'" y2="'+y(own.rate).toFixed(1)+'" stroke="var(--cin)" stroke-width="1.5" stroke-dasharray="4 4" vector-effect="non-scaling-stroke"/>':'')+'</svg><div class="sub mksl"><span>'+H[0].d.slice(0,7)+'</span><span>'+(own?'dashed line = your rate':'')+'</span><span>now</span></div>';}
+  return '<section class="card mkr"><h2 style="margin:0 0 4px">30-year mortgage rates</h2><p class="sub" style="margin:0 0 10px">US average for the week of '+wk+(m.r15?' · 15-year '+m.r15.toFixed(2)+'%':'')+'. A local quote for 76118 can differ a little.</p>'+cmp+sp+(tip?'<p class="sub" style="margin:10px 0 0">'+tip+'</p>':'')+'<p class="sub" style="margin:6px 0 0;font-size:11px">Source: '+esc(m.src||'Freddie Mac PMMS')+', updated weekly.</p></section>';
 }
 function loansRefresh(){if(UI.tab==='invest'&&ivMode()==='loans'){render();return;}if(document.querySelector('[data-w="money"]')&&(UI.wt||{}).money==='loans'){render();return;}const old=document.querySelector('[data-w="loans"] .wbody > .card');if(!old) return;const t=document.createElement('div');t.innerHTML=loansHTML();if(t.firstElementChild) old.replaceWith(t.firstElementChild);}
 // ---- CD maturities ----
@@ -3915,7 +3933,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.70.0';
+const APP_VERSION='1.71.0';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
