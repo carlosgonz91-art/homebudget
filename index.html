@@ -2991,7 +2991,7 @@ function loanBlock(a,split){
     const eta=(left!=null?'<div class="lneta"><div><small>Debt-free</small><b>'+inMonths(left)+'</b></div><div><small>Time left</small><b>'+monthsTxt(left)+'</b></div><div><small>Payments</small><b>'+left+'</b></div></div>':'<div class="lneta mute"><span>'+(L.owed<0.5?'This loan is <b>paid off</b>.':L.pay&&L.hr?'<b>Not paid off</b> at this payment'+(L.rate&&L.pay<=L.mInt+0.01?' (under the '+fmt0(L.mInt)+' monthly interest)':'')+'. Check the rate and payment.':L.pay?'Add your <b>rate</b> to see the payoff date.':'Add your <b>rate</b> and <b>payment</b> to see the payoff date.')+'</span></div>')+(L.pay&&L.hr&&!L.a.pay&&left!=null?'<div class="sub lnx" style="margin:-4px 0 10px">Payment found in your account; it may include escrow. Tap <b>Payment</b> to fix.</div>':'');
     const hero='<div class="lnhero">'+(pct!=null?loanRing(pct):'')+'<div class="lnk"><div class="sub">Still owed</div><div class="lnbig">'+fmt0(L.owed)+'</div>'+(L.orig?'<div class="sub">of '+fmt0(L.orig)+'</div>'+(L.orig>L.owed?'<div class="lnpd">'+fmt0(L.orig-L.owed)+' paid</div>':''):'')+'</div></div>'+eta;
     const isM=/mortg|home|house|escrow/i.test(a.name+' '+(a.sub||''))||L.escrow>0,payLbl=isM?'Mortgage payment':'Monthly payment';
-    const tiles=stiles([{k:payLbl,v:L.pay?fmtT(L.pay+(L.escrow||0)):'–',s:L.pay?(L.escrow?'incl. escrow'+(L.extra?' + extra':''):L.extra?'incl. '+fmtT(L.extra)+' extra':'per month'):'not found',c:'#6366f1'},{k:'This month',v:L.hr&&L.owed?fmtT(L.mInt):'–',s:L.hr?'in interest':'add rate',c:'#f97316'},{k:'Interest',v:L.interest!=null?fmtT(L.interest):'–',s:L.hr?'left to pay':'add rate',c:'#ef4444'}]);
+    const tiles=stiles([{k:payLbl,v:L.pay?fmtT(L.pay+(L.escrow||0)):'–',s:L.pay?(L.escrow?'incl. escrow'+(L.extra?' + extra':''):L.extra?'incl. '+fmtT(L.extra)+' extra':'per month'):'not found',c:'#6366f1'},{k:'This month',v:L.hr&&L.owed?fmtT(L.mInt):'–',s:L.hr?'in interest':'add rate',c:'#f97316'},{k:'Interest',v:(()=>{const r=ytdInt(L);return r?fmtT(r.sum):'–';})(),s:L.hr?'paid in '+todayISO().slice(0,4):'add rate',c:'#ef4444'}]);
     let brk='';
     if(L.pay>0){
       const ex=L.extra||0,pi=L.pay-ex,it=L.hr?Math.min(L.mInt,pi):null,pr=it!=null?Math.max(0,pi-it):null,es=L.escrow||0,tot=L.pay+es;
@@ -3009,11 +3009,11 @@ function loanBlock(a,split){
       const st=(l,v,c)=>'<div><small>'+l+'</small><b'+(c?' class="'+c+'"':'')+'>'+v+'</b></div>';
       const hero2='<div class="sub" style="margin:12px 0 0">Still owed</div><div class="invtot">'+fmt0(L.owed)+'</div>'+(pct!=null?'<div class="track lnpt" role="img" aria-label="'+Math.round(pct)+'% paid off"><div class="fill" style="width:'+pct.toFixed(1)+'%;background:linear-gradient(90deg,var(--cin),color-mix(in srgb,var(--cin) 60%,#fff))"></div></div>':'')
         +'<div class="ivst">'+(L.orig&&L.orig>L.owed?st('Paid off',fmt0(L.orig-L.owed)+' ('+Math.round(pct)+'%)','rdyc'):'')+(left!=null?st('Debt-free',inMonths(left))+st('Time left',monthsTxt(left))+st('Payments left',String(left)):'')+'</div>'+(left==null?eta:'');
-      return '<section class="card lnb">'+head+hero2+'<div style="height:12px"></div>'+tiles+ytdIntP(L,'margin:-2px 0 0')+'</section>'
+      return '<section class="card lnb">'+head+hero2+'<div style="height:12px"></div>'+tiles+''+'</section>'
        +(brk?'<section class="card"><h2>'+payLbl+'</h2>'+brk.replace('<div class="lnbkh"><span>'+payLbl+'</span>','<div class="lnbkh"><span>Total each month</span>')+'</section>':'')
        +loanHistCard(a)+lnSimCard(a,facts);
     }
-    return '<div class="lnb">'+head+hero+brk+tiles+ytdIntP(L,'margin:-2px 0 12px')+wi+(chart?'<div style="margin-top:10px">'+chart+'</div>':'')+(facts.length?'<div class="sub lnx">'+facts.join(' · ')+'</div>':'')+'</div>';
+    return '<div class="lnb">'+head+hero+brk+tiles+''+wi+(chart?'<div style="margin-top:10px">'+chart+'</div>':'')+(facts.length?'<div class="sub lnx">'+facts.join(' · ')+'</div>':'')+'</div>';
 }
 // small overview widget: one line per loan, tap to open the Loans page
 function loansHTML(ym){
@@ -3058,7 +3058,7 @@ function mktRateHTML(A){
       :'Today\'s rate is well below yours. A refinance could lower your payment: get a quote.';}
   let sp='';if(H.length>2){const lo=Math.min(...H.map(x=>x.r30),own?own.rate:99),hi=Math.max(...H.map(x=>x.r30)),W=300,Hh=54,y=v=>Hh-4-(v-lo)/((hi-lo)||1)*(Hh-8),xs=i=>i/(H.length-1)*W;
     sp='<svg class="mksp" viewBox="0 0 '+W+' '+Hh+'" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="var(--brand)" stroke-width="2" vector-effect="non-scaling-stroke" points="'+H.map((x,i)=>xs(i).toFixed(1)+','+y(x.r30).toFixed(1)).join(' ')+'"/>'+(own?'<line x1="0" x2="'+W+'" y1="'+y(own.rate).toFixed(1)+'" y2="'+y(own.rate).toFixed(1)+'" stroke="var(--cin)" stroke-width="1.5" stroke-dasharray="4 4" vector-effect="non-scaling-stroke"/>':'')+'</svg><div class="sub mksl"><span>'+H[0].d.slice(0,7)+'</span><span>'+(own?'dashed line = your rate':'')+'</span><span>now</span></div>';}
-  return '<section class="card mkr"><h2 style="margin:0 0 4px">30-year mortgage rates</h2><p class="sub" style="margin:0 0 10px">US average for the week of '+wk+(m.r15?' · 15-year '+m.r15.toFixed(2)+'%':'')+'. A local quote for 76118 can differ a little.</p>'+cmp+sp+(tip?'<p class="sub" style="margin:10px 0 0">'+tip+'</p>':'')+'<p class="sub" style="margin:6px 0 0;font-size:11px">Source: '+esc(m.src||'Freddie Mac PMMS')+', updated weekly.</p></section>';
+  return '<section class="card mkr"><h2 style="margin:0 0 4px">30-year mortgage rates</h2><p class="sub" style="margin:0 0 10px">US average · week of '+wk+'</p>'+cmp+sp+'<p class="sub" style="margin:6px 0 0;font-size:11px">Source: Freddie Mac</p></section>';
 }
 function loansRefresh(){if(UI.tab==='invest'&&ivMode()==='loans'){render();return;}if(document.querySelector('[data-w="money"]')&&(UI.wt||{}).money==='loans'){render();return;}const old=document.querySelector('[data-w="loans"] .wbody > .card');if(!old) return;const t=document.createElement('div');t.innerHTML=loansHTML();if(t.firstElementChild) old.replaceWith(t.firstElementChild);}
 // ---- CD maturities ----
@@ -3965,7 +3965,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.72.0';
+const APP_VERSION='1.72.1';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
