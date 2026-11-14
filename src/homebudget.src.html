@@ -734,6 +734,8 @@ html,body{touch-action:pan-x pan-y}
 @keyframes bspin{to{transform:rotate(360deg)}}@keyframes bdot{0%,70%,100%{transform:translateY(0);opacity:.35}35%{transform:translateY(-4px);opacity:1}}
 @media (prefers-reduced-motion:reduce){.bspin{animation-duration:2.4s}.bdots i{animation:none;opacity:.7}#busy .bcard{transition:opacity .1s}}
 
+/* backup buttons: a tidy 2-by-2 grid, primary actions on top */
+.bkgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.bkgrid>.btn{width:100%;margin:0;justify-self:stretch;min-width:0;white-space:nowrap}.bkgrid.one>.btn:first-child{grid-column:1/-1}
 /* one button height across the app: 42px regular, 34px small; borders on every kind so filled and outlined buttons line up */
 .btn{border:1px solid transparent}
 .btn:not(.bo):not(.mp .btn){display:inline-flex;align-items:center;justify-content:center;gap:6px;box-sizing:border-box;line-height:1.2;vertical-align:middle}
@@ -3758,7 +3760,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.64.9';
+const APP_VERSION='1.64.10';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -3889,7 +3891,7 @@ async function profileText(){
   return JSON.stringify({version:2,app:APP_VERSION,theme:themeMode(),state:S,files});
 }
 function profileCardHTML(){
-  return '<section class="card" id="s-data"><h2>Backup &amp; help</h2><p class="mute" style="margin-top:0">Your data stays in this browser. Export a profile to back it up or move it to another device. Your bank link is not included.</p><div class="row"><button class="btn" data-act="backup">Export profile</button>'+(navigator.share?'<button class="btn" data-act="sharebackup">Share backup</button>':'')+'<span class="btn ghost pick" style="margin:0">Import profile<input type="file" data-chg="restore" aria-label="Import profile"></span><button class="btn ghost" data-act="exportcsv">Export all as CSV</button></div>'
+  return '<section class="card" id="s-data"><h2>Backup &amp; help</h2><p class="mute" style="margin-top:0">Your data stays in this browser. Export a profile to back it up or move it to another device. Your bank link is not included.</p><div class="bkgrid'+(navigator.share?'':' one')+'"><button class="btn" data-act="backup">Export profile</button>'+(navigator.share?'<button class="btn" data-act="sharebackup">Share backup</button>':'')+'<span class="btn ghost pick" style="margin:0">Import profile<input type="file" data-chg="restore" aria-label="Import profile"></span><button class="btn ghost" data-act="exportcsv">Export CSV</button></div>'
    +'<p class="sub">New device: import the profile, then add a new SimpleFIN token from the same login. It\'s a one-time copy. <b>Share backup</b> sends it to Drive, email or text. Keep it private: it has your financial data.</p>'+(S.files.length?'<p class="sub">Includes '+S.files.length+' saved statement'+(S.files.length===1?'':'s')+'.</p>':'')+(S.lastBackup?'<p class="sub">Last export: '+new Date(S.lastBackup).toLocaleDateString()+'</p>':'<p class="sub">Never exported.</p>')+'</section>';
 }
 function viewSettings(){
