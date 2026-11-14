@@ -3828,7 +3828,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.65.17';
+const APP_VERSION='1.66.0';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -4173,11 +4173,15 @@ const ruleFor=(desc,amount)=>{const nm=normMatch(desc);return (S.rules||[]).find
 function applyRulesAll(){let n=0;for(const t of S.txns){if(t.man) continue;const r=ruleFor(t.desc,t.amount);if(!r) continue;
   if(t.cat!==r.cat||(r.sub||'')!==(t.sub||'')){t.cat=r.cat;if(r.sub) t.sub=r.sub;else delete t.sub;if(r.inc&&t.amount>0) t.inc=r.inc;n++;}}return n;}
 function learnUncat(){let n=0;for(const t of S.txns) if(t.cat==='Uncategorized'){const c=autoCat(t.desc,t.amount,t.acct);if(c!=='Uncategorized'){t.cat=c;n++;}}return n;}
+const P2P_RE=/\b(zelle|venmo|cash ?app)\b/i,P2P_OWN=/\b(cash ?out|instant transfer|standard transfer|transfer (to|from) (your )?bank|add(ed)? (money|funds)|bank transfer)\b/i;
 function autoCat(desc,amount,acctId){
   const A=S.accounts.find(a=>a.id===acctId);
   // money arriving on a loan pays the loan down. It is a move between your accounts, never income or spending.
   if(A&&A.type==='loan'&&amount>0) return 'Transfer';
   let c=categorize(desc,amount,S.rules);
+  // Venmo / Zelle / Cash App: money to or from a person could be a gift, a bill split or a payback. Leave it for you to decide,
+  // unless one of your rules covers it or it is plainly a move between your own accounts (cash out, transfer to bank).
+  if(P2P_RE.test(desc||'')&&!(S.rules||[]).some(r=>r.match&&normMatch(desc).includes(r.match))) return P2P_OWN.test(desc||'')?'Transfer':'Uncategorized';
   if(c==='Uncategorized'||(c==='Income'&&amount>0)){const l=learnedCat(desc,amount);if(l) c=l;}
   if(A&&A.type==='brokerage'&&isInc(c)) c='Investing';
   if(A&&A.type==='credit'&&c==='Income'&&amount>0&&!/pay ?yourself ?back/i.test(desc)&&!(S.rules||[]).some(r=>r.cat==='Income'&&normMatch(desc).includes(r.match))) c='Uncategorized'; // a credit on a card is a refund or cashback, not pay: let the user decide
@@ -5072,7 +5076,8 @@ document.addEventListener('drop',e=>{e.preventDefault();const fl=[...(e.dataTran
   }catch(e){}
 })();
 (async function(){try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();}catch(e){}await loadState();if(!UI.impAcct&&S.accounts[0])UI.impAcct=S.accounts[0].id;render();if((S.wV||0)<3){S.wV=3;S.wB1=1;S.widgets={order:WDEF.slice(),hidden:[]};save();render();}
-if(!S.wB1){S.wB1=1;const W=S.widgets;if(W&&Array.isArray(W.hidden)&&W.hidden.includes('bills')){W.hidden=W.hidden.filter(x=>x!=='bills');W.order.splice(Math.min(2,W.order.length),0,'bills');save();render();}}if((S.ruleV||0)<CAT_V){S.ruleV=CAT_V;let n=0;for(const t of S.txns){if(t.man||!['Uncategorized','Other'].includes(t.cat)) continue;const c=autoCat(t.desc,t.amount,t.acct);if(c!==t.cat){t.cat=c;n++;}}if(n){save();dlog('rules','Sorted transactions with new built-in rules',{n});render();}}if(!S.tyV){S.tyV=1;let n=0;for(const a of S.accounts){if(a.type==='checking'&&/\bsavings?\b/i.test(a.name||'')&&!/checking/i.test(a.name||'')){a.type='savings';n++;}}if(n){save();render();}}setTimeout(()=>backfillStmtBal().catch(()=>{}),1500);setTimeout(()=>{try{gdBoot();}catch(e){}},GD_JUST?50:1200);})();
+if(!S.wB1){S.wB1=1;const W=S.widgets;if(W&&Array.isArray(W.hidden)&&W.hidden.includes('bills')){W.hidden=W.hidden.filter(x=>x!=='bills');W.order.splice(Math.min(2,W.order.length),0,'bills');save();render();}}if((S.ruleV||0)<CAT_V){S.ruleV=CAT_V;let n=0;for(const t of S.txns){if(t.man||!['Uncategorized','Other'].includes(t.cat)) continue;const c=autoCat(t.desc,t.amount,t.acct);if(c!==t.cat){t.cat=c;n++;}}if(n){save();dlog('rules','Sorted transactions with new built-in rules',{n});render();}}if(!S.p2pV){S.p2pV=1;let n=0;for(const t of S.txns){if(t.man||!P2P_RE.test(t.desc||'')||!['Transfer','Other'].includes(t.cat)) continue;if((S.rules||[]).some(r=>r.match&&normMatch(t.desc).includes(r.match))) continue;const c=P2P_OWN.test(t.desc)?'Transfer':'Uncategorized';if(c!==t.cat){t.cat=c;n++;}}if(n){dlog('app','Venmo/Zelle payments set to review',{n});save();setTimeout(()=>toast(n+' Venmo/Zelle payment'+(n===1?' needs':'s need')+' a category. Tap Review uncategorized in Settings.'),1500);}}
+if(!S.tyV){S.tyV=1;let n=0;for(const a of S.accounts){if(a.type==='checking'&&/\bsavings?\b/i.test(a.name||'')&&!/checking/i.test(a.name||'')){a.type='savings';n++;}}if(n){save();render();}}setTimeout(()=>backfillStmtBal().catch(()=>{}),1500);setTimeout(()=>{try{gdBoot();}catch(e){}},GD_JUST?50:1200);})();
 
 // swipe a banner sideways to dismiss it (touch or mouse); a small x shows on hover for desktop
 (function(){
