@@ -3791,7 +3791,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.65.2';
+const APP_VERSION='1.65.3';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -3876,7 +3876,7 @@ function viewInvest0(){
   const PS=FOLD.get('hb-possort')||'value',gOf=x=>(x.value!=null&&x.cost>0&&!fixedInc(x))?x.value-x.cost:null,pOf=x=>{const g=gOf(x);return g==null?null:g/x.cost;};
   const cmp={value:(a,b)=>(b.value||0)-(a.value||0),gain:(a,b)=>(gOf(b)??-Infinity)-(gOf(a)??-Infinity),pct:(a,b)=>(pOf(b)??-Infinity)-(pOf(a)??-Infinity),loss:(a,b)=>(gOf(a)??Infinity)-(gOf(b)??Infinity),name:(a,b)=>String(a.sym||a.desc||'').localeCompare(String(b.sym||b.desc||''))}[PS]||null;
   const PSL={value:['Value','largest first'],gain:['$ gained','biggest gain first'],pct:['% gained','best return first'],loss:['Biggest losers','biggest loss first'],name:['Name','A to Z']};
-  h+='<div class="sech"><div class="secht"><h2>Your accounts</h2><p class="sub" id="posSortHint">Positions inside each account are sorted by <b>'+PSL[PS][0].toLowerCase()+'</b>, '+PSL[PS][1]+'.</p></div><label class="sechc"><span>Sort by</span><select id="posSort" data-chg="possort" aria-describedby="posSortHint">'+Object.keys(PSL).map(v=>'<option value="'+v+'"'+(PS===v?' selected':'')+'>'+PSL[v][0]+'</option>').join('')+'</select></label></div>';
+  h+='<div class="sech"><div class="secht"><h2>Your accounts</h2></div><label class="sechc"><span>Sort by</span><select id="posSort" data-chg="possort">'+Object.keys(PSL).map(v=>'<option value="'+v+'"'+(PS===v?' selected':'')+'>'+PSL[v][0]+'</option>').join('')+'</select></label></div>';
   rows.forEach(r=>{
     if(cmp) r.L=r.L.slice().sort(cmp);
     const cash=(r.inf.bal!=null?r.inf.bal:r.pos)-r.pos;
