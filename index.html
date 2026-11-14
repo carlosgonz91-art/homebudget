@@ -722,8 +722,8 @@ html,body{touch-action:pan-x pan-y}
 .hchipx.warn::before{width:.95em;height:.95em;margin-right:.3em}
 .banner:not(.ok)>span:first-child{position:relative;padding-left:1.45em}.banner:not(.ok)>span:first-child::before{position:absolute;left:0;top:.2em;margin:0}
 .bk.go{cursor:pointer;border-radius:12px;margin:0 -8px;padding:10px 8px;transition:background .15s}.bk.go:hover{background:var(--soft)}.bk.go:focus-visible{outline:2px solid var(--brand);outline-offset:-2px}.bkgo{flex:none;align-self:center;color:var(--mute);font-style:normal;font-size:20px;line-height:1;margin-left:-4px}#acctcard{scroll-margin-top:76px}
-.okck{display:inline-block;font-style:normal;overflow:hidden;white-space:nowrap;max-width:1.5em;margin-right:.35em;vertical-align:bottom;animation:okfade .45s ease 2.7s forwards}@keyframes okfade{to{opacity:0;max-width:0;margin-right:0}}
-@media (prefers-reduced-motion:reduce){.okck{animation-duration:.01s}}
+.okck{display:inline-block;font-style:normal;white-space:nowrap;margin-right:.35em;vertical-align:baseline}.okck.pop{animation:okpop .4s cubic-bezier(.2,.9,.3,1.4)}@keyframes okpop{0%{transform:scale(.3);opacity:0}100%{transform:none;opacity:1}}.okck.wk{color:#b45309}.banner.sy.warn{background:color-mix(in srgb,#f59e0b 12%,var(--card));border-color:color-mix(in srgb,#f59e0b 45%,transparent)}.syerr{display:block;font-size:12px;color:var(--mute);font-weight:500;margin-top:1px}@keyframes okfade{to{opacity:0;max-width:0;margin-right:0}}
+@media (prefers-reduced-motion:reduce){.okck.pop{animation-duration:.01s}}
 /* centred busy message: soft card, spinning ring, bouncing dots */
 #busy{position:fixed;inset:0;z-index:70;display:grid;place-items:center;pointer-events:none;padding:16px}
 #busy .bcard{display:flex;align-items:center;gap:16px;background:color-mix(in srgb,var(--ink) 94%,transparent);color:var(--bg);padding:18px 24px;border-radius:22px;box-shadow:0 18px 50px rgba(8,10,30,.35);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);opacity:0;transform:translateY(10px) scale(.94);transition:opacity .22s ease,transform .28s cubic-bezier(.2,.9,.3,1.2);max-width:min(92vw,380px)}
@@ -1674,7 +1674,7 @@ function toast(msg,act,tone){
   t.innerHTML='<i class="tico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">'+TOAST_ICO[tone]+'</svg></i><span>'+esc(msg)+'</span>'+(act?'<button id="toastBtn">'+esc(act.label)+'</button>':'');
   // shrink the bubble to the text: a wrapped line leaves the box at full width, so measure the longest line and size to it
   try{const sp=t.querySelector('span');sp.style.width='';const r=document.createRange();r.selectNodeContents(sp);const L=[...r.getClientRects()];const tops=new Set(L.map(x=>Math.round(x.top)));
-    if(tops.size>1){const w=Math.max(...L.map(x=>x.width));if(w>0) sp.style.width=Math.ceil(w+1)+'px';}}catch(e){}
+    if(tops.size>1){const k=(t.getBoundingClientRect().width/(t.offsetWidth||1))||1,w=Math.max(...L.map(x=>x.width))/k;if(w>0) sp.style.width=Math.ceil(w+2)+'px';}}catch(e){}
   t.classList.add('show');
   if(act) $('#toastBtn').onclick=()=>{t.classList.remove('show');act.fn();};
   clearTimeout(toastT);const hide=()=>{if(t.matches(':hover')||t.contains(document.activeElement)){toastT=setTimeout(hide,1500);return;}t.classList.remove('show');};toastT=setTimeout(hide,act?9000:3500);
@@ -3274,7 +3274,9 @@ function viewDash(){
   let h='';
   const stale=!S.lastBackup||(Date.now()-S.lastBackup)>30*864e5;
   const fresh=UI._okAt&&Date.now()-UI._okAt<5000;
-  if(SF.access&&sfOnline()) h+='<div class="banner row sy'+(SF.last&&(Date.now()/1000-SF.last)<86400?' ok':'')+'"><span>'+(SF.last?(fresh?'<i class="okck" aria-hidden="true">✓</i>':'')+'Synced '+syncWhen(SF.last*1000):'Not synced yet')+'</span><span class="spacer"></span><button class="btn small" data-act="sfsync" data-ico="lead">Sync</button></div>';
+  // ✓ stays while the last sync worked; ⚠ when the last try failed (the time shown is still the last good sync)
+  const sOk=SF.last&&(Date.now()/1000-SF.last)<86400&&!UI._syncErr;
+  if(SF.access&&sfOnline()) h+='<div class="banner row sy'+(UI._syncErr?' warn':sOk?' ok':'')+'"><span>'+(SF.last?(UI._syncErr?'':sOk?'<i class="okck'+(fresh?' pop':'')+'" aria-hidden="true">✓</i>':'')+'Synced '+syncWhen(SF.last*1000)+(UI._syncErr?'<small class="syerr">Last try failed. Tap Sync to retry.</small>':''):'Not synced yet')+'</span><span class="spacer"></span><button class="btn small" data-act="sfsync" data-ico="lead">Sync</button></div>';
   if(UI.pdf&&UI.pdf.sync&&!UI.pdf.busy){const nn=(UI.pdf.items||[]).filter(it=>it.choice==='new'&&(it.fresh||[]).length).length;h+='<div class="banner row"><span><b>'+(nn>1?nn+' new accounts':'New account')+' found.</b> Review to finish the sync.</span><span class="spacer"></span><button class="btn small" data-act="goimport">Review</button></div>';}
   // announcements: sit with the sync banner and can be dismissed (each comes back if its situation changes)
   {const DS=dismissed(),day=Math.floor(Date.now()/864e5),wk=Math.floor(Date.now()/(7*864e5)),HH=sfHealth(),nn=HH.bad+HH.general.length;
@@ -3771,7 +3773,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.64.5';
+const APP_VERSION='1.64.6';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -4525,7 +4527,7 @@ async function sfSync(){
     {const isNew=a=>{const l4=(String(a.name||'').match(/(\d{4})(?!.*\d)/)||[])[1]||'';return !S.accounts.find(x=>x.sf===a.id)&&!(l4&&S.accounts.find(x=>((x.ref||'').split(':')[1]===l4)||(x.name.match(/••(\d{4})/)||[])[1]===l4));};
      if(SF.last&&(j.accounts||[]).some(isNew)){try{const w=await sfFetch(SF.access,Math.floor(Date.now()/1000)-80*86400);if(w&&Array.isArray(w.accounts)){dlog('simplefin','New account found, fetched 80 days',{count:(j.accounts||[]).filter(isNew).length});j=w;}}catch(e){}}}
     dlog('simplefin','Accounts received',(j.accounts||[]).map(a=>{const tx=a.transactions||[],ds=tx.filter(t=>!t.pending).map(t=>+(t.posted||t.transacted_at||0)).filter(Boolean).sort();return {id:a.id,name:a.name,org:a.org&&(a.org.name||a.org.domain),balance:a.balance,available:a['available-balance'],balanceDate:a['balance-date']?new Date((+a['balance-date'])*1000).toISOString().slice(0,10):null,currency:a.currency,tx:tx.length,pending:tx.filter(t=>t.pending).length,first:ds[0]?new Date(ds[0]*1000).toISOString().slice(0,10):null,last:ds.length?new Date(ds[ds.length-1]*1000).toISOString().slice(0,10):null,holdings:(a.holdings||[]).length||undefined,holdingFields:Array.isArray(a.holdings)&&a.holdings[0]?Object.keys(a.holdings[0]):undefined,txFields:tx[0]?Object.keys(tx[0]):undefined};}));
-    SF.prevLast=SF.last;SF.last=Math.floor(Date.now()/1000);await kvSet('simplefin-last',SF.last);UI._okAt=Date.now();
+    UI._syncErr=false;SF.prevLast=SF.last;SF.last=Math.floor(Date.now()/1000);await kvSet('simplefin-last',SF.last);UI._okAt=Date.now();
     S.sfRaw=(j.accounts||[]).map(a=>{const o=Object.assign({},a);delete o.transactions;o.txCount=(a.transactions||[]).length;if(o.holdings){o.holdings=o.holdings.length;}return o;});
     // remember how many syncs in a row SimpleFIN left an account out (it sometimes drops a bank for one update, then brings it back)
     {const here=new Set((j.accounts||[]).map(a=>String(a.id)));S.sfMiss=S.sfMiss||{};S.accounts.forEach(a=>{if(!a.sf) return;if(here.has(String(a.sf))) delete S.sfMiss[a.sf];else{const m=S.sfMiss[a.sf]||(S.sfMiss[a.sf]={n:0,since:Date.now()});m.n++;}});}
@@ -4559,6 +4561,7 @@ async function sfSync(){
     else{const nn=items.filter(it=>it.choice==='new'&&(it.fresh||[]).length);dlog('simplefin','New account needs review',nn.map(it=>it.fileName));if(UI.tab==='settings')UI.goto='s-import';toast('New account found. Tap Review on the banner to finish.');}
     UI._okAt=Date.now();
   }catch(e){
+    UI._syncErr=true;
     dlog('simplefin','Sync failed',errInfo(e),'error');
     UI.pdf=null;
     toast(e&&(e.name==='TimeoutError'||e.name==='AbortError')?'SimpleFIN took too long to answer. Try again in a minute.':e&&e.name==='TypeError'?"Couldn't reach SimpleFIN. Check your internet connection. If you are using the online viewer, open the desktop copy instead.":(e&&e.message)||'Sync failed.');
