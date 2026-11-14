@@ -1448,6 +1448,8 @@ function auditCore(S0,today){
   for(const t of tr) for(const u of near(t)){
     if(u===t||u.acct===t.acct||Math.abs(u.amount+t.amount)>=0.005) continue;
     if(!xferish(u)||p2p(t)||p2p(u)) continue;
+    // cash out of an ATM never lands in another of your accounts, so it can't be the other half of a transfer
+    if(u.cat==='Cash & ATM'||t.cat==='Cash & ATM'||/\batm\b/i.test(u.desc||'')||/\batm\b/i.test(t.desc||'')) continue;
     const dd=Math.abs(dayNum(u.date)-dayNum(t.date));
     // a row that names the other account by its last 4 digits is the best match
     if(dd<=4) cand.push([dd+(u.cat==='Transfer'?0:.5)-(names(t,u.acct)||names(u,t.acct)?.8:0),t,u]);
@@ -3760,7 +3762,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.64.10';
+const APP_VERSION='1.64.11';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';

@@ -110,6 +110,7 @@ const S5=(txns,accts)=>mk({accounts:accts||[acct('A','Checking'),acct('B','Savin
 {const F=run(S5([TR({acct:'A',amount:-100}),tx({acct:'B',amount:100,cat:'Income'})]));T('5k counterpart in Income IS flagged (it inflates income)',has(F,/other half|look like/,'warn'),F);}
 {const F=run(S5([TR({acct:'A',amount:-100}),tx({acct:'B',amount:100,cat:'Shopping'}),TR({acct:'B',amount:100})]));T('5l prefers the Transfer-labeled half over a spending row',!has(F,/other half/)&&has(F,/^1 transfer matched/),F);}
 {const F=run(S5([tx({acct:'A',amount:-100,cat:'Shopping'}),tx({acct:'B',amount:100,cat:'Shopping'})]));T('5m two non-transfers are never paired',!has(F,/matched|other half/),F);}
+{const F=run(S5([TR({acct:'A',amount:300,desc:'Extra principal payment'}),tx({acct:'B',amount:-300,cat:'Cash & ATM',desc:'ATM Withdrawal 08/04 597 W Pioneer Pkwy'})]));T('5n an ATM withdrawal is never the other half of a transfer',!has(F,/other half/),F);}
 {const F=run(S5([TR({acct:'A',amount:-100,desc:'To Rainy Day Vault'}),TR({acct:'B',amount:100,desc:'From Rainy Day Vault'})]));T('5n vault moves ignored entirely',!has(F,/matched|goe?s? to or from/),F);}
 {const F=run(S5([TR({acct:'A',amount:-100,desc:'To Savings Balance'})]));T('5o "to savings balance" is an internal move',!has(F,/goe?s? to or from|should show up/),F);}
 {const F=run(S5([TR({acct:'A',amount:-100,desc:'Move to Emergency Pocket'})]));T('5p pocket moves are internal',!has(F,/goe?s? to or from|should show up/),F);}
