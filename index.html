@@ -3715,7 +3715,7 @@ function rolloverIn(cat,ym){
   let carry=0;for(let m=ms[0]>bm?ms[0]:bm;m<ym;m=addMonths(m,1)) carry+=budgetOf(cat,m)-(md(m).byCat[cat]||0);
   return carry;
 }
-const expenseCats=()=>allCats().filter(c=>!['Income','Interest','Transfer','Investing'].includes(c));
+const expenseCats=()=>allCats().filter(c=>!['Income','Interest'].concat(EXCLUDED).includes(c));
 // spending only in categories that have a budget this month, so the headline compares like with like
 function budgetedSpend(ym,d){d=d||md(ym);return expenseCats().reduce((a,c)=>a+(budgetOf(c,ym)>0?(d.byCat[c]||0):0),0);}
 function plannedExpenses(ym){return expenseCats().reduce((a,c)=>a+budgetOf(c,ym),0);}
@@ -3779,7 +3779,10 @@ function openSheet(cat){
   const el=$('#dlg');
   el.innerHTML='<div class="dlgbox sheet" role="dialog" aria-modal="true"><h3>'+(pick?'Add a budget':esc(cat))+'</h3>'
    +(cat?'<p class="sub">'+esc(monthLabel(ym))+': '+fmt0(inc?d.income:(d.byCat[cat]||0))+(inc?' received':' spent')+'</p>':'')
-   +(pick?'<label>Category<select id="bdCat">'+free.map(c=>'<option>'+esc(c)+'</option>').join('')+'</select></label>':'')
+   +(pick?'<label>Category<select id="bdCat" data-chg="bdcat">'+free.map(c=>'<option>'+esc(c)+'</option>').join('')+'<option value="__new__">+ New category…</option></select></label>'
+     // a budget for one bill inside a bigger category (HOA inside Housing): make its own category and move its payments there
+     +'<div id="bdNewBox"'+(free.length?' hidden':'')+'><label>New category name<input type="text" id="bdNewCat" placeholder="e.g. HOA" maxlength="40" autocomplete="off"></label>'
+     +'<label>Move payments whose description contains <span class="sub">(optional)</span><input type="text" id="bdNewMatch" placeholder="e.g. hoa" maxlength="60" autocomplete="off"></label><p class="sub" style="margin:-2px 0 4px">Moves past payments and future imports into the new category.</p></div>':'')
    +'<label>'+(inc?'Expected monthly income':'Monthly budget')+'<input id="bdAmt" type="number" inputmode="decimal" min="0" step="10" value="'+(b||'')+'" placeholder="0"></label>'
    +'<label class="chk"><input type="checkbox" id="bdOnce">Only for '+esc(monthLabel(ym))+'</label>'
    +(inc?'':'<label class="chk"><input type="checkbox" id="bdRoll" '+(cat&&S.rollover[cat]?'checked':'')+'>Roll unused money over to next month</label>')
@@ -3912,7 +3915,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.69.6';
+const APP_VERSION='1.70.0';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -5059,7 +5062,12 @@ const ACT={
   addbud(){if(!expenseCats().some(c=>!budgetOf(c,UI.month))){toast('Every category already has a budget.');return;}openSheet('');},
   bdclose(){const d=$('#dlg');d.classList.remove('show');d.innerHTML='';},
   bdsave(el){
-    const cat=el.dataset.cat||($('#bdCat')||{}).value,amt=Math.max(0,Math.round((+$('#bdAmt').value||0)*100)/100),once=$('#bdOnce').checked,roll=$('#bdRoll');
+    let cat=el.dataset.cat||($('#bdCat')||{}).value;
+    if(!el.dataset.cat&&(cat==='__new__'||!cat)&&$('#bdNewCat')){const n=($('#bdNewCat').value||'').trim().replace(/\s+/g,' ');if(!n){toast('Type a name for the new category');$('#bdNewCat').focus();return;}
+      const ex=['Uncategorized'].concat(allCats()).find(c=>c.toLowerCase()===n.toLowerCase());cat=ex||n;if(!ex){S.customCats=S.customCats||[];S.customCats.push(n);}
+      const m=normMatch(($('#bdNewMatch')||{}).value||'');
+      if(m.length>=3){S.rules=S.rules.filter(r=>r.match!==m);S.rules.unshift({match:m,cat});let k=0;for(const t of S.txns){if(t.amount<0&&normMatch(t.desc).includes(m)&&t.cat!==cat){t.cat=cat;t.man=true;k++;}}if(k) DATA_V++;dlog('app','budget category made',{cat,m,k});}}
+    const amt=Math.max(0,Math.round((+$('#bdAmt').value||0)*100)/100),once=$('#bdOnce').checked,roll=$('#bdRoll');
     if(!cat) return;
     if(!amt&&!budgetOf(cat,UI.month)){ACT.bdclose();return;}
     setBudget(cat,UI.month,amt,once);
@@ -5115,6 +5123,7 @@ const ACT={
   }
 };
 const CHG={
+  bdcat(el){const b=$('#bdNewBox');if(b){b.hidden=el.value!=='__new__';if(el.value==='__new__'){const i=$('#bdNewCat');if(i) setTimeout(()=>i.focus(),30);}}},
   devname(el){const v=el.value.trim();try{if(v) localStorage.setItem('hb-device',v);else localStorage.removeItem('hb-device');}catch(e){}toast('Device name saved');},
   month(el){UI.month=el.value;render();},
   filter(el){UI.filters[el.dataset.f]=el.value;UI.limit=200;renderTxnList();},
