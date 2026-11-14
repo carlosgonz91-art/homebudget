@@ -2351,10 +2351,11 @@ function flowHTML(ym){
 }
 function calHTML(ym){
   const days=dailyData(ym),n=days.length,first=new Date(+ym.slice(0,4),+ym.slice(5)-1,1).getDay(),today=todayISO();
-  const vals=days.map(x=>x.v).filter(v=>v>0).sort((a,b)=>a-b),p=vals.length?vals[Math.min(vals.length-1,Math.floor(vals.length*.9))]:1;
+  // shade by share of the month's biggest day (square root, so small days still show but a $300 day never looks like a $2,500 one)
+  const p=Math.max(1,...days.map(x=>x.v));
   let cells='';for(let i=0;i<first;i++) cells+='<i class="ce"></i>';
-  days.forEach((x,i)=>{const dt=ym+'-'+String(i+1).padStart(2,'0'),a=x.v>0?Math.min(1,x.v/p):0,wd=new Date(dt+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
-    cells+='<button type="button" class="cc'+(dt===today?' today':'')+(dt>today?' fut':'')+(UI.calDay===dt?' sel':'')+'" data-act="calday" data-d="'+dt+'" aria-pressed="'+(UI.calDay===dt)+'" data-info="'+esc(wd+' · '+(x.v>0.005?fmt0(x.v)+' across '+x.n+' purchase'+(x.n>1?'s':''):x.v<-0.005?fmt0(-x.v)+' back (refund)':'nothing spent'))+'" style="'+(a>0?'background:color-mix(in srgb,var(--brand) '+Math.round(16+a*46)+'%,var(--soft));color:var(--ink)':'')+';animation-delay:'+(i*14)+'ms">'+(i+1)+'</button>';});
+  days.forEach((x,i)=>{const dt=ym+'-'+String(i+1).padStart(2,'0'),a=x.v>0?Math.sqrt(Math.min(1,x.v/p)):0,wd=new Date(dt+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+    cells+='<button type="button" class="cc'+(dt===today?' today':'')+(dt>today?' fut':'')+(UI.calDay===dt?' sel':'')+'" data-act="calday" data-d="'+dt+'" aria-pressed="'+(UI.calDay===dt)+'" data-info="'+esc(wd+' · '+(x.v>0.005?fmt0(x.v)+' across '+x.n+' purchase'+(x.n>1?'s':''):x.v<-0.005?fmt0(-x.v)+' back (refund)':'nothing spent'))+'" style="'+(a>0?'background:color-mix(in srgb,var(--brand) '+Math.round(10+a*62)+'%,var(--soft));color:var(--ink)':'')+';animation-delay:'+(i*14)+'ms">'+(i+1)+'</button>';});
   const mxI=days.reduce((b,x,i)=>x.v>days[b].v?i:b,0),tot=days.reduce((a,x)=>a+x.v,0),act=days.filter(x=>x.v>0.005).length;
   const dflt=tot>0?'Busiest day: '+new Date(ym+'-'+String(mxI+1).padStart(2,'0')+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})+' · '+fmt0(days[mxI].v)+' · spent on '+act+' of '+n+' days':'No spending this month';
   return '<div class="cal"><div class="cw">'+['S','M','T','W','T','F','S'].map(x=>'<span>'+x+'</span>').join('')+'</div><div class="cg">'+cells+'</div><div class="cinfo" data-d="'+esc(dflt)+'">'+esc(dflt)+'</div>'+(UI.calDay&&UI.calDay.slice(0,7)===ym?dayTxHTML(UI.calDay):'<p class="sub cdh">Tap a day to see its transactions.</p>')+'</div>';
@@ -3842,7 +3843,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.66.6';
+const APP_VERSION='1.66.7';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
