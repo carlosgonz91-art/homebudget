@@ -778,6 +778,14 @@ html,body{touch-action:pan-x pan-y}
 .hleg{display:flex;flex-wrap:wrap;gap:6px 12px;margin:10px 0 2px;font-size:12px;color:var(--mute)}.hleg span{display:inline-flex;align-items:center;gap:5px}.hleg i{width:12px;height:12px;border-radius:4px;display:inline-block}
 .blask{margin:6px 0 10px;padding:10px 12px;border:1px dashed var(--line);border-radius:14px}.bla{margin-bottom:8px}.blbtn{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 0 46px}
 .bnm{display:flex!important;align-items:center;min-width:0}.ip .l .bnm>span{color:inherit;font:inherit;margin:0;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}.bpill{flex:none;display:inline-block;font-style:normal;font-size:11px;font-weight:650;line-height:1;padding:3px 7px;margin-left:6px;border-radius:99px;vertical-align:2px;color:var(--brand);background:color-mix(in srgb,var(--brand) 14%,transparent);white-space:nowrap}
+.bcnav{display:flex;align-items:center;justify-content:space-between;margin:2px 0 8px}.bcnav b{font-size:14px}
+.bcw,.bcg{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}.bcw span{text-align:center;font-size:10.5px;font-weight:700;color:var(--mute)}.bcg{margin-top:5px}
+.bcd{min-width:0;min-height:48px;border:1px solid transparent;border-radius:10px;background:var(--soft);color:var(--mute);font:inherit;padding:4px 2px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:3px;cursor:pointer}
+.bcd b{font-size:11.5px;font-weight:650}.bcd span{font-size:10px;font-weight:700;line-height:1.1;white-space:nowrap;overflow:hidden;max-width:100%}
+.bcd.due{background:color-mix(in srgb,var(--brand) 22%,var(--soft));color:var(--ink)}.bcd.due span{color:var(--brand)}
+.bcd.paid{background:color-mix(in srgb,var(--cin) 16%,var(--soft));color:var(--ink)}.bcd.paid span{color:var(--cin)}
+.bcd.today{border-color:var(--brand)}.bcd.sel{outline:2px solid var(--ink);outline-offset:1px}
+.bcleg{display:flex;gap:14px;margin:10px 0 4px;font-size:12px;color:var(--mute)}.bcleg span{display:inline-flex;align-items:center;gap:5px}.bcleg i{width:11px;height:11px;border-radius:4px}.bcleg .lp{background:color-mix(in srgb,var(--cin) 40%,var(--soft))}.bcleg .ld{background:color-mix(in srgb,var(--brand) 45%,var(--soft))}
 </style>
 <header><div class="bar"><span class="logo"><span class="mk mkc" aria-hidden="true"></span>HomeBudget <span class="ver" id="ver"></span></span>
 <nav>
@@ -3156,6 +3164,29 @@ function billAskHTML(){
 const BILLKIND=[['Internet',/\b(at ?&? ?t|att|xfinity|comcast|spectrum|frontier|fiber|internet|google fi(ber)?|starlink|cox)\b/],['Phone',/\b(t ?mobile|verizon|wireless|mint mobile|visible|cricket|boost)\b/],['Gas',/\b(atmos|gas co|natural gas|centerpoint)\b/],['Water',/\bwater|\bsewer\b/],['Electricity',/\b(electric|energy|power|txu|reliant|oncor|direct energy|green mountain)\b/],['Utilities',/\b(city of|utility|utilities)\b/],['Trash',/\b(trash|waste|republic services|recycl)\b/],['Auto insurance',/\b(farmers|geico|progressive|allstate|state farm|usaa|liberty mutual|auto ins)\b/],['Insurance',/\binsurance|\bins\b/],['Mortgage',/mortgage|loansphere|firstunited|first united/],['Loan',/\bloan\b/],['HOA',/\bhoa\b|homeowners assoc/],['Rent',/\brent\b/],['Streaming',/\b(youtube ?tv|hulu|netflix|disney|hbo|max|peacock|paramount|sling|apple tv)\b/],['Streaming',/\b(spotify|pandora(?! karaoke)|apple music|tidal|sirius)\b/],['Pets',/\b(banfield|vet|petco|chewy|rover)\b/],['Apps & cloud',/\bnord|vpn\b/],['Streaming',/\b(audible)\b/],['Membership',/\b(amazon prime|prime|costco|sams club|walmart plus)\b/],['Apps & cloud',/\b(icloud|google one|google google|dropbox|onedrive|google storage|apple com bill)\b/],['Entertainment',/\b(cinemark|amc|regal|karaoke)\b/],['Health',/\b(health|medical|clinic|dental|vision|texashealth)\b/],['Gym',/\b(gym|fitness|planet fitness|ymca)\b/],['Childcare',/\b(daycare|child ?care|preschool)\b/],['School',/\b(tuition|school|college|community)\b/],['Security',/\b(adt|simplisafe|ring|security)\b/]];
 const billKind=b=>{const t=(b.k+' '+(b.desc||'')).toLowerCase();for(const [n,re] of BILLKIND) if(re.test(t)) return n;return /subscri/i.test(b.cat||'')?'Subscription':'';};
 const kindPill=b=>{const n=billKind(b);return n?' <i class="bpill">'+esc(n)+'</i>':'';};
+// calendar of one month: days a bill was paid (✓) and days one is expected, tap a day to see which
+const BILLD={month:30,quarter:91,half:182,year:365};
+function billCalHTML(R,row){
+  const today=todayISO(),cur=today.slice(0,7),ym=UI.blCalM&&UI.blCalM>=addMonths(cur,-12)&&UI.blCalM<=addMonths(cur,12)?UI.blCalM:cur;
+  const y=+ym.slice(0,4),m=+ym.slice(5),nd=new Date(y,m,0).getDate(),first=new Date(y,m-1,1).getDay(),T=dayNum(today),dstr=n=>new Date(n*864e5).toISOString().slice(0,10);
+  const K=new Map(R.map(b=>[b.k,b])),day={},put=(d,e)=>{(day[d]=day[d]||[]).push(e);};
+  // paid: real payments to a bill's merchant that month
+  const pd={};for(const t of S.txns){if(t.date.slice(0,7)!==ym||t.amount>=0||EXCLUDED.includes(t.cat)||isInc(t.cat)) continue;const k=merchantKey(t.desc),b=k&&K.get(k);if(!b) continue;const key=k+'|'+t.date;(pd[key]=pd[key]||{b,d:t.date,a:0}).a+=-t.amount;}
+  Object.values(pd).forEach(x=>put(x.d,{b:x.b,a:x.a,paid:true}));
+  // expected: the next due date stepped forward by the bill's schedule, only from today on and only if not already paid around then
+  const m0=dayNum(ym+'-01'),m1=dayNum(ym+'-'+String(nd).padStart(2,'0'));
+  for(const b of R){const g=BILLD[b.cad]||30;let d=b.due;while(d<T) d+=g;let guard=0;while(d<m0&&guard++<40) d+=g;
+    for(;d<=m1;d+=g){const ds=dstr(d);if(ds.slice(0,7)!==ym) continue;if(Object.values(pd).some(x=>x.b===b&&Math.abs(dayNum(x.d)-d)<=g/3)) continue;put(ds,{b,a:b.amt,paid:false});}}
+  const sel=UI.blCalD&&UI.blCalD.slice(0,7)===ym?UI.blCalD:null;
+  let cells='';for(let i=0;i<first;i++) cells+='<i></i>';
+  for(let i=1;i<=nd;i++){const ds=ym+'-'+String(i).padStart(2,'0'),L=day[ds]||[],tot=L.reduce((t,e)=>t+e.a,0),allPaid=L.length&&L.every(e=>e.paid);
+    cells+='<button type="button" class="bcd'+(L.length?(allPaid?' paid':' due'):'')+(ds===today?' today':'')+(sel===ds?' sel':'')+'" data-act="blcald" data-d="'+ds+'" aria-label="'+esc(niceDay(ds)+(L.length?', '+L.length+' bill'+(L.length>1?'s':'')+' '+fmt0(tot):''))+'"><b>'+i+'</b>'+(L.length?'<span>$'+fmtK(Math.round(tot))+'</span>':'')+'</button>';}
+  const mt=Object.values(day).flat(),pT=mt.filter(e=>e.paid).reduce((t,e)=>t+e.a,0),dT=mt.filter(e=>!e.paid).reduce((t,e)=>t+e.a,0);
+  const nav='<div class="bcnav"><button type="button" class="btn ghost small icon" data-act="blcalm" data-n="-1" aria-label="Previous month">‹</button><b>'+new Date(y,m-1,15).toLocaleDateString('en-US',{month:'long',year:'numeric'})+'</b><button type="button" class="btn ghost small icon" data-act="blcalm" data-n="1" aria-label="Next month">›</button></div>';
+  const leg='<div class="bcleg"><span><i class="lp"></i>Paid '+fmt0(pT)+'</span><span><i class="ld"></i>Expected '+fmt0(dT)+'</span></div>';
+  const list=sel?'<h3 class="blh">'+niceDay(sel)+'</h3>'+((day[sel]||[]).length?day[sel].map(e=>row(Object.assign({},e.b,{lastAmt:e.a,amt:e.a,inDays:dayNum(sel)-T,late:false}),e.paid)).join(''):'<p class="sub" style="margin:4px 0 0">No bills this day.</p>'):'<p class="sub" style="margin:8px 0 0">Tap a day to see its bills.</p>';
+  return nav+'<div class="bcw">'+['S','M','T','W','T','F','S'].map(x=>'<span>'+x+'</span>').join('')+'</div><div class="bcg">'+cells+'</div>'+leg+list;
+}
 function billsHTML(pym){
   if(pastYM(pym)) return billsPastHTML(pym);
   const B=billScan();
@@ -3169,8 +3200,8 @@ function billsHTML(pym){
   const when=b=>b.late?'Expected '+nd(b.due):b.inDays<0?'Was due '+nd(b.due):b.inDays===0?'Due today':b.inDays===1?'Due tomorrow':b.inDays<=7?'Due in '+b.inDays+' days':'Due ~'+nd(b.due);
   const row=(b,done)=>'<div class="ip rcr go bl'+(done?' done':'')+'" role="button" tabindex="0" data-act="mergo" data-k="'+esc(b.k)+'">'+avHTML(b.cat)+'<div class="l"><b class="bnm"><span>'+esc(b.name)+'</span>'+kindPill(b)+'</b><span>'+esc(b.cat)+' · '+cadL[b.cad]+(b.varies?' · changes, last one '+fmt(b.lastAmt)+' · range '+fmt0(b.lo)+'–'+fmt0(b.hi):'')+'</span></div><div class="r"><b>'+(done?fmt(b.lastAmt):(b.varies?'≈':'')+fmt(b.amt))+'</b><span class="rdue'+(done?' paid':b.late?' late':b.inDays<=7?' soon':'')+'">'+(done?'✓ Paid '+niceDay(b.last):when(b))+'</span></div></div>';
   // Upcoming: grouped by when each bill is next expected. All bills: every bill found, with its usual amount and next date.
-  const tab=UI.blTab==='all'?'all':'up';
-  const seg='<div class="seg2" role="group" aria-label="Bills view"><button type="button" data-act="bltab" data-m="up" class="'+(tab==='up'?'on':'')+'" aria-pressed="'+(tab==='up')+'">Upcoming</button><button type="button" data-act="bltab" data-m="all" class="'+(tab==='all'?'on':'')+'" aria-pressed="'+(tab==='all')+'">All bills · '+R.length+'</button></div>';
+  const tab=['all','cal'].includes(UI.blTab)?UI.blTab:'up';
+  const seg='<div class="seg2" role="group" aria-label="Bills view">'+[['up','Upcoming'],['all','All bills'],['cal','Calendar']].map(([m,t])=>'<button type="button" data-act="bltab" data-m="'+m+'" class="'+(tab===m?'on':'')+'" aria-pressed="'+(tab===m)+'">'+t+'</button>').join('')+'</div>';
   const head='<div class="row" style="align-items:center;margin-bottom:8px"><h2 style="margin:0">Bills &amp; subscriptions</h2><span class="spacer"></span>'+seg+'</div>';
   const sumL=L=>L.length?'<span class="sub"> · '+fmt0(L.reduce((t,b)=>t+b.amt,0))+'</span>':'';
   let body;
@@ -3181,10 +3212,12 @@ function billsHTML(pym){
     body=(G.length?G.map(([h,L])=>{const vis=L.slice(0,Math.max(0,cap-shown));shown+=vis.length;return vis.length?'<h3 class="blh">'+h+sumL(L)+'</h3>'+vis.map(b=>row(b,false)).join(''):'';}).join(''):'<p class="sub" style="margin:4px 0 0">Nothing due in the next few weeks.</p>')
       +(U.length>8?'<button type="button" class="btn ghost small rcmore" data-act="blall" aria-expanded="'+!!UI.blAll+'">'+(UI.blAll?'Show less':'Show '+(U.length-8)+' more')+'</button>':'')
       +(paid.length?'<details class="bld"'+(UI.blPaid?' open':'')+' data-tg="blPaid"><summary>Paid this month <span class="sub">· '+paid.length+' · '+fmt0(paid.reduce((t,b)=>t+b.lastAmt,0))+'</span></summary>'+paid.map(b=>row(b,true)).join('')+'</details>':'');
+  }else if(tab==='cal'){
+    body=billCalHTML(R,row);
   }else{
     body=R.slice().sort((a,b)=>b.monthly-a.monthly).map(b=>'<div class="ip rcr go bl" role="button" tabindex="0" data-act="mergo" data-k="'+esc(b.k)+'">'+avHTML(b.cat)+'<div class="l"><b class="bnm"><span>'+esc(b.name)+'</span>'+kindPill(b)+'</b><span>'+esc(b.cat)+' · '+cadL[b.cad]+' · last paid '+niceDay(b.last)+'</span></div><div class="r"><b>'+(b.varies?'≈':'')+fmt(b.amt)+'</b><span class="rdue'+(b.paidNow?' paid':b.late?' late':b.inDays<=7?' soon':'')+'">'+(b.paidNow?'✓ Next ~'+nd(b.due):when(b))+'</span></div></div>').join('');
   }
-  return '<section class="card">'+head+tiles+billAskHTML()+body
+  return '<section class="card">'+head+tiles+(tab==='up'?billAskHTML():'')+body
     +'<p class="sub mxnote">Found by scanning your transactions for bills, utilities, insurance, loans and subscriptions that repeat. Due dates are estimates from past payments. Credit card payments and transfers are not counted.</p></section>';
 }
 function recurPastHTML(ym){
@@ -3849,7 +3882,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.68.3';
+const APP_VERSION='1.69.0';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -4837,6 +4870,8 @@ const ACT={
   gocat(el){jmp();UI.filters={q:'',acct:'',cat:el.dataset.cat,month:el.dataset.m||''};UI.limit=200;UI.tab='txns';render();window.scrollTo(0,0);},
   audgo(el){jmp();UI.filters={q:'',acct:'',cat:'',month:'',ids:String(el.dataset.ids||'').split(',').filter(Boolean),label:el.dataset.label||'Selected transactions'};UI.limit=200;UI.tab='txns';render();window.scrollTo(0,0);},
   mergo(el){const k=el.dataset.k,ym=el.dataset.m||'';const ids=S.txns.filter(t=>(merchantKey(t.desc)||'other')===k&&(!ym||t.date.startsWith(ym))).map(t=>t.id);jmp();UI.filters={q:'',acct:'',cat:'',month:'',ids,label:titleCase(k)+(ym?' · '+monthLabel(ym):' · all')};UI.limit=200;UI.tab='txns';render();window.scrollTo(0,0);},
+  blcald(el){UI.blCalD=UI.blCalD===el.dataset.d?null:el.dataset.d;render();},
+  blcalm(el){const c=todayISO().slice(0,7);UI.blCalM=addMonths(UI.blCalM||c,+el.dataset.n);UI.blCalD=null;render();},
   blall(){UI.blAll=!UI.blAll;render();},
   blans(el){const k=el.dataset.k,c=el.dataset.c;S.billAns=S.billAns||{};S.billAns[k]=c;save();toast(c==='no'?'Set to not a bill':'Set to '+({month:'monthly',half:'every 6 months',year:'yearly',quarter:'every 3 months'})[c]);render();},
   blaskall(){UI.blAskAll=!UI.blAskAll;render();},
