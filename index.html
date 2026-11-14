@@ -620,7 +620,16 @@ td.ds{max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sum2>div{min-width:0}
 .sum2 b{font-variant-numeric:tabular-nums}
 #toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom,0px));transform:translate(-50%,30px);background:color-mix(in srgb,var(--ink) 92%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:var(--bg);padding:14px 20px;border-radius:18px;display:flex;gap:16px;align-items:center;opacity:0;pointer-events:none;transition:.25s;width:max-content;max-width:min(calc(100vw - 32px),420px);z-index:20;font-weight:600;font-size:14.5px;line-height:1.45;box-shadow:0 14px 34px -10px rgba(0,0,0,.45)}
-#toast.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+#toast.show{opacity:1;transform:translate(-50%,-50%) scale(1);pointer-events:auto}
+#toast{top:50%;bottom:auto!important;transform:translate(-50%,-50%) scale(.92);padding:13px 18px 13px 14px;gap:12px;border:1px solid transparent}
+#toast .tico{flex:none;width:30px;height:30px;border-radius:50%;display:grid;place-items:center}#toast .tico svg{width:18px;height:18px}
+#toast.t-ok{background:#ecfdf3;color:#065f46;border-color:#a7f3d0}#toast.t-ok .tico{background:#16a34a;color:#fff}
+#toast.t-warn{background:#fffbeb;color:#78350f;border-color:#fcd34d}#toast.t-warn .tico{background:#f59e0b;color:#fff}
+#toast.t-bad{background:#fef2f2;color:#7f1d1d;border-color:#fca5a5}#toast.t-bad .tico{background:#dc2626;color:#fff}
+#toast.t-info{background:color-mix(in srgb,var(--ink) 92%,transparent);color:var(--bg)}#toast.t-info .tico{background:rgba(255,255,255,.18);color:inherit}
+#toast[class*="t-"] button{background:rgba(0,0,0,.08);color:inherit}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) #toast.t-ok{background:#052e1c;color:#bbf7d0;border-color:#166534}:root:not([data-theme="light"]) #toast.t-warn{background:#2e2103;color:#fde68a;border-color:#92400e}:root:not([data-theme="light"]) #toast.t-bad{background:#2f0b0b;color:#fecaca;border-color:#991b1b}:root:not([data-theme="light"]) #toast[class*="t-"] button{background:rgba(255,255,255,.12)}}
+:root[data-theme="dark"] #toast.t-ok{background:#052e1c;color:#bbf7d0;border-color:#166534}:root[data-theme="dark"] #toast.t-warn{background:#2e2103;color:#fde68a;border-color:#92400e}:root[data-theme="dark"] #toast.t-bad{background:#2f0b0b;color:#fecaca;border-color:#991b1b}:root[data-theme="dark"] #toast[class*="t-"] button{background:rgba(255,255,255,.12)}
 #toast>span{min-width:0}#toast button{background:var(--bg);color:var(--ink);border:0;border-radius:99px;padding:7px 14px;font:inherit;font-weight:700;cursor:pointer;flex:none}
 details summary{cursor:pointer;color:var(--brand);font-weight:650}
 ol,ul{padding-left:20px}
@@ -1639,9 +1648,15 @@ let busyT;
 function busyShow(msg,sub){const b=$('#busy');if(!b)return;clearTimeout(busyT);b.querySelector('.bmsg').textContent=msg;b.querySelector('.bsub').textContent=sub||'';b.hidden=false;void b.offsetWidth;b.classList.add('show');}
 function busySub(sub){const e=document.querySelector('#busy .bsub');if(e)e.textContent=sub||'';}
 function busyHide(){const b=$('#busy');if(!b)return;b.classList.remove('show');clearTimeout(busyT);busyT=setTimeout(()=>{b.hidden=true;},260);}
-function toast(msg,act){
+// tone: ok (green ✓), warn (yellow ⚠), bad (red ✕), info (neutral i). Left out, it is read from the wording.
+const TOAST_BAD=/couldn.?t|could not|can.?t |failed|fail\b|error|rejected|blocked|too long|unreadable|doesn.?t look|no longer in/i;
+const TOAST_WARN=/attention|synced, but|needed\b|warning|auth required|skipped|missing|expired|not available|first\b|^(type|enter|give|paste|pick|add your)\b|nothing to|no new files|nothing new to suggest|returned no accounts/i;
+const TOAST_ICO={ok:'<path d="M5 12.5l4.5 4.5L19 7.5"/>',warn:'<path d="M12 3.5L2.8 19.5h18.4z"/><path d="M12 10v4.2"/><circle cx="12" cy="17" r=".6" fill="currentColor"/>',bad:'<path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/>',info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/><circle cx="12" cy="7.8" r=".6" fill="currentColor"/>'};
+function toast(msg,act,tone){
   const t=$('#toast');
-  t.innerHTML='<span>'+esc(msg)+'</span>'+(act?'<button id="toastBtn">'+esc(act.label)+'</button>':'');
+  tone=tone||(TOAST_BAD.test(msg)?'bad':TOAST_WARN.test(msg)?'warn':'ok');
+  t.className=t.className.replace(/\bt-(ok|warn|bad|info)\b/g,'').trim()+' t-'+tone;
+  t.innerHTML='<i class="tico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">'+TOAST_ICO[tone]+'</svg></i><span>'+esc(msg)+'</span>'+(act?'<button id="toastBtn">'+esc(act.label)+'</button>':'');
   t.classList.add('show');
   if(act) $('#toastBtn').onclick=()=>{t.classList.remove('show');act.fn();};
   clearTimeout(toastT);const hide=()=>{if(t.matches(':hover')||t.contains(document.activeElement)){toastT=setTimeout(hide,1500);return;}t.classList.remove('show');};toastT=setTimeout(hide,act?9000:3500);
@@ -3735,7 +3750,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.63.1';
+const APP_VERSION='1.64.0';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -4518,7 +4533,7 @@ async function sfSync(){
     dlog('simplefin','Matched to accounts',items.map(it=>({sf:it.sfId,item:it.fileName,account:it.choice==='new'?'NEW ACCOUNT':((S.accounts.find(x=>x.id===it.choice)||{}).name||it.choice),rows:it.res.txns.length,new:(it.fresh||[]).length,duplicates:it.dup})));
     dlog('simplefin','Sync result',{newTransactions:nNew,warnings:warn.length?warn:undefined,outcome:!items.length?'no accounts':!nNew?'nothing new':'preview shown'});
     if(!items.length){UI.pdf=null;toast(warn[0]||'SimpleFIN returned no accounts. Link your banks on the SimpleFIN site first.');}
-    else if(!nNew){UI.pdf=null;UI._an=null;UI._posAnim=true;UI._fx=true;toast(warn[0]||'Nothing new to sync. Balances are up to date.');}
+    else if(!nNew){UI.pdf=null;UI._an=null;UI._posAnim=true;UI._fx=true;toast(warn.length?'Synced, but '+(plainSfMsg(warn[0]).bank?plainSfMsg(warn[0]).bank+': ':'')+plainSfMsg(warn[0]).why.toLowerCase()+(warn.length>1?' (+'+(warn.length-1)+' more)':''):'Synced. Nothing new, balances are up to date.',null,warn.length?'warn':'ok');}
     else if(!items.some(it=>it.choice==='new'&&(it.fresh||[]).length)){UI._keepTab=UI.tab;busyHide();await ACT.pdfgo();UI._fx=true;UI._posAnim=true;}
     else{const nn=items.filter(it=>it.choice==='new'&&(it.fresh||[]).length);dlog('simplefin','New account needs review',nn.map(it=>it.fileName));if(UI.tab==='settings')UI.goto='s-import';toast('New account found. Tap Review on the banner to finish.');}
     UI._okAt=Date.now();
@@ -4816,7 +4831,7 @@ const ACT={
     if(P.sync){UI._an=null;UI._posAnim=true;UI._fx=true;UI._okAt=Date.now();}
     UI.pdf=null;UI.month=latestMonth();UI.tab=UI._keepTab||'dash';UI._keepTab=null;learnUncat();save();render();
     const u=S.txns.filter(t=>t.cat==='Uncategorized').length;
-    toast((nNew?(P.sync?'Synced ':'Imported ')+nNew:(P.sync?'Already up to date':'Saved'))+(nAcct?' · '+nAcct+' account'+(nAcct>1?'s':'')+' created':'')+(nFiles?' · '+nFiles+' original'+(nFiles>1?'s':'')+' kept':'')+(nDup&&nNew?' · '+nDup+' duplicates skipped':'')+(u?' · '+u+' to review':''));
+    toast((nNew?(P.sync?'Synced ':'Imported ')+nNew:(P.sync?'Already up to date':'Saved'))+(nAcct?' · '+nAcct+' account'+(nAcct>1?'s':'')+' created':'')+(nFiles?' · '+nFiles+' original'+(nFiles>1?'s':'')+' kept':'')+(nDup&&nNew?' · '+nDup+' duplicates skipped':'')+(u?' · '+u+' to review':'')+(P.sync&&P.warn&&P.warn.length?' · '+P.warn.length+' bank issue'+(P.warn.length>1?'s':''):''),null,P.sync&&P.warn&&P.warn.length?'warn':'ok');
   },
   pdfcancel(){if(UI.pdf&&UI.pdf.sync&&SF.prevLast!==undefined){SF.last=SF.prevLast;SF.prevLast=undefined;try{if(SF.last) kvSet('simplefin-last',SF.last);else kvDel('simplefin-last');}catch(e){}}UI.pdf=null;render();},
   async sfconnect(){
