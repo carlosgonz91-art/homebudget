@@ -2983,11 +2983,11 @@ function loanBlock(a,split){
       const st=(l,v,c)=>'<div><small>'+l+'</small><b'+(c?' class="'+c+'"':'')+'>'+v+'</b></div>';
       const hero2='<div class="sub" style="margin:12px 0 0">Still owed</div><div class="invtot">'+fmt0(L.owed)+'</div>'+(pct!=null?'<div class="track lnpt" role="img" aria-label="'+Math.round(pct)+'% paid off"><div class="fill" style="width:'+pct.toFixed(1)+'%;background:linear-gradient(90deg,var(--cin),color-mix(in srgb,var(--cin) 60%,#fff))"></div></div>':'')
         +'<div class="ivst">'+(L.orig&&L.orig>L.owed?st('Paid off',fmt0(L.orig-L.owed)+' ('+Math.round(pct)+'%)','rdyc'):'')+(left!=null?st('Debt-free',inMonths(left))+st('Time left',monthsTxt(left))+st('Payments left',String(left)):'')+'</div>'+(left==null?eta:'');
-      return '<section class="card lnb">'+head+hero2+'<div style="height:12px"></div>'+tiles+(L.interest!=null?'<p class="sub" style="margin:-2px 0 0">About <b>'+fmt0(L.interest)+'</b> more interest until it\'s paid off.</p>':'')+'</section>'
+      return '<section class="card lnb">'+head+hero2+'<div style="height:12px"></div>'+tiles+ytdIntP(L,'margin:-2px 0 0')+'</section>'
        +(brk?'<section class="card"><h2>'+payLbl+'</h2>'+brk.replace('<div class="lnbkh"><span>'+payLbl+'</span>','<div class="lnbkh"><span>Total each month</span>')+'</section>':'')
        +loanHistCard(a)+lnSimCard(a,facts);
     }
-    return '<div class="lnb">'+head+hero+brk+tiles+(L.interest!=null?'<p class="sub" style="margin:-2px 0 12px">About <b>'+fmt0(L.interest)+'</b> more interest until it\'s paid off.</p>':'')+wi+(chart?'<div style="margin-top:10px">'+chart+'</div>':'')+(facts.length?'<div class="sub lnx">'+facts.join(' · ')+'</div>':'')+'</div>';
+    return '<div class="lnb">'+head+hero+brk+tiles+ytdIntP(L,'margin:-2px 0 12px')+wi+(chart?'<div style="margin-top:10px">'+chart+'</div>':'')+(facts.length?'<div class="sub lnx">'+facts.join(' · ')+'</div>':'')+'</div>';
 }
 // small overview widget: one line per loan, tap to open the Loans page
 function loansHTML(ym){
@@ -3001,6 +3001,12 @@ function loansHTML(ym){
    +A.map(({a,L})=>{const pct=L.orig?Math.max(0,Math.min(100,(L.orig-L.owed)/L.orig*100)):null;
     return '<div class="lnwr"><div class="lnwn"><span>'+esc(loanName(a))+'</span><em'+(!L.past&&L.months==null&&!(L.owed<0.5)&&L.hr&&L.pay?' class="bad"':'')+'>'+(L.past?'End of '+ymShort(ym):L.months!=null?inMonths(L.months):L.owed<0.5?'Paid off':L.hr&&L.pay?'Not at this payment':(pct!=null?'':'add rate'))+'</em></div>'+(pct!=null?'<div class="track"><div class="fill" style="width:'+pct.toFixed(1)+'%;background:linear-gradient(90deg,var(--cin),color-mix(in srgb,var(--cin) 60%,#fff))"></div></div><div class="lnwp">'+Math.round(pct)+'% paid · '+fmt0(L.owed)+' left</div>':'<div class="lnwp">'+fmt0(L.owed)+' left · <u>set the original amount</u> to see progress</div>')+'</div>';}).join('')+'</div>';
 }
+// interest paid so far this year: each month's payment carries about one month of interest on the balance owed before it
+function ytdInt(L){if(!L||!(L.rate>0)) return null;const H=(L.hist||[]).slice().sort((x,y)=>x[0]<y[0]?-1:1);if(!H.length) return null;
+  const t=todayISO(),y=t.slice(0,4);let sum=0,n=0;
+  for(let m=1;m<=+t.slice(5,7);m++){const ym=y+'-'+String(m).padStart(2,'0'),prev=addMonths(ym,-1),b=valAt(H,ymEnd(prev));const bal=b!=null?b:(H[0][0]<=ym+'-28'?H[0][1]:null);if(bal==null||bal<0.5) continue;sum+=bal*L.rate/1200;n++;}
+  return n?{sum,n}:null;}
+const ytdIntP=(L,st)=>{const r=ytdInt(L);return r?'<p class="sub" style="'+st+'">About <b>'+fmt0(r.sum)+'</b> paid in interest so far in '+todayISO().slice(0,4)+' ('+r.n+' payment'+(r.n>1?'s':'')+', estimated from your balance and '+L.rate+'% rate).</p>':'';};
 // full page (Invest tab → Loans)
 function loansPageHTML(){
   const A=loanAccts().map(a=>({a,L:loanInfo(a)})).filter(x=>x.L);
@@ -3933,7 +3939,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.71.0';
+const APP_VERSION='1.71.1';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
