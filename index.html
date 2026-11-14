@@ -635,8 +635,14 @@ td.ds{max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #toast.t-bad{background:#fef2f2;color:#7f1d1d;border-color:#fca5a5}#toast.t-bad .tico{background:#dc2626;color:#fff}
 #toast.t-info{background:color-mix(in srgb,var(--brand) 10%,var(--card));color:var(--ink);border-color:color-mix(in srgb,var(--brand) 35%,transparent)}#toast.t-info .tico{background:linear-gradient(135deg,var(--brand),var(--brand2,#7c3aed));color:#fff}
 #toast[class*="t-"] button{background:rgba(0,0,0,.08);color:inherit}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) #toast.t-ok{background:#052e1c;color:#bbf7d0;border-color:#166534}:root:not([data-theme="light"]) #toast.t-warn{background:#2e2103;color:#fde68a;border-color:#92400e}:root:not([data-theme="light"]) #toast.t-bad{background:#2f0b0b;color:#fecaca;border-color:#991b1b}:root:not([data-theme="light"]) #toast[class*="t-"] button{background:rgba(255,255,255,.12)}}
-:root[data-theme="dark"] #toast.t-ok{background:#052e1c;color:#bbf7d0;border-color:#166534}:root[data-theme="dark"] #toast.t-warn{background:#2e2103;color:#fde68a;border-color:#92400e}:root[data-theme="dark"] #toast.t-bad{background:#2f0b0b;color:#fecaca;border-color:#991b1b}:root[data-theme="dark"] #toast[class*="t-"] button{background:rgba(255,255,255,.12)}
+/* pop-ups (sync card, messages): light card in light mode; the dark navy-purple in dark mode */
+:root{--pop-bg:color-mix(in srgb,var(--card) 96%,transparent);--pop-fg:var(--ink);--pop-bd:var(--line)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--pop-bg:rgba(21,26,45,.96);--pop-fg:#eceffa;--pop-bd:rgba(255,255,255,.1)}
+  :root:not([data-theme="light"]) #toast[class*="t-"]{background:var(--pop-bg);color:var(--pop-fg)}:root:not([data-theme="light"]) #toast.t-ok{border-color:#166534}:root:not([data-theme="light"]) #toast.t-warn{border-color:#92400e}:root:not([data-theme="light"]) #toast.t-bad{border-color:#991b1b}:root:not([data-theme="light"]) #toast.t-info{border-color:color-mix(in srgb,var(--brand) 45%,transparent)}:root:not([data-theme="light"]) #toast[class*="t-"] button{background:rgba(255,255,255,.12)}}
+:root[data-theme="dark"]{--pop-bg:rgba(21,26,45,.96);--pop-fg:#eceffa;--pop-bd:rgba(255,255,255,.1)}
+:root[data-theme="dark"] #toast[class*="t-"]{background:var(--pop-bg);color:var(--pop-fg)}:root[data-theme="dark"] #toast.t-ok{border-color:#166534}:root[data-theme="dark"] #toast.t-warn{border-color:#92400e}:root[data-theme="dark"] #toast.t-bad{border-color:#991b1b}:root[data-theme="dark"] #toast.t-info{border-color:color-mix(in srgb,var(--brand) 45%,transparent)}:root[data-theme="dark"] #toast[class*="t-"] button{background:rgba(255,255,255,.12)}
+#busy .bcard{background:var(--pop-bg)!important;color:var(--pop-fg)!important;border:1px solid var(--pop-bd);box-shadow:0 18px 50px rgba(8,10,30,.22)!important}
+#toast>span{text-wrap:balance}
 #toast>span{min-width:0}#toast button{background:var(--bg);color:var(--ink);border:0;border-radius:99px;padding:7px 14px;font:inherit;font-weight:700;cursor:pointer;flex:none}
 details summary{cursor:pointer;color:var(--brand);font-weight:650}
 ol,ul{padding-left:20px}
@@ -3762,7 +3768,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.64.3';
+const APP_VERSION='1.64.4';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
