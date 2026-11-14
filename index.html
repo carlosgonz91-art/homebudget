@@ -1469,10 +1469,13 @@ function auditCore(S0,today){
     const dated=files.filter(f=>f.start&&f.end),inStmt=t=>dated.some(f=>f.acct===t.acct&&f.start<=t.date&&t.date<=f.end);
     // synced vault-side copies of a move ("From/To Joint savings ...") never appear as their own row on a statement, so they are left out too
     // so are a brokerage's automatic cash sweeps and reinvestments (the statement lists them as core fund activity, not as transactions)
-    const mirror=t=>t.sf&&(/^(from|to) joint savings\b/i.test(t.desc||'')||/^(reinvestment|purchase into core account|redemption from core account)\b/i.test(t.desc||''));
-    const rel=S.txns.filter(t=>(!t.sf||inStmt(t))&&!mirror(t)),n=rel.filter(t=>!t.src).length,skipped=S.txns.length-rel.length;
+    const mirror=t=>t.sf&&(/^(?:(?:deposit|withdrawal|transfer)\s*:\s*)?(from|to) joint savings\b/i.test(t.desc||'')||/^(reinvestment|purchase into core account|redemption from core account)\b/i.test(t.desc||''));
+    const rel=S.txns.filter(t=>(!t.sf||inStmt(t))&&!mirror(t)),noo=rel.filter(t=>!t.src&&!dk('noorig:'+t.id)).sort((a,b)=>b.date.localeCompare(a.date)),n=noo.length,skipped=S.txns.length-rel.length;
+    // list each one with why it has no original, so it can be opened and checked
+    const AN=id=>{const a=S.accounts.find(x=>x.id===id);return a?a.name:'?';};
+    const noL=noo.map(t=>t.date+' · '+AN(t.acct)+' · '+(t.amount<0?'-':'')+'$'+Math.abs(t.amount).toFixed(2)+' · '+t.desc+'  ('+(t.sf?'bank-synced, but not printed on the statement for these dates':'added by hand or from a file that is no longer saved')+')'),noR=noo.map(t=>({k:'noorig:'+t.id,id:t.id}));
     const note=skipped?[skipped+' bank-synced transaction'+(skipped>1?'s fall':' falls')+' outside your saved statements, so there is nothing to link '+(skipped>1?'them':'it')+' to.']:[];
-    if(n) add('warn',n+' transaction'+(n>1?'s have':' has')+' no saved original',['That is '+n+' of '+rel.length+'. Re-add the matching statements in Settings → Import to link them.'].concat(note),null,'noorig');
+    if(n) add('warn',n+' transaction'+(n>1?'s have':' has')+' no saved original',noL.concat(['That is '+n+' of '+rel.length+'. Re-add the matching statements in Settings → Import to link them, or tap Not an issue on the ones that are fine.'],note),noR.concat([null],note.map(()=>null)),'noorig');
     else if(rel.length) add('ok','All '+rel.length+' transactions link to a saved original',note);
   }
   // 5. transfers should appear on both sides
@@ -3823,7 +3826,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.65.15';
+const APP_VERSION='1.65.16';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
