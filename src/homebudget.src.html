@@ -776,6 +776,7 @@ html,body{touch-action:pan-x pan-y}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--h1:color-mix(in srgb,var(--brand) 22%,var(--soft));--h2:color-mix(in srgb,var(--brand) 50%,var(--soft));--h3:var(--brand);--h4:color-mix(in srgb,var(--brand) 55%,#fff);--h5:color-mix(in srgb,var(--brand) 18%,#fff);--hf1:#fff;--hf2:#fff;--hf3:#fff;--hf4:#141833;--hf5:#141833}}
 :root[data-theme="dark"]{--h1:color-mix(in srgb,var(--brand) 22%,var(--soft));--h2:color-mix(in srgb,var(--brand) 50%,var(--soft));--h3:var(--brand);--h4:color-mix(in srgb,var(--brand) 55%,#fff);--h5:color-mix(in srgb,var(--brand) 18%,#fff);--hf1:#fff;--hf2:#fff;--hf3:#fff;--hf4:#141833;--hf5:#141833}
 .hleg{display:flex;flex-wrap:wrap;gap:6px 12px;margin:10px 0 2px;font-size:12px;color:var(--mute)}.hleg span{display:inline-flex;align-items:center;gap:5px}.hleg i{width:12px;height:12px;border-radius:4px;display:inline-block}
+.blask{margin:6px 0 10px;padding:10px 12px;border:1px dashed var(--line);border-radius:14px}.bla{margin-bottom:8px}.blbtn{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 0 46px}
 </style>
 <header><div class="bar"><span class="logo"><span class="mk mkc" aria-hidden="true"></span>HomeBudget <span class="ver" id="ver"></span></span>
 <nav>
@@ -1575,9 +1576,9 @@ function sanitizeState(st){
   st.watch=(Array.isArray(st.watch)?st.watch:[]).filter(x=>typeof x==='string'&&/^[A-Z.\-]{1,8}$/.test(x)).slice(0,60);
   for(const k of ['rules','customCats','pendingTx','files']) if(!Array.isArray(st[k])) st[k]=[];
   st.rules=st.rules.filter(isO);st.customCats=st.customCats.filter(x=>typeof x==='string'&&x.trim());
-  for(const k of ['budgets','rollover','mappings','balSf','subs','catGroup','holdings']) if(!isO(st[k])) st[k]={};
+  for(const k of ['budgets','rollover','mappings','balSf','subs','catGroup','holdings','billAns']) if(!isO(st[k])) st[k]={};
   const BADK=k=>k==='__proto__'||k==='constructor'||k==='prototype';
-  for(const k of ['budgets','rollover','mappings','balSf','subs','catGroup','holdings','auditOk']) for(const kk of Object.keys(st[k])) if(BADK(kk)) delete st[k][kk];
+  for(const k of ['budgets','rollover','mappings','balSf','subs','catGroup','holdings','auditOk','billAns']) for(const kk of Object.keys(st[k])) if(BADK(kk)) delete st[k][kk];
   st.customCats=st.customCats.filter(x=>!BADK(x));
   st.txns.forEach(t=>{if(BADK(t.cat)) t.cat='Uncategorized';});
   const num=v=>v==null||v===''?null:(isFinite(+v)?+v:null);
@@ -3082,24 +3083,30 @@ function recurring0(){
 const BILLRE=/electric|energy|power\b|water|sewer|trash|waste|\bgas\b|atmos|oncor|\btxu\b|reliant|internet|fiber|cable|spectrum|comcast|xfinity|frontier|\batt\b|at&t|verizon|t-?mobile|wireless|mobile|insurance|geico|progressive|state farm|allstate|farmers|usaa|mortgage|\bloan\b|\bhoa\b|\brent\b|city of|utilit|netflix|spotify|hulu|disney|youtube|icloud|apple\.com|prime|gym|fitness|tuition|daycare|child ?care|school|storage|security|adt\b|pest|lawn|membership|subscription/i;
 const BILLCAT=/bill|utilit|housing|insurance|subscription|phone|internet|loan|mortgage|rent|childcare|education/i;
 let _blV='',_blR=null;
-function billScan(){const dv=DATA_V+'|'+S.txns.length+'|'+todayISO();if(_blV===dv&&_blR) return _blR;const end=dtime('bills','scan');_blR=billScan0();_blV=dv;end({found:_blR.length});return _blR;}
+function billScan(){const dv=DATA_V+'|'+S.txns.length+'|'+todayISO()+'|'+JSON.stringify(S.billAns||{});if(_blV===dv&&_blR) return _blR;const end=dtime('bills','scan');_blR=billScan0();_blV=dv;end({found:_blR.length});return _blR;}
 function billScan0(){
-  const T=dayNum(todayISO()),by={};
+  const T=dayNum(todayISO()),by={},ANS=S.billAns||{},CADD={month:30,quarter:91,half:182,year:365},ask=[];
   for(const t of S.txns){
     if(t.amount>=0||EXCLUDED.includes(t.cat)||isInc(t.cat)) continue;
-    const dn=dayNum(t.date);if(!isFinite(dn)||T-dn>430||dn>T) continue;
+    const dn=dayNum(t.date);if(!isFinite(dn)||T-dn>800||dn>T) continue;
     const k=merchantKey(t.desc);if(!k) continue;(by[k]=by[k]||[]).push(t);
   }
   const med=a=>{const x=a.slice().sort((p,q)=>p-q);return x[Math.floor(x.length/2)];},out=[];
   for(const k in by){
+    if(ANS[k]==='no') continue;
     const L=by[k].sort((a,b)=>a.date<b.date?-1:1),last=L[L.length-1],like=BILLRE.test(k)||BILLRE.test(last.desc)||BILLCAT.test(last.cat||'')||BILLCAT.test(groupOf(last.cat)||'');
     // one payment per day (split charges on the same day count once)
     const D=[];L.forEach(t=>{const d=dayNum(t.date),p=D[D.length-1];if(p&&p.d===d){p.a+=-t.amount;}else D.push({d,a:-t.amount,date:t.date});});
-    if(D.length<2) continue;
+    // a bill you confirmed (yearly, every 6 months...) counts from a single payment, on the schedule you picked
+    const said=CADD[ANS[k]]?ANS[k]:null,lastD0=D[D.length-1];
+    if(said){const mid=med(D.slice(-3).map(x=>x.a)),g=CADD[said];if(T-lastD0.d>g*1.6+30) continue;
+      out.push({k,first:D[0].date,name:titleCase(k),cat:last.cat,cad:said,amt:lastD0.a,typ:mid,lo:mid,hi:mid,varies:false,n:D.length,last:lastD0.date,lastAmt:lastD0.a,lastD:lastD0.d,due:lastD0.d+g,monthly:mid*30/g,said:true});continue;}
     const gaps=[];for(let i=1;i<D.length;i++) gaps.push(D[i].d-D[i-1].d);
-    const g=med(gaps);let cad=null;
-    if(g>=25&&g<=36) cad='month';else if(g>=80&&g<=100) cad='quarter';else if(g>=170&&g<=195) cad='half';else if(g>=350&&g<=380) cad='year';
-    if(!cad) continue;
+    const g=D.length>1?med(gaps):0;let cad=null;
+    // infrequent bills drift (a policy paid early or renewed late), so the longer schedules allow a wider window
+    if(g>=25&&g<=36) cad='month';else if(g>=75&&g<=110) cad='quarter';else if(g>=150&&g<=215) cad='half';else if(g>=330&&g<=400) cad='year';
+    // not sure: a bill-like payment seen once (or far apart) and big enough to matter is asked about instead of guessed
+    if(!cad){if(like&&!/fee|interest/i.test(last.cat||'')&&lastD0.a>=40&&T-lastD0.d<=400&&(D.length===1||g>45)&&!ANS[k]) ask.push({k,name:titleCase(k),cat:last.cat,amt:lastD0.a,last:lastD0.date,n:D.length,guess:D.length>1?(g>270?'year':'half'):'year'});continue;}
     const am=D.slice(-6).map(x=>x.a),mid=med(am);if(!(mid>=1)) continue;
     const steady=am.filter(a=>Math.abs(a-mid)<=mid*0.2).length>=am.length*0.6;
     // bill-like names only need to repeat; everything else must also be a steady amount seen at least 3 times
@@ -3109,13 +3116,14 @@ function billScan0(){
     const lastD=D[D.length-1];if(T-lastD.d>g*1.6+10) continue; // stopped
     // next payment: the last one plus the usual gap between recent payments (a bill paid around the 1st can land on the 30th or the 2nd,
     // so counting days is steadier than reusing the day of the month)
-    const rg=gaps.slice(-4),gm=Math.round(rg.reduce((a,x)=>a+x,0)/rg.length),due=lastD.d+(cad==='month'&&Math.abs(gm-g)<=4?gm:g);
+    const rg=gaps.slice(-4),gm=Math.round(rg.reduce((a,x)=>a+x,0)/rg.length),due=lastD.d+(cad==='month'&&Math.abs(gm-g)<=4?gm:cad!=='month'&&D.length<3?CADD[cad]:g);
     const lo=Math.min(...am),hi=Math.max(...am);
     // amount: the last payment is the best guess for the next one (prices change, utilities vary month to month);
     // only a one-off far from the usual amount (a catch-up or double payment) falls back to the usual amount
     const vary=(hi-lo)>mid*0.15&&(hi-lo)>=3,est=Math.abs(lastD.a-mid)<=mid*0.5?lastD.a:mid;
     out.push({k,first:D[0].date,name:titleCase(k),cat:last.cat,cad,amt:est,typ:mid,lo,hi,varies:(hi-lo)>mid*0.15&&(hi-lo)>=3,n:D.length,last:lastD.date,lastAmt:lastD.a,lastD:lastD.d,due,monthly:cad==='month'?mid:cad==='quarter'?mid/3:cad==='half'?mid/6:mid/12});
   }
+  out.ask=ask.sort((a,b)=>b.amt-a.amt);
   return out;
 }
 function merchMonth(ym){const o={};for(const t of S.txns){if(t.date.slice(0,7)!==ym||t.amount>=0||EXCLUDED.includes(t.cat)||isInc(t.cat)) continue;const k=merchantKey(t.desc);if(!k) continue;const x=o[k]||(o[k]={a:0,d:t.date});x.a+=-t.amount;if(t.date>x.d)x.d=t.date;}return o;}
@@ -3132,10 +3140,19 @@ function billsPastHTML(ym){
   const row=(b,p)=>'<div class="ip rcr go bl'+(p?' done':'')+'" role="button" tabindex="0" data-act="mergo" data-k="'+esc(b.k)+'">'+avHTML(b.cat)+'<div class="l"><b>'+esc(b.name)+'</b><span>'+esc(b.cat)+'</span></div><div class="r"><b>'+fmt(p?p.a:b.amt)+'</b><span class="rdue'+(p?' paid':' late')+'">'+(p?'✓ Paid '+niceDay(p.d):'No payment')+'</span></div></div>';
   return wCard('Bills &amp; subscriptions','',tiles+(miss.length?'<h3 class="blh">Not paid in '+ymShort(ym)+'</h3>'+miss.map(b=>row(b,null)).join(''):'')+(paid.length?'<h3 class="blh">Paid in '+ymShort(ym)+'</h3>'+paid.map(b=>row(b,M[b.k])).join(''):'<p class="sub" style="margin:4px 0 0">No bill payments found that month.</p>'));
 }
+// payments that look like a bill but were only seen once (or too far apart to tell): ask instead of guessing
+function billAskHTML(){
+  const A=(billScan().ask||[]);if(!A.length) return '';
+  const L=A.slice(0,UI.blAskAll?A.length:3);
+  return '<div class="blask"><h3 class="blh">Is this a bill? <span class="sub">· '+A.length+'</span></h3><p class="sub" style="margin:0 0 6px">Looks like a bill, but it was paid only once (or too far apart to tell). Pick how often it repeats and it will show up here when it is due.</p>'
+    +L.map(b=>'<div class="bla"><div class="ip rcr go" role="button" tabindex="0" data-act="mergo" data-k="'+esc(b.k)+'">'+avHTML(b.cat)+'<div class="l"><b>'+esc(b.name)+'</b><span>'+esc(b.cat)+' · paid '+niceDay(b.last)+(b.n>1?' · '+b.n+' times':'')+'</span></div><div class="r"><b>'+fmt(b.amt)+'</b></div></div>'
+      +'<div class="blbtn">'+[['month','Monthly'],['quarter','Every 3 mo'],['half','Every 6 mo'],['year','Yearly'],['no','Not a bill']].map(([c,t])=>'<button type="button" class="btn small ghost" data-act="blans" data-k="'+esc(b.k)+'" data-c="'+c+'">'+t+'</button>').join('')+'</div></div>').join('')
+    +(A.length>3?'<button type="button" class="btn ghost small rcmore" data-act="blaskall">'+(UI.blAskAll?'Show less':'Show '+(A.length-3)+' more')+'</button>':'')+'</div>';
+}
 function billsHTML(pym){
   if(pastYM(pym)) return billsPastHTML(pym);
   const B=billScan();
-  if(!B.length) return wCard('Bills &amp; subscriptions','',wEmpty('No bills found yet. They show up once a bill, utility or subscription has been paid twice.'));
+  if(!B.length) return wCard('Bills &amp; subscriptions','',billAskHTML()||wEmpty('No bills found yet. They show up once a bill, utility or subscription has been paid twice.'));
   const T=dayNum(todayISO()),ym=todayISO().slice(0,7),dstr=n=>new Date(n*864e5).toISOString().slice(0,10),nd=n=>niceDay(dstr(n));
   const R=B.map(b=>{const paidNow=b.last.slice(0,7)===ym||T-b.lastD<=5,late=!paidNow&&b.due<T-3;return Object.assign({},b,{paidNow,late,inDays:b.due-T});});
   const open=R.filter(b=>!b.paidNow||b.inDays<=7&&b.inDays>=0&&b.last.slice(0,7)!==ym).filter(b=>!b.paidNow).sort((a,b)=>a.due-b.due),paid=R.filter(b=>b.paidNow).sort((a,b)=>b.lastD-a.lastD);
@@ -3160,7 +3177,7 @@ function billsHTML(pym){
   }else{
     body=R.slice().sort((a,b)=>b.monthly-a.monthly).map(b=>'<div class="ip rcr go bl" role="button" tabindex="0" data-act="mergo" data-k="'+esc(b.k)+'">'+avHTML(b.cat)+'<div class="l"><b>'+esc(b.name)+'</b><span>'+esc(b.cat)+' · '+cadL[b.cad]+' · last paid '+niceDay(b.last)+'</span></div><div class="r"><b>'+(b.varies?'≈':'')+fmt(b.amt)+'</b><span class="rdue'+(b.paidNow?' paid':b.late?' late':b.inDays<=7?' soon':'')+'">'+(b.paidNow?'✓ Next ~'+nd(b.due):when(b))+'</span></div></div>').join('');
   }
-  return '<section class="card">'+head+tiles+body
+  return '<section class="card">'+head+tiles+billAskHTML()+body
     +'<p class="sub mxnote">Found by scanning your transactions for bills, utilities, insurance, loans and subscriptions that repeat. Due dates are estimates from past payments. Credit card payments and transfers are not counted.</p></section>';
 }
 function recurPastHTML(ym){
@@ -3825,7 +3842,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.67.1';
+const APP_VERSION='1.68.0';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -4814,6 +4831,8 @@ const ACT={
   audgo(el){jmp();UI.filters={q:'',acct:'',cat:'',month:'',ids:String(el.dataset.ids||'').split(',').filter(Boolean),label:el.dataset.label||'Selected transactions'};UI.limit=200;UI.tab='txns';render();window.scrollTo(0,0);},
   mergo(el){const k=el.dataset.k,ym=el.dataset.m||'';const ids=S.txns.filter(t=>(merchantKey(t.desc)||'other')===k&&(!ym||t.date.startsWith(ym))).map(t=>t.id);jmp();UI.filters={q:'',acct:'',cat:'',month:'',ids,label:titleCase(k)+(ym?' · '+monthLabel(ym):' · all')};UI.limit=200;UI.tab='txns';render();window.scrollTo(0,0);},
   blall(){UI.blAll=!UI.blAll;render();},
+  blans(el){const k=el.dataset.k,c=el.dataset.c;S.billAns=S.billAns||{};S.billAns[k]=c;save();toast(c==='no'?'Set to not a bill':'Set to '+({month:'monthly',half:'every 6 months',year:'yearly',quarter:'every 3 months'})[c]);render();},
+  blaskall(){UI.blAskAll=!UI.blAskAll;render();},
   bltab(el){UI.blTab=el.dataset.m;UI.blAll=false;render();},
   notes(){UI.notesOpen=!UI.notesOpen;notesPaint();if(UI.notesOpen){const f=document.querySelector('#notePop .btn');if(f) f.focus();}},
   notego(el){UI.notesOpen=false;notesPaint();const a=el.dataset.a;if(ACT[a]) ACT[a](el);},
