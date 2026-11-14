@@ -3700,7 +3700,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.62.0';
+const APP_VERSION='1.62.1';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -4471,6 +4471,13 @@ async function sfSync(){
     // an account with no transactions yet (a new loan, say) still belongs in the app: create it now
     {let made=0;for(const it of items){if(it.choice==='new'&&it.sfId&&!(it.res.txns||[]).length&&!(it.res.last4&&items.some(o=>o!==it&&o.res.last4===it.res.last4))){const a={id:uid(),name:it.res.name+(it.res.last4?' ••'+it.res.last4:''),type:it.res.type,ref:it.res.ref||undefined,sf:it.sfId};S.accounts.push(a);it.choice=a.id;made++;}}
      if(made){save();dlog('simplefin','Created accounts without transactions',{count:made});}}
+    // a bank that moved its accounts to a new bank (Discover savings → Capital One 360) shows up as a new bank-sync account with the same last 4.
+    // When the old feed is gone, point the existing account at the new feed so its balance keeps updating.
+    {const here=new Set((j.accounts||[]).map(a=>String(a.id)));
+     for(const it of items){if(!it.sfId||!it.choice||it.choice==='new') continue;const a=S.accounts.find(x=>x.id===it.choice);
+       if(!a||!a.sf||a.sf===it.sfId||here.has(String(a.sf))||S.accounts.some(x=>x.sf===it.sfId)) continue;
+       const old=a.sf;a.sf=it.sfId;if(S.balHist&&S.balHist[old]){const nh=S.balHist[it.sfId]||[];S.balHist[it.sfId]=S.balHist[old].filter(x=>!nh.length||x[0]<nh[0][0]).concat(nh);}
+       if(S.sfMiss) delete S.sfMiss[old];dlog('simplefin','Account moved to a new bank feed',{account:a.name,from:old,to:it.sfId});save();}}
     UI.pdf={busy:false,items,sync:true,warn};recomputePdf();
     const nNew=items.reduce((n,it)=>n+(it.fresh||[]).length,0);
     dlog('simplefin','Matched to accounts',items.map(it=>({sf:it.sfId,item:it.fileName,account:it.choice==='new'?'NEW ACCOUNT':((S.accounts.find(x=>x.id===it.choice)||{}).name||it.choice),rows:it.res.txns.length,new:(it.fresh||[]).length,duplicates:it.dup})));
