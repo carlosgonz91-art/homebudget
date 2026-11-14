@@ -3912,7 +3912,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.69.4';
+const APP_VERSION='1.69.5';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -4036,7 +4036,12 @@ function rulesCardHTML(){
    +(open?'<div class="rls">'+list+'</div>'+nav:'')
    +'<div class="row" style="margin-top:12px">'+(un?'<button class="btn" data-act="gouncat">Review '+un+' uncategorized</button>':'')+'<button class="btn ghost" data-act="reapply">Apply rules to everything</button></div></section>';
 }
-const profileName=()=>'homebudget-profile-'+todayISO()+'.json';
+// each device has its own name (kept on this device only, not in the profile) so exports from two phones are easy to tell apart
+let DEV_MODEL='';try{navigator.userAgentData&&navigator.userAgentData.getHighEntropyValues(['model']).then(v=>{DEV_MODEL=(v&&v.model||'').trim();}).catch(()=>{});}catch(e){}
+const devGuess=()=>{const u=navigator.userAgent||'';return DEV_MODEL||(/iPhone/.test(u)?'iPhone':/iPad/.test(u)?'iPad':/Android/.test(u)?'Android phone':/Windows/.test(u)?'Windows PC':/Mac/.test(u)?'Mac':'device');};
+const devName=()=>{let n='';try{n=localStorage.getItem('hb-device')||'';}catch(e){}return n||devGuess();};
+const fileSafe=x=>String(x).trim().replace(/[^\w\- ]+/g,'').replace(/\s+/g,'-').slice(0,40)||'device';
+const profileName=()=>'homebudget-profile-'+todayISO()+'_'+fileSafe(devName())+'.json';
 async function profileText(){
   const files=[];
   const seen=new Set();for(const f of S.files){const k=f.blob||f.id;if(seen.has(k)) continue;seen.add(k);const b=await blobGet(k);if(b) files.push({id:k,b64:await blobToB64(b)});}
@@ -4044,6 +4049,7 @@ async function profileText(){
 }
 function profileCardHTML(){
   return '<section class="card" id="s-data"><h2>Backup &amp; help</h2><p class="mute" style="margin-top:0">Your data stays in this browser. Export a profile to back it up or move it to another device. Your bank link is not included.</p><div class="bkgrid'+(navigator.share?'':' one')+'"><button class="btn" data-act="backup">Export profile</button>'+(navigator.share?'<button class="btn" data-act="sharebackup">Share backup</button>':'')+'<span class="btn ghost pick" style="margin:0">Import profile<input type="file" accept=".json,application/json,text/plain" data-chg="restore" aria-label="Import profile"></span><button class="btn ghost" data-act="exportcsv">Export CSV</button></div>'
+   +'<label class="fld" style="margin:12px 0 4px">This device\'s name <span class="sub">(added to backup file names)</span><input type="text" id="devName" maxlength="40" data-chg="devname" value="'+esc(devName())+'" placeholder="e.g. Carlos phone"></label>'
    +'<p class="sub">New device: import the profile, then add a new SimpleFIN token from the same login. It\'s a one-time copy. <b>Share backup</b> sends it to Drive, email or text. Keep it private: it has your financial data.</p>'+(S.files.length?'<p class="sub">Includes '+S.files.length+' saved statement'+(S.files.length===1?'':'s')+'.</p>':'')+(S.lastBackup?'<p class="sub">Last export: '+new Date(S.lastBackup).toLocaleDateString()+'</p>':'<p class="sub">Never exported.</p>')+'</section>';
 }
 function viewSettings(){
@@ -4957,7 +4963,10 @@ const ACT={
     const f=new File([txt],profileName(),{type:'application/json'});
     if(navigator.canShare&&navigator.canShare({files:[f]})){
       try{await navigator.share({files:[f],title:'HomeBudget backup',text:'HomeBudget profile backup'});S.lastBackup=Date.now();save();render();toast('Backup shared');}
-      catch(e){if(e&&e.name!=='AbortError') toast('Could not open sharing. Use Export profile instead.');}
+      // a big backup takes a few seconds to build, and the phone only opens sharing right after a tap: offer a fresh tap to share it
+      catch(e){if(e&&e.name==='AbortError') return;
+        const go=async()=>{try{await navigator.share({files:[f],title:'HomeBudget backup'});S.lastBackup=Date.now();save();render();toast('Backup shared');}catch(x){if(x&&x.name!=='AbortError') toast('Could not open sharing. Use Export profile instead.');}};
+        toast('Backup is ready to share',{label:'Share',fn:go},'info');}
     }else{
       const ok=await saveFile(f.name,txt,'application/json');
       if(ok){S.lastBackup=Date.now();save();render();toast('Sharing is not available here, so the profile was downloaded');}
@@ -5106,6 +5115,7 @@ const ACT={
   }
 };
 const CHG={
+  devname(el){const v=el.value.trim();try{if(v) localStorage.setItem('hb-device',v);else localStorage.removeItem('hb-device');}catch(e){}toast('Device name saved');},
   month(el){UI.month=el.value;render();},
   filter(el){UI.filters[el.dataset.f]=el.value;UI.limit=200;renderTxnList();},
   acctq(el){INP.acctq(el);},
