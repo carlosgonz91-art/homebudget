@@ -152,7 +152,10 @@ h1{font-size:28px;font-weight:800;letter-spacing:-.03em;margin:2px 0 12px}h2{fon
 .hcw[data-hp]{cursor:crosshair;touch-action:pan-y;outline:none}.hcw[data-hp]:focus-visible{box-shadow:0 0 0 2px var(--brand);border-radius:8px}
 .hcr{margin:2px 0 8px;display:inline-flex}
 [hidden].hxtt,[hidden].hct,[hidden].hxv,[hidden].hxq,[hidden].hxq2,[hidden].hcx,[hidden].hcp{display:none!important}
-.nbtn{position:relative!important;margin-left:auto}.nbtn{background:transparent!important;padding:0!important;touch-action:manipulation}.nbtn>*{pointer-events:none}.nbtn svg{width:38px!important;height:38px!important}.nbtn+.tbtn{margin-left:8px}
+.nbtn{position:relative!important;margin-left:auto}.nbtn{background:transparent!important;padding:0!important;touch-action:manipulation}.nbtn>*{pointer-events:none}#noteBtn[hidden]{display:none!important}#noteBtn[hidden]+.tbtn{margin-left:auto}
+.nbtn.glow{animation:nglow 1.8s ease-in-out infinite;border-radius:50%}
+@keyframes nglow{0%,100%{box-shadow:0 0 0 0 rgba(251,191,36,.55),0 0 6px 1px rgba(251,191,36,.35)}50%{box-shadow:0 0 0 9px rgba(251,191,36,0),0 0 16px 4px rgba(251,191,36,.55)}}
+@media (prefers-reduced-motion:reduce){.nbtn.glow{animation:none;box-shadow:0 0 10px 3px rgba(251,191,36,.6)}}.nbtn svg{width:38px!important;height:38px!important}.nbtn+.tbtn{margin-left:8px}
 .nbdg{position:absolute;top:-3px;right:-3px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:var(--bad);color:#fff;font-size:10.5px;font-weight:800;display:grid;place-items:center;line-height:1}
 .gdf{display:grid;gap:8px;margin-top:10px}.gdf .btn{justify-self:start}.gdh ol{padding-left:20px;margin:8px 0;display:grid;gap:6px}.gdh code{font-size:12px;word-break:break-all;background:var(--track);padding:1px 5px;border-radius:5px}.gdq{background:var(--soft);border-radius:12px;padding:10px 12px;margin:0 0 10px}
 .hcleg{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--mute);margin:6px 0 0}.hcleg span{display:inline-flex;align-items:center;gap:6px}.hcleg i{width:14px;height:3px;border-radius:2px;display:inline-block}.hcleg i.d{height:0;background:none!important;border-top:2px dashed}.hctx{display:flex!important;align-items:center;gap:5px;font-size:11.5px}.hctx i{width:8px;height:8px;border-radius:50%;display:inline-block}
@@ -3266,6 +3269,9 @@ function notesPaint(){
   const b=document.getElementById('noteBtn'),pop=document.getElementById('notePop');if(!b) return;
   const L=notesList(),bad=L.some(x=>x.lvl==='bad');
   b.hidden=!L.length;b.classList.toggle('bad',bad);
+  // glow until you open the list; a new or changed message makes it glow again
+  const sg=L.map(x=>x.id+':'+x.sig).join('|');let seen='';try{seen=localStorage.getItem('hb-noteseen')||'';}catch(e){}
+  b.classList.toggle('glow',!!L.length&&sg!==seen&&!UI.notesOpen);if(UI.notesOpen&&L.length){try{localStorage.setItem('hb-noteseen',sg);}catch(e){}}
   // only rewrite the icon when the count changes: background re-renders used to swap it out mid-tap on phones, so the tap was lost
   const ih='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="12" fill="#fbbf24" stroke="none"/><path d="M12 6.8v6.7" stroke="#1f1300" stroke-width="2.6" stroke-linecap="round"/><circle cx="12" cy="17.2" r="1.5" fill="#1f1300" stroke="none"/></svg>'+(L.length?'<span class="nbdg">'+L.length+'</span>':'');
   if(b.dataset.ih!==ih){b.innerHTML=ih;b.dataset.ih=ih;}
@@ -3705,7 +3711,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button class="btn small" data-act="sfsync" data-ico="lead">Sync now</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.63.0';
+const APP_VERSION='1.63.1';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
