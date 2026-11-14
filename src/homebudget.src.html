@@ -1715,7 +1715,7 @@ function busySub(sub){const e=document.querySelector('#busy .bsub');if(e)e.textC
 function busyHide(){const b=$('#busy');if(!b)return;b.classList.remove('show');clearTimeout(busyT);busyT=setTimeout(()=>{b.hidden=true;},260);}
 // tone: ok (green ✓), warn (yellow ⚠), bad (red ✕), info (neutral i). Left out, it is read from the wording.
 const TOAST_BAD=/couldn.?t|could not|can.?t |failed|fail\b|error|rejected|blocked|too long|unreadable|doesn.?t look|no longer in/i;
-const TOAST_WARN=/attention|synced, but|needed\b|warning|auth required|(?<!duplicates )skipped|missing|expired|not available|first\b|^(type|enter|give|paste|pick|add your)\b|nothing to|no new files|nothing new to suggest|returned no accounts/i;
+const TOAST_WARN=/attention|synced, but|needed\b|warning|auth required|(?<!duplicates )skipped|missing|expired|not available|first\b|^(type|enter|give|paste|pick|add your)\b|nothing to|nothing new to suggest|returned no accounts/i;
 // green only for something that worked; anything else that isn't a problem uses the app's own colors
 const TOAST_OK=/^(synced|saved|imported|merged|connected to|added|renamed|payment saved|key saved|rate saved|profile (saved|imported)|export saved|backup shared|picture saved|debug log (copied|saved)|prices updated|removed one|removed \d|vaults (saved|cleared)|smarter categories|your saved rules|set \d|set to|\d+ (new file|transaction)|already up to date|google drive disconnected)|marked (closed|as ok)|reopened$|budget removed|a month( \(this month only\))?$/i;
 const TOAST_ICO={ok:'<path d="M5 12.5l4.5 4.5L19 7.5"/>',warn:'<path d="M12 3.5L2.8 19.5h18.4z"/><path d="M12 10v4.2"/><circle cx="12" cy="17" r=".6" fill="currentColor"/>',bad:'<path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/>',info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/><circle cx="12" cy="7.8" r=".6" fill="currentColor"/>'};
@@ -3845,7 +3845,7 @@ async function gdSync(manual,all){
       files.push(new File([b],f.name,{type:b.type||(/\.pdf$/i.test(f.name)?'application/pdf':''),lastModified:Date.parse(f.modifiedTime)||Date.now()}));}
     const ns=Object.assign({},c.seen||{});L.forEach(f=>{if(fresh.includes(f)||ns[f.id]) ns[f.id]=f.modifiedTime;});gdSet({seen:ns});
     dlog('gdrive','Checked folder',{files:L.length,fresh:fresh.length});
-    if(!files.length&&manual) toast('No new files in '+c.folder.name);
+    if(!files.length&&manual) toast('No new statements in '+c.folder.name,null,'info');
   }catch(e){if(e.message==='auth'){UI.gdBusy=null;if(manual) gdAuth();else render();return;}UI.gdErr=e.message;dlog('gdrive','Check failed',{m:e.message},'warn');if(manual) toast('Google Drive: '+e.message);}
   UI.gdBusy=null;UI.gdFirst=null;
   if(files.length){toast(files.length+' new file'+(files.length===1?'':'s')+' from Google Drive');UI.tab='settings';UI.goto='s-import';await processBatch(files);}
@@ -3888,7 +3888,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.69.2';
+const APP_VERSION='1.69.3';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
