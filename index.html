@@ -734,6 +734,15 @@ html,body{touch-action:pan-x pan-y}
 .bsub{font-size:13px;opacity:.75;margin-top:2px}.bsub:empty{display:none}
 @keyframes bspin{to{transform:rotate(360deg)}}@keyframes bdot{0%,70%,100%{transform:translateY(0);opacity:.35}35%{transform:translateY(-4px);opacity:1}}
 @media (prefers-reduced-motion:reduce){.bspin{animation-duration:2.4s}.bdots i{animation:none;opacity:.7}#busy .bcard{transition:opacity .1s}}
+
+/* one button height across the app: 42px regular, 34px small; borders on every kind so filled and outlined buttons line up */
+.btn{border:1px solid transparent}
+.btn:not(.bo):not(.mp .btn){display:inline-flex;align-items:center;justify-content:center;gap:6px;box-sizing:border-box;line-height:1.2;vertical-align:middle}
+.btn:not(.small):not(.bo){min-height:42px;padding-top:4px;padding-bottom:4px}
+.btn.small:not(.bo){min-height:34px;height:34px;padding-top:0;padding-bottom:0;white-space:nowrap}
+.mp .btn{min-height:0}
+.btn.bo:not(.small){width:42px!important;height:42px!important;min-height:0!important;padding:0!important}
+.btn.small.bo{width:34px!important;height:34px!important;min-height:0!important;padding:0!important}
 </style>
 <header><div class="bar"><span class="logo"><span class="mk mkc" aria-hidden="true"></span>HomeBudget <span class="ver" id="ver"></span></span>
 <nav>
@@ -3773,7 +3782,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.64.8';
+const APP_VERSION='1.64.9';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
