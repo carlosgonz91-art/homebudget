@@ -3796,7 +3796,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.65.13';
+const APP_VERSION='1.65.14';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -3959,9 +3959,9 @@ function auditOkHTML(){
 }
 function dupCardHTML(P){
   const nm=id=>acctName(id);
-  return '<section class="card"><h2>Duplicates found</h2><p class="mute" style="margin-top:0"><b>'+P.length+'</b> transaction'+(P.length===1?'':'s')+' appear twice: once from your bank sync and once from a statement you imported. That is why the totals can look doubled. Merging keeps the bank-synced copy, links your statement to it, and keeps any category or nickname you set.</p>'
-   +'<details><summary>See them</summary>'+P.slice(0,12).map(({manual:m,sf:f})=>'<div class="stp"><span>'+esc(f.date)+' · '+esc(nm(f.acct))+'<div class="sub">'+esc(f.desc)+' ≈ '+esc(m.desc)+'</div></span><b class="'+(f.amount<0?'neg':'pos')+'">'+fmt(f.amount)+'</b></div>').join('')+(P.length>12?'<p class="sub">…and '+(P.length-12)+' more</p>':'')+'</details>'
-   +'<p style="margin:12px 0 0"><button class="btn" data-act="mergedupes">Merge '+P.length+' duplicate'+(P.length===1?'':'s')+'</button></p></section>';
+  return '<section class="card"><h2>Duplicates found</h2><p class="mute" style="margin-top:0"><b>'+P.length+'</b> transaction'+(P.length===1?' is':'s are')+' in your app twice (from bank sync and a statement, or from a bank’s old and new feed), so '+(P.length===1?'it is':'they are')+' counted twice in your totals. <b>Merge deletes the extra copy</b>, so each one is counted once. Your categories and notes are kept.</p>'
+   +'<details><summary>See them</summary>'+P.slice(0,12).map(({manual:m,sf:f})=>'<div class="stp"><span>'+esc(f.date)+' · '+esc(nm(f.acct))+'<div class="sub">'+esc(f.desc)+' — same as '+esc(m.date)+(m.desc&&m.desc!==f.desc?' “'+esc(m.desc)+'”':'')+'</div></span><b class="'+(f.amount<0?'neg':'pos')+'">'+fmt(f.amount)+'</b></div>').join('')+(P.length>12?'<p class="sub">…and '+(P.length-12)+' more</p>':'')+'</details>'
+   +'<p style="margin:12px 0 0"><button class="btn" data-act="mergedupes">Remove '+P.length+' extra cop'+(P.length===1?'y':'ies')+'</button></p></section>';
 }
 function viewAudit(){
   if(!S.txns.length) return '<section class="card"><h2>Audit</h2><p class="mute">Import some statements first, then come back here to check them.</p></section>';
@@ -4969,7 +4969,7 @@ const ACT={
       });
       const removed=S.txns.filter(t=>rm.has(t.id));S.txns=S.txns.filter(t=>!rm.has(t.id));
       dlog('audit','Merged statement/sync duplicates',{count:P.length});save();render();
-      toast('Merged '+P.length+' duplicate'+(P.length===1?'':'s'),{label:'Undo',fn:()=>{S.txns=S.txns.concat(removed);saved.forEach(([f,o])=>K.forEach(k=>{if(o[k]===undefined) delete f[k];else f[k]=o[k];}));save();render();}});
+      toast('Removed '+P.length+' extra cop'+(P.length===1?'y':'ies')+'. Each is counted once now.',{label:'Undo',fn:()=>{S.txns=S.txns.concat(removed);saved.forEach(([f,o])=>K.forEach(k=>{if(o[k]===undefined) delete f[k];else f[k]=o[k];}));save();render();}});
     }});
   },
   recheck(){if(!(UI.recheck&&UI.recheck.busy)) recheckOriginals();},
