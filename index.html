@@ -792,8 +792,7 @@ html,body{touch-action:pan-x pan-y}
 .dvup{background:var(--soft);border-radius:14px;padding:10px 12px;margin:10px 0}.dvr{display:flex;align-items:baseline;gap:8px;padding:3px 0}.dvr .sub{flex:1;min-width:0}.dva{color:var(--cin)}
 .hxt>span{white-space:nowrap}
 .itip{margin:2px 0 8px}.itip>summary{list-style:none;cursor:pointer;display:inline-flex;align-items:center;gap:5px;width:fit-content;font-size:12px;color:var(--mute);padding:2px 0}.itip>summary span{font-weight:600}.itip[open]>summary{color:var(--brand)}.itip>p,.itip>div{margin-top:4px!important}.itip>summary::-webkit-details-marker{display:none}.itip>summary i{display:inline-grid;place-items:center;width:15px;height:15px;font-size:10px!important;border-radius:50%;border:1.5px solid var(--mute);color:var(--mute);font:italic 700 11px/1 Georgia,serif}.itip[open]>summary i{border-color:var(--brand);color:var(--brand)}.itip>p{margin:6px 0 0;font-size:12.5px}
-.bcal{margin:0 auto}.bcal .cc{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}.bcal .cc em{font-style:normal;font-size:9.5px;font-weight:800;line-height:1;min-width:16px;height:14px;padding:0 4px;border-radius:7px;display:grid;place-items:center;color:#fff}
-.bcal .cc em.bpd{background:var(--cin)}.bcal .cc em.bsn{background:#f59e0b}.bcal .cc em.bdu{background:#64748b}
+.bcal{margin:0 auto}.bcal .cc{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}.bcal .bdots{display:flex;gap:3px;height:6px}.bcal .bdots b{width:6px;height:6px;border-radius:50%;box-shadow:0 0 0 1px color-mix(in srgb,var(--card) 70%,transparent)}.bcal .bdots .bpd{background:var(--cin)}.bcal .bdots .bsn{background:#f59e0b}.bcal .bdots .bdu{background:#64748b}
 </style>
 <header><div class="bar"><span class="logo"><span class="mk mkc" aria-hidden="true"></span>HomeBudget <span class="ver" id="ver"></span></span>
 <nav>
@@ -3277,9 +3276,9 @@ function billCalHTML(R,row){
   let cells='';for(let i=0;i<first;i++) cells+='<i class="ce"></i>';
   for(let i=1;i<=nd;i++){const ds=ym+'-'+String(i).padStart(2,'0'),L=day[ds]||[],tot=L.reduce((t,e)=>t+e.a,0),allPaid=L.length&&L.every(e=>e.paid);
     const dIn=dayNum(ds)-T,soon=L.length&&!allPaid&&dIn>=0&&dIn<=7;
-    // tile shaded like the Trends calendar (more bills = stronger); the small pill under the number says paid / due soon / later
+    // tile shaded like the Trends calendar (more bills = stronger); one small dot per bill under the number: paid / due soon / later
     const lv=L.length?Math.min(3,L.length+1):0;
-    cells+='<button type="button" class="cc'+(L.length?' bhas':'')+(ds===today?' today':'')+(sel===ds?' sel':'')+'" data-act="blcald" data-d="'+ds+'" aria-label="'+esc(niceDay(ds)+(L.length?', '+L.length+' bill'+(L.length>1?'s':'')+' '+fmt0(tot)+(allPaid?', paid':soon?', due soon':''):''))+'"'+(lv?' style="background:var(--h'+lv+');color:var(--hf'+lv+')"':'')+'><span>'+i+'</span>'+(L.length?'<em class="'+(allPaid?'bpd':soon?'bsn':'bdu')+'">'+L.length+'</em>':'')+'</button>';}
+    cells+='<button type="button" class="cc'+(L.length?' bhas':'')+(ds===today?' today':'')+(sel===ds?' sel':'')+'" data-act="blcald" data-d="'+ds+'" aria-label="'+esc(niceDay(ds)+(L.length?', '+L.length+' bill'+(L.length>1?'s':'')+' '+fmt0(tot)+(allPaid?', paid':soon?', due soon':''):''))+'"'+(lv?' style="background:var(--h'+lv+');color:var(--hf'+lv+')"':'')+'><span>'+i+'</span>'+(L.length?'<i class="bdots">'+L.slice(0,4).map(e=>'<b class="'+(e.paid?'bpd':dIn>=0&&dIn<=7?'bsn':'bdu')+'"></b>').join('')+'</i>':'')+'</button>';}
   const mt=Object.entries(day).flatMap(([d,L])=>L.map(e=>Object.assign({d},e))),pT=mt.filter(e=>e.paid).reduce((t,e)=>t+e.a,0),sT=mt.filter(e=>!e.paid&&dayNum(e.d)-T<=7).reduce((t,e)=>t+e.a,0),dT=mt.filter(e=>!e.paid&&dayNum(e.d)-T>7).reduce((t,e)=>t+e.a,0);
   const nav='<div class="bcnav"><button type="button" class="btn ghost small icon" data-act="blcalm" data-n="-1" aria-label="Previous month">‹</button><b>'+new Date(y,m-1,15).toLocaleDateString('en-US',{month:'long',year:'numeric'})+'</b><button type="button" class="btn ghost small icon" data-act="blcalm" data-n="1" aria-label="Next month">›</button></div>';
   const leg='<div class="bcleg"><span><i class="lp"></i>Paid '+fmt0(pT)+'</span><span><i class="ls"></i>Due in 7 days '+fmt0(sT)+'</span><span><i class="ld"></i>Later '+fmt0(dT)+'</span></div>';
@@ -3986,7 +3985,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.74.1';
+const APP_VERSION='1.74.2';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
