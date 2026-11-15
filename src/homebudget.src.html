@@ -370,7 +370,7 @@ label select,label input{display:block;margin-top:4px;color:var(--ink)}
 .lneta.mute{display:block;color:var(--mute);background:var(--soft);border-color:var(--line);font-size:13.5px}.lneta.mute b{display:inline;color:var(--ink);font-size:inherit}
 .lnms{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:0 0 12px}.lnm{border-radius:12px;padding:7px 8px;background:var(--soft);border:1px solid var(--line);text-align:center;min-width:0}.lnm b{display:block;font-size:13px}.lnm span{display:block;font-size:11px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.lnm.done{background:color-mix(in srgb,#10b981 14%,var(--card));border-color:color-mix(in srgb,#10b981 35%,var(--line))}.lnm.done span{color:#059669;font-weight:700}
 .lnwi{border-radius:14px;padding:10px 12px;background:var(--soft);border:1px solid var(--line);margin:2px 0 4px}.lnwh{font-weight:700;font-size:13.5px;margin-bottom:8px}.lnch{display:flex;gap:6px;flex-wrap:wrap}.lnch button{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:99px;padding:7px 13px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;min-height:36px}.lnch button.on{background:linear-gradient(135deg,var(--g1),var(--g2));border-color:transparent;color:#fff}.lnres{margin-top:8px;font-size:14px}.lnres b{color:#059669}
-.lnp{height:8px;border-radius:4px;background:var(--track);overflow:hidden;margin:-4px 0 12px}.lnp i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,var(--cin),color-mix(in srgb,var(--cin) 60%,#fff))}
+.lnp{height:8px;border-radius:4px;background:var(--track);overflow:hidden;margin:-4px 0 12px}.lnp i{display:block;height:100%;border-radius:4px;background:var(--cin)}
 .lnx{margin-top:8px;line-height:1.6}.lnx b{color:var(--ink)}
 .tkh{margin:12px 0 2px;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
 .tkx{border:0;background:none;padding:0;font:inherit;font-size:12px;color:var(--mute);cursor:pointer;text-decoration:underline}
@@ -794,6 +794,18 @@ html,body{touch-action:pan-x pan-y}
 .bcal{margin:0 auto}.bcal .cc{position:relative}.bcal .bdots{position:absolute;left:0;right:0;bottom:4px;display:flex;justify-content:center;gap:2px;height:5px}.bcal .bdots b{width:5px;height:5px;border-radius:50%;box-shadow:0 0 0 1px color-mix(in srgb,var(--card) 70%,transparent)}.bcal .bdots .bpd{background:var(--cin)}.bcal .bdots .bsn{background:#f59e0b}.bcal .bdots .bdu{background:#64748b}
 /* horizontal pill rows only scroll sideways (no small vertical wiggle) */
 .snav,.wts,.hcr,.secch{overflow-y:hidden}
+
+/* ---- one look for every bar in the app: 8px pill, flat color, no gradients or glow.
+   Colors carry meaning: brand = share/progress, green = paid/good, red = over budget, a category's own color for category bars ---- */
+.track,.ivbar,.lnp,.bbbar,.cdbar,.hbar{height:8px!important;border-radius:99px!important}
+.ivbar i,.lnp i,.bbbar b,.cdbar i,.hbar i,.fill,.mfill{border-radius:99px!important;box-shadow:none!important}
+.ivbar i{background:var(--brand)!important}
+.rdy .ivbar i{background:var(--cin)!important}
+.lnp i{background:var(--cin)!important}
+.cdbar{background:var(--track)!important}.cdbar i{background:var(--cin)!important}
+.fill{background:var(--fill,var(--brand))}
+.fill.over{background:var(--cout)!important}
+.insbar,.mixbar,.lnbar,.agbar{height:8px!important;border-radius:99px!important;gap:2px!important}
 </style>
 <header><div class="bar"><span class="logo"><span class="mk mkc" aria-hidden="true"></span>HomeBudget <span class="ver" id="ver"></span></span>
 <nav>
@@ -2037,7 +2049,7 @@ function loansWithChart(ym){
   const h=loansHTML(ym);if(!h||pastYM(ym)) return h;
   const A=loanAccts().map(a=>({a,L:loanInfo(a)})).filter(x=>x.L&&x.L.owed>0.5).sort((x,y)=>y.L.owed-x.L.owed);if(!A.length) return h;
   const c=loanHistCard(A[0].a);if(!c||!/<svg/.test(c)) return h;
-  const inner=c.replace(/^\s*<section class="card">/,'').replace(/<\/section>\s*$/,'').replace(/<h2>Balance over time<\/h2><p class="sub"[^>]*>[\s\S]*?<\/p>/,'<h3 class="blh" style="margin:16px 0 6px">Balance over time'+(A.length>1?' · '+esc(A[0].a.name):'')+'</h3>');
+  const inner=c.replace(/^\s*<section class="card">/,'').replace(/<\/section>\s*$/,'').replace(/<h2>Balance over time<\/h2>[\s\S]*?(?=<div class="hc")/,'<h3 class="blh" style="margin:16px 0 6px">Balance over time'+(A.length>1?' · '+esc(A[0].a.name):'')+'</h3>');
   // the list is one card (a div or a section): the chart goes inside it, before its last closing tag
   return h.replace(/<\/(section|div)>\s*$/,m=>inner+m);
 }
@@ -2045,7 +2057,7 @@ function loanHistCard(a){
   const L=loanInfo(a);if(!L) return '';
   // real history from imported statements wins over the estimate once it covers at least two months
   const real=L.hist.length>2&&dayNum(L.hist[L.hist.length-1][0])-dayNum(L.hist[0][0])>=60,est=real?null:loanPast(L),P=est||(L.hist.length>1?L.hist:null);if(!P) return L.orig?'':'<section class="card"><h2>Balance over time</h2><p class="sub" style="margin:0">Add the rate and payment to see the balance since the loan started.</p></section>';
-  return '<section class="card"><h2>Balance over time</h2><details class="itip"><summary><i>i</i><span>About</span></summary><p class="sub" style="margin:-4px 0 4px">'+(est?'Remaining balance since the loan started, about '+new Date(P[0][0]+'T12:00:00').toLocaleDateString('en-US',{month:'long',year:'numeric'})+'.':'Remaining balance from your statements and syncs, since '+new Date(P[0][0]+'T12:00:00').toLocaleDateString('en-US',{month:'long',year:'numeric'})+'.')+'</p></details>'+histChart(P,{id:'ln'+String(a.id).replace(/\W/g,''),label:'Loan balance',inv:true,col:'#f97316'})+(est?'<details class="itip"><summary><i>i</i><span>About</span></summary><p class="sub" style="margin:6px 0 0">The past is estimated from the original amount, your rate and your payment, because the bank only sends today\'s balance. Earlier extra payments are not shown.</p></details>':'')+'</section>';
+  return '<section class="card"><h2>Balance over time</h2><details class="itip"><summary><i>i</i><span>About</span></summary><p class="sub" style="margin:-4px 0 4px">'+(est?'Remaining balance since the loan started, about '+new Date(P[0][0]+'T12:00:00').toLocaleDateString('en-US',{month:'long',year:'numeric'})+'.':'Remaining balance from your statements and syncs, since '+new Date(P[0][0]+'T12:00:00').toLocaleDateString('en-US',{month:'long',year:'numeric'})+'.')+'</p></details>'+histChart(P,{id:'ln'+String(a.id).replace(/\W/g,''),label:'Loan balance',inv:true})+(est?'<details class="itip"><summary><i>i</i><span>About</span></summary><p class="sub" style="margin:6px 0 0">The past is estimated from the original amount, your rate and your payment, because the bank only sends today\'s balance. Earlier extra payments are not shown.</p></details>':'')+'</section>';
 }
 // statement-only accounts (no bank link) that are not just the statements of a linked account
 const isTwin=a=>!a.sf&&S.accounts.some(x=>x.sf&&x!==a&&stmtTwins(x,x.sf).includes(a.id));
@@ -2384,7 +2396,7 @@ function dayTxHTML(dt){
 // one row layout for both "Top spending" views (Merchants / Purchases)
 function topRow(i,cat,name,full,amt,sub,pct,act){
   const col=catColor(cat),pa=UI._mpAnim?' pa':'';
-  return '<div class="mr'+pa+(act?' go':'')+'" style="--i:'+i+'"'+(act?' role="button" tabindex="0" '+act:'')+'>'+avHTML(cat)+'<div class="mrb"><div class="mrt"><span class="n" title="'+esc(full||name)+'">'+esc(name)+'</span><b>'+fmt0(amt)+'</b></div><div class="track"><div class="mfill" style="width:'+pct.toFixed(1)+'%;background:linear-gradient(90deg,'+col+',color-mix(in srgb,'+col+' 55%,#fff));animation-delay:'+(i*70)+'ms"></div></div><div class="sub">'+esc(sub)+'</div></div></div>';
+  return '<div class="mr'+pa+(act?' go':'')+'" style="--i:'+i+'"'+(act?' role="button" tabindex="0" '+act:'')+'>'+avHTML(cat)+'<div class="mrb"><div class="mrt"><span class="n" title="'+esc(full||name)+'">'+esc(name)+'</span><b>'+fmt0(amt)+'</b></div><div class="track"><div class="mfill" style="width:'+pct.toFixed(1)+'%;background:'+col+';animation-delay:'+(i*70)+'ms"></div></div><div class="sub">'+esc(sub)+'</div></div></div>';
 }
 function merchHTML(ym){
   const m={};
@@ -3005,7 +3017,7 @@ function loanBlock(a,split){
     const chart=(L.hist.length>1||L.proj.length>1)?loanChart(L,XA?projOf(XA.path):null)+'<div class="legend">'+(L.hist.length>1?'<span><i class="dot" style="background:#f97316"></i>Balance</span>':'')+(L.proj.length>1?'<span><i class="dot" style="background:#6366f1"></i>Your plan</span>':'')+(XA?'<span><i class="dot" style="background:#10b981"></i>With +$'+ex+'</span>':'')+'</div>':'';
     if(split){
       const st=(l,v,c)=>'<div><small>'+l+'</small><b'+(c?' class="'+c+'"':'')+'>'+v+'</b></div>';
-      const hero2='<div class="sub" style="margin:12px 0 0">Still owed</div><div class="invtot">'+fmt0(L.owed)+'</div>'+(pct!=null?'<div class="track lnpt" role="img" aria-label="'+Math.round(pct)+'% paid off"><div class="fill" style="width:'+pct.toFixed(1)+'%;background:linear-gradient(90deg,var(--cin),color-mix(in srgb,var(--cin) 60%,#fff))"></div></div>':'')
+      const hero2='<div class="sub" style="margin:12px 0 0">Still owed</div><div class="invtot">'+fmt0(L.owed)+'</div>'+(pct!=null?'<div class="track lnpt" role="img" aria-label="'+Math.round(pct)+'% paid off"><div class="fill" style="width:'+pct.toFixed(1)+'%;background:var(--cin)"></div></div>':'')
         +'<div class="ivst">'+(L.orig&&L.orig>L.owed?st('Paid off',fmt0(L.orig-L.owed)+' ('+Math.round(pct)+'%)','rdyc'):'')+(left!=null?st('Debt-free',inMonths(left))+st('Time left',monthsTxt(left))+st('Payments left',String(left)):'')+'</div>'+(left==null?eta:'');
       return '<section class="card lnb">'+head+hero2+'<div style="height:12px"></div>'+tiles+''+'</section>'
        +(brk?'<section class="card"><h2>'+payLbl+'</h2>'+brk.replace('<div class="lnbkh"><span>'+payLbl+'</span>','<div class="lnbkh"><span>Total each month</span>')+'</section>':'')
@@ -3023,7 +3035,7 @@ function loansHTML(ym){
   const owed=A.reduce((t,x)=>t+x.L.owed,0);
   return '<div class="card lnw go" role="button" tabindex="0" data-act="goloans"><div class="row" style="align-items:baseline;margin-bottom:8px"><h2 style="margin:0">Loans</h2><span class="spacer"></span><b class="lnwt">'+fmt0(owed)+'</b><i class="bkgo" aria-hidden="true">›</i></div>'
    +A.map(({a,L})=>{const pct=L.orig?Math.max(0,Math.min(100,(L.orig-L.owed)/L.orig*100)):null;
-    return '<div class="lnwr"><div class="lnwn"><span>'+esc(loanName(a))+'</span><em'+(!L.past&&L.months==null&&!(L.owed<0.5)&&L.hr&&L.pay?' class="bad"':'')+'>'+(L.past?'End of '+ymShort(ym):L.months!=null?inMonths(L.months):L.owed<0.5?'Paid off':L.hr&&L.pay?'Not at this payment':(pct!=null?'':'add rate'))+'</em></div>'+(pct!=null?'<div class="track"><div class="fill" style="width:'+pct.toFixed(1)+'%;background:linear-gradient(90deg,var(--cin),color-mix(in srgb,var(--cin) 60%,#fff))"></div></div><div class="lnwp">'+Math.round(pct)+'% paid · '+fmt0(L.owed)+' left</div>':'<div class="lnwp">'+fmt0(L.owed)+' left · <u>set the original amount</u> to see progress</div>')+'</div>';}).join('')+'</div>';
+    return '<div class="lnwr"><div class="lnwn"><span>'+esc(loanName(a))+'</span><em'+(!L.past&&L.months==null&&!(L.owed<0.5)&&L.hr&&L.pay?' class="bad"':'')+'>'+(L.past?'End of '+ymShort(ym):L.months!=null?inMonths(L.months):L.owed<0.5?'Paid off':L.hr&&L.pay?'Not at this payment':(pct!=null?'':'add rate'))+'</em></div>'+(pct!=null?'<div class="track"><div class="fill" style="width:'+pct.toFixed(1)+'%;background:var(--cin)"></div></div><div class="lnwp">'+Math.round(pct)+'% paid · '+fmt0(L.owed)+' left</div>':'<div class="lnwp">'+fmt0(L.owed)+' left · <u>set the original amount</u> to see progress</div>')+'</div>';}).join('')+'</div>';
 }
 // interest paid so far this year: each month's payment carries about one month of interest on the balance owed before it
 function ytdInt(L){if(!L||!(L.rate>0)) return null;const H=(L.hist||[]).slice().sort((x,y)=>x[0]<y[0]?-1:1);if(!H.length) return null;
@@ -3973,7 +3985,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<details class="itip"><summary><i>i</i><span>About</span></summary><p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p></details><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.74.12';
+const APP_VERSION='1.75.0';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
