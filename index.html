@@ -2054,6 +2054,15 @@ function loanPast(L){
   const now=new Date(),P=path.map((v,i)=>{const d=new Date(now.getFullYear(),now.getMonth()-(m-i),Math.min(28,now.getDate()),12);return [d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'),v];});
   P[P.length-1][0]=todayISO();return P;
 }
+// Loans tab on Overview: the loan list plus the balance-over-time chart of the biggest loan (same chart as the loan's own page)
+function loansWithChart(ym){
+  const h=loansHTML(ym);if(!h||pastYM(ym)) return h;
+  const A=loanAccts().map(a=>({a,L:loanInfo(a)})).filter(x=>x.L&&x.L.owed>0.5).sort((x,y)=>y.L.owed-x.L.owed);if(!A.length) return h;
+  const c=loanHistCard(A[0].a);if(!c||!/<svg/.test(c)) return h;
+  const inner=c.replace(/^\s*<section class="card">/,'').replace(/<\/section>\s*$/,'').replace(/<h2>Balance over time<\/h2><p class="sub"[^>]*>[\s\S]*?<\/p>/,'<h3 class="blh" style="margin:16px 0 6px">Balance over time'+(A.length>1?' · '+esc(A[0].a.name):'')+'</h3>');
+  // the list is one card (a div or a section): the chart goes inside it, before its last closing tag
+  return h.replace(/<\/(section|div)>\s*$/,m=>inner+m);
+}
 function loanHistCard(a){
   const L=loanInfo(a);if(!L) return '';
   // real history from imported statements wins over the estimate once it covers at least two months
@@ -2976,7 +2985,6 @@ function lnSimCard(a,facts){
   if(!L.A||L.owed<0.5){const ch=(L.hist.length>1||L.proj.length>1)?loanChart(L,null):'';return ch||facts.length?'<section class="card"><h2>Balance over time</h2>'+ch+(facts.length?'<div class="sub lnx">'+facts.join(' · ')+'</div>':'')+'</section>':'';}
   const {x,l}=lnSim(a),id=esc(a.id),mx=Math.max(2000,Math.ceil(L.pay/500)*500);
   return '<section class="card lnsim" data-ln="'+id+'"><h2>Pay it off faster</h2><details class="itip"><summary><i>i</i><span>About</span></summary><p class="sub" style="margin:-4px 0 12px">Try any extra amount. The numbers and the chart update as you go. Nothing is saved or sent to your lender.</p></details>'
-   +'<div class="lnch" role="group" aria-label="Quick amounts">'+LNX.map(v=>'<button type="button" data-act="lnextra" data-id="'+id+'" data-v="'+v+'" class="'+(v===x?'on':'')+'" aria-pressed="'+(v===x)+'">'+(v?'+$'+v:'None')+'</button>').join('')+'</div>'
    +'<div class="lnsg"><label class="lnsf"><span>Extra each month</span><span class="lnsi"><i>$</i><input type="number" inputmode="decimal" min="0" max="100000" step="25" value="'+(x||'')+'" placeholder="0" data-inp="lnx" data-id="'+id+'" aria-label="Extra each month in dollars"></span></label>'
    +'<label class="lnsf"><span>One-time extra now</span><span class="lnsi"><i>$</i><input type="number" inputmode="decimal" min="0" max="'+Math.floor(L.owed)+'" step="100" value="'+(l||'')+'" placeholder="0" data-inp="lnl" data-id="'+id+'" aria-label="One-time extra payment in dollars"></span></label></div>'
    +'<input type="range" class="lnsl" min="0" max="'+mx+'" step="25" value="'+Math.min(mx,x)+'" data-inp="lnxr" data-id="'+id+'" aria-label="Extra each month slider"><div class="lnslx"><span>$0</span><span>'+fmt0(mx)+'/mo</span></div>'
@@ -3504,7 +3512,7 @@ function viewDash(){
     flow:()=>d.spend>0?'<section class="card"><h2>Where the money went</h2><div class="flowbar"><span class="sub">'+fmt0(d.spend)+' spent'+(d.income>0?' of '+fmt0(d.income)+' earned':'')+'</span><span class="spacer"></span><button type="button" class="btn ghost small" data-act="flowsave" data-ym="'+UI.month+'" title="Save the chart as a picture">Save picture</button>'+(navigator.share?'<button type="button" class="btn ghost small" data-act="flowshare" data-ym="'+UI.month+'">Share</button>':'')+'</div>'+flowHTML(UI.month)+'</section>':'',
     cal:()=>'<section class="card"><h2>Day by day</h2>'+calHTML(UI.month)+'</section>',
     merch:()=>topSpendHTML(UI.month),
-    accts:()=>accountsHTML(UI.month),inv:()=>invAllHTML(UI.month),usual:()=>usualHTML(UI.month),recur:()=>recurHTML(UI.month),bills:()=>billsHTML(UI.month),bank:bankConnHTML,mix:()=>nowOnly(invMixHTML(),UI.month),cds:()=>nowOnly(cdWidgetHTML(),UI.month),loans:()=>loansHTML(UI.month),tick:tickHTML,bubble:bubbleHTML};
+    accts:()=>accountsHTML(UI.month),inv:()=>invAllHTML(UI.month),usual:()=>usualHTML(UI.month),recur:()=>recurHTML(UI.month),bills:()=>billsHTML(UI.month),bank:bankConnHTML,mix:()=>nowOnly(invMixHTML(),UI.month),cds:()=>nowOnly(cdWidgetHTML(),UI.month),loans:()=>loansWithChart(UI.month),tick:tickHTML,bubble:bubbleHTML};
   const HW={accts:H0.accts,bills:H0.bills,
     spend:()=>tabbedCard('spend','Spending',[['cat','By category'],['flow','Where it went'],['merch','Top spending']],H0),
     trends:()=>tabbedCard('trends','Trends',[['trend','Months'],['cal','Day by day']],H0),
@@ -3985,7 +3993,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.74.6';
+const APP_VERSION='1.74.8';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
