@@ -822,6 +822,7 @@ html,body{touch-action:pan-x pan-y}
 .legend i.dot{width:14px!important;height:3px!important;border-radius:2px!important}
 .tip .pos,.tip em.pos{color:var(--cin)!important}.tip .neg,.tip em.neg{color:var(--cout)!important}
 .lnwr.go{cursor:pointer;border-radius:10px;margin-left:-6px;margin-right:-6px;padding:4px 6px}.lnwr.go:hover{background:var(--soft)}
+.cdm2{font-size:12px;color:var(--mute);margin-top:3px}.ivm em.warn{color:#f59e0b}
 </style>
 <header><div class="bar"><span class="logo"><span class="mk mkc" aria-hidden="true"></span>HomeBudget <span class="ver" id="ver"></span></span>
 <nav>
@@ -3106,11 +3107,13 @@ function cdWidgetHTML(){
   const tot=L.reduce((t,x)=>t+x.value,0),yr=L.reduce((t,x)=>t+x.value*x.rate/100,0),avg=tot>0?yr/tot*100:0,mx=Math.max(1,...L.map(x=>x.days));
   const nice=m=>new Date(m+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
   const left=x=>x.days<0?'Matured':x.days===0?'Today':x.days<=90?x.days+' day'+(x.days===1?'':'s'):Math.round(x.days/30.4)+' months';
+  const nm=x=>titleCase(String(x.issuer).replace(/\b(NATL|NATIONAL) (ASSN|ASSOCIATION)\b|\bN ?\.? ?A\.?$|\bNA\b/gi,'').replace(/\bBK\b/gi,'Bank').replace(/\s+/g,' ').trim().toLowerCase()).replace(/\bJpmorgan\b/,'JPMorgan');
   const nx=L[0];
-  const tiles=stiles([{k:'In CDs',v:fmtT(tot),s:L.length+' CD'+(L.length===1?'':'s'),c:'#0d9488'},{k:'Avg rate',v:(+avg.toFixed(2))+'%',s:'≈'+fmtT(yr)+'/yr',c:'#10b981'},{k:'Next up',v:left(nx),s:esc(titleCase(nx.issuer)),c:CDSC(nx.days)}]);
+  const tiles=stiles([{k:'In CDs',v:fmtT(tot),s:L.length+' CD'+(L.length===1?'':'s'),c:'#0d9488'},{k:'Avg rate',v:(+avg.toFixed(2))+'%',s:'≈'+fmtT(yr)+'/yr',c:'#10b981'},{k:'Next up',v:left(nx),s:esc(nm(nx)),c:CDSC(nx.days)}]);
+  // same row look as the investment accounts: name + amount, a thin bar, rate · date and time left
   return wCard('CD maturities','',tiles+L.map(x=>{
-    const w=x.days<0?100:Math.max(5,x.days/mx*100);
-    return '<div class="cdx" style="--c:'+CDSC(x.days)+'"><div class="cdn"><b>'+esc(x.issuer)+'</b><span class="cdv">'+fmt0(x.value)+'</span></div><div class="cdm"><span><i class="cdrate">'+(+x.rate)+'%</i> '+nice(x.mat)+'</span><span class="cdw">'+(x.days<=30?'<i class="wi" aria-hidden="true"></i>':'')+left(x)+'</span></div><div class="cdbar" title="Time left"><i style="width:'+w.toFixed(1)+'%"></i></div></div>';}).join(''));
+    const w=x.days<0?100:Math.max(4,x.days/mx*100),soon=x.days<=30;
+    return '<div class="ivr"><div class="ivn"><b title="'+esc(x.issuer)+'">'+esc(nm(x))+'</b><span>'+fmt0(x.value)+'</span></div><div class="ivm"><span class="ivbar"><i style="width:'+w.toFixed(1)+'%"></i></span><em class="'+(soon?'warn':'')+'">'+left(x)+'</em></div><div class="cdm2">'+(+x.rate)+'% · matures '+nice(x.mat)+'</div></div>';}).join(''));
 }
 // ---- more widgets ----
 const niceDay=d=>{const y=new Date().getFullYear(),x=new Date(d+'T12:00:00');return isNaN(x)?d:x.toLocaleDateString('en-US',+d.slice(0,4)===y?{month:'short',day:'numeric'}:{month:'short',day:'numeric',year:'numeric'});};
@@ -4001,7 +4004,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<details class="itip"><summary><i>i</i><span>About</span></summary><p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p></details><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.76.5';
+const APP_VERSION='1.76.6';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
