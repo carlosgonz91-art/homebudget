@@ -1426,7 +1426,18 @@ function parseStatement(pages){
   return statementExtras(lines,r);
 }
 // rates printed on the statement (savings APY, card APR). A loan keeps the rate its own parser read.
+// CD purchase dates: a Fidelity statement lists "MM/DD  ISSUER CD  CUSIP  You Bought ..." under Securities Bought & Sold.
+// Kept per issuer so the CD widget can fill each bar from the day it was bought to the day it matures.
+const cdKey=x=>String(x||'').toUpperCase().replace(/\s+(CD|CERTIFICATE OF DEPOSIT)\b.*$/,'').replace(/[^A-Z0-9 ]/g,'').replace(/\s+/g,' ').trim();
+function cdBuysFrom(lines,end){
+  if(!end||typeof S==='undefined'||!S) return;let n=0;
+  for(const l of lines){const m=String(l).match(/^\s*(\d\d)\/(\d\d)\s+(.+?\s+CD)\s+\w{9}\s+You Bought\b/i);if(!m) continue;
+    let y=+end.slice(0,4);if(+m[1]>+end.slice(5,7)) y--;const d=y+'-'+m[1]+'-'+m[2];if(isNaN(dayNum(d))) continue;
+    const k=cdKey(m[3]);S.cdBuy=S.cdBuy||{};if(!S.cdBuy[k]||S.cdBuy[k]>d){S.cdBuy[k]=d;n++;}}
+  return n;
+}
 function statementExtras(lines,r){
+  try{if(r&&r.issuer==='Fidelity') cdBuysFrom(lines,r.end);}catch(e){}
   try{if(r&&r.type!=='loan'&&!r.apy&&r.apy!==0){const a=apyIn(lines);if(a!=null&&a<=25)r.apy=a;}
     if(r&&r.type==='credit'&&r.apr==null){const m=lines.map(l=>l.match(/^Purchases (\d+(?:\.\d+)?)%/)).find(Boolean);if(m&&+m[1]<=60)r.apr=+m[1];}}catch(e){}
   return r;
@@ -1624,9 +1635,9 @@ function sanitizeState(st){
   st.watch=(Array.isArray(st.watch)?st.watch:[]).filter(x=>typeof x==='string'&&/^[A-Z.\-]{1,8}$/.test(x)).slice(0,60);
   for(const k of ['rules','customCats','pendingTx','files']) if(!Array.isArray(st[k])) st[k]=[];
   st.rules=st.rules.filter(isO);st.customCats=st.customCats.filter(x=>typeof x==='string'&&x.trim());
-  for(const k of ['budgets','rollover','mappings','balSf','subs','catGroup','holdings','billAns']) if(!isO(st[k])) st[k]={};
+  for(const k of ['budgets','rollover','mappings','balSf','subs','catGroup','holdings','billAns','cdBuy']) if(!isO(st[k])) st[k]={};
   const BADK=k=>k==='__proto__'||k==='constructor'||k==='prototype';
-  for(const k of ['budgets','rollover','mappings','balSf','subs','catGroup','holdings','auditOk','billAns']) for(const kk of Object.keys(st[k])) if(BADK(kk)) delete st[k][kk];
+  for(const k of ['budgets','rollover','mappings','balSf','subs','catGroup','holdings','auditOk','billAns','cdBuy']) for(const kk of Object.keys(st[k])) if(BADK(kk)) delete st[k][kk];
   st.customCats=st.customCats.filter(x=>!BADK(x));
   st.txns.forEach(t=>{if(BADK(t.cat)) t.cat='Uncategorized';});
   const num=v=>v==null||v===''?null:(isFinite(+v)?+v:null);
@@ -3094,6 +3105,11 @@ function mktRateHTML(A){
 }
 function loansRefresh(){if(UI.tab==='invest'&&ivMode()==='loans'){render();return;}if(document.querySelector('[data-w="money"]')&&(UI.wt||{}).money==='loans'){render();return;}const old=document.querySelector('[data-w="loans"] .wbody > .card');if(!old) return;const t=document.createElement('div');t.innerHTML=loansHTML();if(t.firstElementChild) old.replaceWith(t.firstElementChild);}
 // ---- CD maturities ----
+function cdBuyDate(issuer,mat){
+  const k=cdKey(issuer);let d=(S.cdBuy||{})[k]||null;
+  for(const t of S.txns){if(!(t.amount<0)||!/^you bought/i.test(t.desc||'')) continue;const m=String(t.desc).match(/^YOU BOUGHT\s+(?:FACT SHEET TO FOLLOW\s+)?(.+?\s+CD)\s+[\d.]+%/i);if(m&&cdKey(m[1])===k&&(!d||t.date<d)) d=t.date;}
+  return d&&d<mat?d:null;
+}
 function cdList(){
   const H=S.holdings||{},m={};
   Object.keys(H).forEach(id=>(H[id]||[]).forEach(h=>{const f=fixedInc(h);if(!f||!(h.value>0)) return;const k=[f.issuer,f.mat,f.rate,f.kind].join('|');const e=m[k]||(m[k]={issuer:f.issuer,rate:f.rate,mat:f.mat,kind:f.kind,value:0});e.value+=h.value;}));
@@ -3111,9 +3127,10 @@ function cdWidgetHTML(){
   const nx=L[0];
   const tiles=stiles([{k:'In CDs',v:fmtT(tot),s:L.length+' CD'+(L.length===1?'':'s'),c:'#0d9488'},{k:'Avg rate',v:(+avg.toFixed(2))+'%',s:'≈'+fmtT(yr)+'/yr',c:'#10b981'},{k:'Next up',v:left(nx),s:esc(nm(nx)),c:CDSC(nx.days)}]);
   // same row look as the investment accounts: name + amount, a thin bar, rate · date and time left
-  return wCard('CD maturities','',tiles+L.map(x=>{
-    const w=x.days<0?100:Math.max(4,x.days/mx*100),soon=x.days<=30;
-    return '<div class="ivr"><div class="ivn"><b title="'+esc(x.issuer)+'">'+esc(nm(x))+'</b><span>'+fmt0(x.value)+'</span></div><div class="ivm"><span class="ivbar"><i style="width:'+w.toFixed(1)+'%"></i></span><em class="'+(soon?'warn':'')+'">'+left(x)+'</em></div><div class="cdm2">'+(+x.rate)+'% · matures '+nice(x.mat)+'</div></div>';}).join(''));
+  const noBuy=L.some(x=>!cdBuyDate(x.issuer,x.mat))&&S.files.length;
+  return wCard('CD maturities','',tiles+(noBuy?'<p class="sub" style="margin:0 0 8px">To fill the bars from purchase to maturity, run <b>Audit → Re-check originals</b> once.</p>':'')+L.map(x=>{
+    const b0=cdBuyDate(x.issuer,x.mat),tot0=b0?dayNum(x.mat)-dayNum(b0):0,w=x.days<0?100:b0?Math.max(3,Math.min(100,(tot0-x.days)/tot0*100)):0,soon=x.days<=30;
+    return '<div class="ivr"><div class="ivn"><b title="'+esc(x.issuer)+'">'+esc(nm(x))+'</b><span>'+fmt0(x.value)+'</span></div><div class="ivm"><span class="ivbar"'+(b0?' title="Bought '+nice(b0)+'"':'')+'><i style="width:'+w.toFixed(1)+'%"></i></span><em class="'+(soon?'warn':'')+'">'+left(x)+'</em></div><div class="cdm2">'+(+x.rate)+'% · '+(b0?nice(b0)+' → ':'matures ')+nice(x.mat)+'</div></div>';}).join(''));
 }
 // ---- more widgets ----
 const niceDay=d=>{const y=new Date().getFullYear(),x=new Date(d+'T12:00:00');return isNaN(x)?d:x.toLocaleDateString('en-US',+d.slice(0,4)===y?{month:'short',day:'numeric'}:{month:'short',day:'numeric',year:'numeric'});};
@@ -4004,7 +4021,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<details class="itip"><summary><i>i</i><span>About</span></summary><p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p></details><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.76.6';
+const APP_VERSION='1.77.0';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -4238,7 +4255,7 @@ async function recheckOriginals(){
   if(bad.length) R.findings.push({lvl:'bad',title:'Stored file changed',items:bad});
   if(drift.length) R.findings.push({lvl:'bad',title:'Ledger and original disagree',items:drift});
   if(okN) R.findings.push({lvl:'ok',title:okN+' of '+fl.length+' originals re-read and match your ledger',items:[]});
-  R.busy=false;R.at=Date.now();upd();
+  R.busy=false;R.at=Date.now();save();upd();
 }
 
 // ---------- import flow ----------
