@@ -3783,7 +3783,7 @@ function typicalHTML(){
   const tot=groups.reduce((a,g)=>a+g[1],0),inc=use.reduce((a,m)=>a+md(m).income,0)/use.length;
   const us=use,mon=new Date(ym+'-15T12:00:00').toLocaleDateString('en-US',{month:'long',year:'numeric'});
   const when=ym===todayISO().slice(0,7)?'So far this month':'';
-  return '<section class="card"><h2>Spending in '+esc(mon)+'</h2>'+(when?'<p class="sub" style="margin:-6px 0 10px">'+when+'</p>':'')+'
+  return '<section class="card"><h2>Spending in '+esc(mon)+'</h2>'+(when?'<p class="sub" style="margin:-6px 0 10px">'+when+'</p>':'')
    +'<div class="agtop"><div><div class="sub">Spending</div><div class="agbig">'+fmt0(tot)+'</div></div><div class="agnet"><span class="sub">Income</span><span class="agv">'+fmt0(inc)+'</span></div></div>'
    +groups.map(([g,v,l])=>'<details class="ag"><summary><i class="agd" style="background:'+catColor(l[0][0])+'"></i><span>'+esc(g)+'</span><span class="agsp"></span><span class="agv agsum">'+fmt0(v)+'</span></summary>'
      +l.map(([c,x])=>'<div class="agr go" role="button" tabindex="0" data-act="gocat" data-cat="'+esc(c)+'" data-m="'+esc(us.join(','))+'"><span>'+esc(c)+'</span><span class="agv">'+fmt0(x)+'<i class="chev">›</i></span></div>').join('')+'</details>').join('')
