@@ -825,6 +825,7 @@ html,body{touch-action:pan-x pan-y}
 .lnwr.go{cursor:pointer;border-radius:10px;margin-left:-6px;margin-right:-6px;padding:4px 6px}.lnwr.go:hover{background:var(--soft)}
 .cdm2{font-size:12px;color:var(--mute);margin-top:3px}.ivm em.warn{color:#f59e0b}
 .cdm2 b{color:var(--ink);font-weight:750}
+.bwt{display:flex;align-items:baseline;gap:8px;margin:2px 0 8px}.bwt b{font-size:24px;font-weight:800}.bwl{display:grid;gap:10px;margin-top:14px}.bwn{display:flex;justify-content:space-between;gap:8px;font-size:13.5px;margin-bottom:5px}.bwn span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.bwn b{white-space:nowrap}.bwn b small{color:var(--mute);font-weight:500}.bwn b.bad{color:var(--cout)}
 </style>
 <header><div class="bar"><span class="logo"><span class="mk mkc" aria-hidden="true"></span>HomeBudget <span class="ver" id="ver"></span></span>
 <nav>
@@ -2521,20 +2522,20 @@ function merchHTML(ym){
 // ---------- overview widgets ----------
 // Overview widgets. Related views share one card with tabs (e.g. Spending: by category / where it went / vs usual / top spending).
 const WID=[
-  {id:'accts',t:'Accounts',w:'full'},{id:'spend',t:'Spending',w:'full'},{id:'bills',t:'Bills & subscriptions',w:'half'},{id:'trends',t:'Trends',w:'half'},
+  {id:'accts',t:'Accounts',w:'full'},{id:'spend',t:'Spending',w:'full'},{id:'budget',t:'Budgets',w:'half'},{id:'bills',t:'Bills & subscriptions',w:'half'},{id:'trends',t:'Trends',w:'half'},
   {id:'money',t:'Investments & loans',w:'full'},{id:'markets',t:'Markets',w:'full'}
 ];
 // old widget ids → the card they now live in
 const WMERGE={cat:'spend',flow:'spend',usual:'spend',merch:'spend',big:'spend',trend:'trends',cal:'trends',inv:'money',mix:'money',loans:'money',cds:'money',nw:'accts',tick:'markets',bubble:'markets',recur:'bills',bank:null,pace:null};
 // default Overview: every widget, big picture first (money overall, this month, where it went, regular costs),
 // then investments and loans, and the market tools (stock lookup, AI crash alarm) at the bottom. Half-width cards sit in pairs.
-const WDEF=['accts','spend','bills','trends','money','markets'];
+const WDEF=['accts','budget','spend','bills','trends','money','markets'];
 function wState(){
   const all=WID.map(x=>x.id),W=S.widgets;
   if(!W||!Array.isArray(W.order)) return {order:WDEF.filter(i=>all.includes(i)),hidden:[]};
   const mg=WMERGE;W.order=W.order.map(i=>i in mg?mg[i]:i).filter((i,k,a)=>i&&a.indexOf(i)===k);W.hidden=(W.hidden||[]).filter(i=>!(i in mg));
   const order=W.order.filter(i=>all.includes(i)),hidden=(W.hidden||[]).filter(i=>all.includes(i)&&!order.includes(i));
-  all.forEach(i=>{if(!order.includes(i)&&!hidden.includes(i)){if(i==='bills') order.splice(Math.min(2,order.length),0,i);else if(i==='cds'||i==='loans') order.push(i);else hidden.push(i);}});
+  all.forEach(i=>{if(!order.includes(i)&&!hidden.includes(i)){if(i==='bills') order.splice(Math.min(2,order.length),0,i);else if(i==='budget') order.splice(Math.min(1,order.length),0,i);else if(i==='cds'||i==='loans') order.push(i);else hidden.push(i);}});
   return {order,hidden};
 }
 // one-time: put the CD widget on pages that already have a saved layout (it stays hidden when there are no CDs)
@@ -3580,8 +3581,9 @@ function viewDash(){
     flow:()=>d.spend>0?'<section class="card"><h2>Where the money went</h2><div class="flowbar"><span class="sub">'+fmt0(d.spend)+' spent'+(d.income>0?' of '+fmt0(d.income)+' earned':'')+'</span><span class="spacer"></span><button type="button" class="btn ghost small" data-act="flowsave" data-ym="'+UI.month+'" title="Save the chart as a picture">Save picture</button>'+(navigator.share?'<button type="button" class="btn ghost small" data-act="flowshare" data-ym="'+UI.month+'">Share</button>':'')+'</div>'+flowHTML(UI.month)+'</section>':'',
     cal:()=>'<section class="card"><h2>Day by day</h2>'+calHTML(UI.month)+'</section>',
     merch:()=>topSpendHTML(UI.month),
-    accts:()=>accountsHTML(UI.month),inv:()=>invAllHTML(UI.month),usual:()=>usualHTML(UI.month),recur:()=>recurHTML(UI.month),bills:()=>billsHTML(UI.month),bank:bankConnHTML,mix:()=>nowOnly(invMixHTML(),UI.month),cds:()=>nowOnly(cdWidgetHTML(),UI.month),loans:()=>loansWithChart(UI.month),tick:tickHTML,bubble:bubbleHTML};
-  const HW={accts:H0.accts,bills:H0.bills,
+    accts:()=>accountsHTML(UI.month),inv:()=>invAllHTML(UI.month),usual:()=>usualHTML(UI.month),recur:()=>recurHTML(UI.month),bills:()=>billsHTML(UI.month),
+    budget:()=>budgetWidgetHTML(UI.month),bank:bankConnHTML,mix:()=>nowOnly(invMixHTML(),UI.month),cds:()=>nowOnly(cdWidgetHTML(),UI.month),loans:()=>loansWithChart(UI.month),tick:tickHTML,bubble:bubbleHTML};
+  const HW={accts:H0.accts,budget:H0.budget,bills:H0.bills,
     spend:()=>tabbedCard('spend','Spending',[['cat','By category'],['flow','Where it went'],['merch','Top spending']],H0),
     trends:()=>tabbedCard('trends','Trends',[['trend','Months'],['cal','Day by day']],H0),
     money:()=>tabbedCard('money','Investments & loans',[['inv','Investments'],['loans','Loans'],['cds','CDs']],H0),
@@ -3866,6 +3868,18 @@ const expenseCats=()=>allCats().filter(c=>!['Income','Interest'].concat(EXCLUDED
 function budgetedSpend(ym,d){d=d||md(ym);return expenseCats().reduce((a,c)=>a+(budgetOf(c,ym)>0?(d.byCat[c]||0):0),0);}
 function plannedExpenses(ym){return expenseCats().reduce((a,c)=>a+budgetOf(c,ym),0);}
 function barHTML(spent,avail,col){const max=Math.max(avail,spent,1);return '<div class="track"><div class="fill '+(avail&&spent>avail?'over':'')+(avail?'':' nob')+'" style="width:'+Math.max(0,spent)/max*100+'%'+(col&&!(avail&&spent>avail)?';background:'+col:'')+'"></div>'+(avail?'<i class="mark" style="left:'+avail/max*100+'%"></i>':'')+'</div>';}
+// Overview card: the month's budget at a glance (total, then the categories closest to their limit); tapping goes to Budgets
+function budgetWidgetHTML(ym){
+  const d=md(ym),C=expenseCats().filter(c=>budgetOf(c,ym)>0);
+  if(!C.length) return '<section class="card go" role="button" tabindex="0" data-act="tab" data-tab="budgets"><h2>Budgets</h2>'+wEmpty('No budgets yet. Tap to set one up.')+'</section>';
+  const rows=C.map(c=>{const b=budgetOf(c,ym)+(S.rollover[c]?rolloverIn(c,ym):0),sp=d.byCat[c]||0;return {c,b,sp,r:b>0?sp/b:0};}).sort((x,y)=>y.r-x.r);
+  const tb=rows.reduce((t,x)=>t+x.b,0),ts=rows.reduce((t,x)=>t+x.sp,0),left=tb-ts,over=rows.filter(x=>x.sp>x.b+0.5).length;
+  const bar=(sp,b,col)=>'<div class="track"><div class="fill'+(sp>b?' over':'')+'" style="width:'+Math.min(100,b>0?sp/b*100:0).toFixed(1)+'%'+(col&&sp<=b?';background:'+col:'')+'"></div></div>';
+  const top=rows.slice(0,5).map(x=>'<div class="bwr"><div class="bwn"><span>'+esc(x.c)+'</span><b class="'+(x.sp>x.b?'bad':'')+'">'+fmt0(x.sp)+' <small>/ '+fmt0(x.b)+'</small></b></div>'+bar(x.sp,x.b,CATCOL[x.c]||catColor(x.c))+'</div>').join('');
+  return '<section class="card go" role="button" tabindex="0" data-act="tab" data-tab="budgets" aria-label="Open Budgets"><div class="wth"><h2>Budgets</h2><span class="spacer"></span><span class="sub">'+(over?over+' over':'On track')+' ›</span></div>'
+    +'<div class="bwt"><b>'+fmt0(Math.abs(left))+'</b><span class="sub">'+(left<0?'over':'left')+' of '+fmt0(tb)+'</span></div>'+bar(ts,tb)
+    +'<div class="bwl">'+top+'</div>'+(rows.length>5?'<p class="sub" style="margin:8px 0 0">+'+(rows.length-5)+' more categories</p>':'')+'</section>';
+}
 function catRowHTML(c,ym){
   const d=md(ym),b=budgetOf(c,ym),carry=rolloverIn(c,ym),spent=d.byCat[c]||0,avail=b+carry,left=avail-spent,has=b||carry;
   return '<div class="bwrap"><button class="brow" data-act="budgo" data-cat="'+esc(c)+'" aria-label="See '+esc(c)+' transactions"><div class="b1"><span style="display:flex;align-items:center;gap:8px"><i class="cdot" style="background:'+catColor(c)+'"></i>'+esc(c)+(S.rollover[c]?' ↻':'')+'</span><span class="bl '+(has?(left<0?'neg':'pos'):'mute')+'">'+(has?(left<0?fmt0(-left)+' over':fmt0(left)+' left'):'')+'</span></div>'+barHTML(spent,avail,catColor(c))+'<div class="b2 sub"><span>'+fmt0(spent)+' spent</span><span>'+(has?'of '+fmt0(avail)+(carry?' (incl. '+fmt0(carry)+' rolled over)':''):'No budget')+'</span></div></button><button class="btn ghost small bed" data-act="budedit" data-cat="'+esc(c)+'" aria-label="Edit '+esc(c)+' budget">Edit budget</button></div>';
@@ -4061,7 +4075,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<details class="itip"><summary><i>i</i><span>About</span></summary><p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p></details><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.78.0';
+const APP_VERSION='1.79.0';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
