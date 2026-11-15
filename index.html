@@ -2391,8 +2391,8 @@ function calHTML(ym){
     cells+='<button type="button" class="cc'+(dt===today?' today':'')+(dt>today?' fut':'')+(UI.calDay===dt?' sel':'')+'" data-act="calday" data-d="'+dt+'" aria-pressed="'+(UI.calDay===dt)+'" data-info="'+esc(wd+' · '+(x.v>0.005?fmt0(x.v)+' across '+x.n+' purchase'+(x.n>1?'s':''):x.v<-0.005?fmt0(-x.v)+' back (refund)':'nothing spent'))+'" style="'+(a>0?'background:var(--h'+a+');color:var(--hf'+a+')':'')+';animation-delay:'+(i*14)+'ms">'+(i+1)+'</button>';});
   const mxI=days.reduce((b,x,i)=>x.v>days[b].v?i:b,0),tot=days.reduce((a,x)=>a+x.v,0),act=days.filter(x=>x.v>0.005).length;
   const md2=i=>new Date(ym+'-'+String(i+1).padStart(2,'0')+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}),bzI=days.reduce((b,x,i)=>(x.n||0)>(days[b].n||0)?i:b,0);
-  // biggest = most money spent; busiest = most purchases
-  const dflt=tot>0?'Biggest day: '+md2(mxI)+' · '+fmt0(days[mxI].v)+((days[bzI].n||0)>1&&bzI!==mxI?' · Busiest: '+md2(bzI)+' · '+days[bzI].n+' purchases':'')+' · spent on '+act+' of '+n+' days':'No spending this month';
+  // busiest = most transactions that day (its total alongside)
+  const dflt=tot>0?'Busiest day: '+md2(bzI)+' · '+(days[bzI].n||0)+' transaction'+((days[bzI].n||0)===1?'':'s')+' · '+fmt0(days[bzI].v):'No spending this month';
   return '<div class="cal"><div class="cw">'+['S','M','T','W','T','F','S'].map(x=>'<span>'+x+'</span>').join('')+'</div><div class="cg">'+cells+'</div>'+heatLeg()+'<div class="cinfo" data-d="'+esc(dflt)+'">'+esc(dflt)+'</div>'+(UI.calDay&&UI.calDay.slice(0,7)===ym?dayTxHTML(UI.calDay):'')+'</div>';
 }
 // the transactions behind one day of the calendar (same rules as the day totals: no transfers, investing or income)
@@ -3995,7 +3995,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<details class="itip"><summary><i>i</i><span>About</span></summary><p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p></details><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.74.10';
+const APP_VERSION='1.74.11';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
