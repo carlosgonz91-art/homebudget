@@ -822,6 +822,7 @@ html,body{touch-action:pan-x pan-y}
 .legend,.hcleg{font-size:12px!important;font-weight:600!important;color:var(--mute)!important;gap:8px 14px!important;flex-wrap:wrap}
 .legend i.dot{width:14px!important;height:3px!important;border-radius:2px!important}
 .tip .pos,.tip em.pos{color:var(--cin)!important}.tip .neg,.tip em.neg{color:var(--cout)!important}
+.lnwr.go{cursor:pointer;border-radius:10px;margin-left:-6px;margin-right:-6px;padding:4px 6px}.lnwr.go:hover{background:var(--soft)}.lnwr.go .lnwn span{text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--mute) 50%,transparent);text-underline-offset:3px}
 </style>
 <header><div class="bar"><span class="logo"><span class="mk mkc" aria-hidden="true"></span>HomeBudget <span class="ver" id="ver"></span></span>
 <nav>
@@ -2043,7 +2044,7 @@ function histChart(P0,o){
     return '<p class="hcc '+(gr>=0?'pos':'neg')+'">'+sg(gr)+(r!=null?' ('+pf(r)+')':'')+' growth since '+niceDay(P[0][0])+'</p><p class="sub hccs">'+sg(ch)+' total change · '+sg(net)+' '+(net>=0?'you added':'you took out')+'</p>';
   };
   const span=x1-x0,isoOf=n=>{const d=new Date(Date.UTC(1970,0,1)+n*864e5);return d.toISOString().slice(0,10);},dn0=dayNum('1970-01-01'),TK=(span<=5?Array.from({length:span+1},(_,i)=>x0+i):[0,1,2,3].map(i=>Math.round(x0+span*i/3))).map(n=>({x:pd+(n-x0)/Math.max(1,span)*(W-2*pd),d:isoOf(n-dn0)}));
-  const hp=JSON.stringify({x0,x1,lo,sp,pd,W,H:Hh,p:P.map(q=>ex?[dayNum(q[0])-x0,Math.round(q[1]*100)/100,Math.round(q[2]),Math.round(q[3])]:[dayNum(q[0])-x0,Math.round(q[1]*100)/100]),c:col});
+  const hp=JSON.stringify({x0,x1,lo,sp,pd,W,H:Hh,inv:!!o.inv,p:P.map(q=>ex?[dayNum(q[0])-x0,Math.round(q[1]*100)/100,Math.round(q[2]),Math.round(q[3])]:[dayNum(q[0])-x0,Math.round(q[1]*100)/100]),c:col});
   const exL=ex?[[2,'var(--asset,#38bdf8)'],[3,'var(--cout)']].map(([k,c])=>'<polyline points="'+P.map(p=>X(p[0]).toFixed(1)+','+Y(p[k]).toFixed(1)).join(' ')+'" fill="none" stroke="'+c+'" stroke-width="1.6" stroke-dasharray="5 3" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>').join(''):'';
   return '<div class="hc">'+seg+'<div class="hcw" data-hp="'+esc(hp)+'" tabindex="0" aria-label="'+esc((o.label||'Value')+' chart. Hover, touch or use arrow keys to see values.')+'"><svg viewBox="0 0 '+W+' '+Hh+'" preserveAspectRatio="none" role="img" aria-label="'+esc((o.label||'Value')+' from '+niceDay(P[0][0])+' to '+niceDay(P[P.length-1][0])+': '+fmt0(d0)+' to '+fmt0(d1))+'"><defs><linearGradient id="'+id+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+col+'" stop-opacity=".28"/><stop offset="1" stop-color="'+col+'" stop-opacity="0"/></linearGradient></defs>'
    +G.map(v=>'<line x1="0" x2="'+W+'" y1="'+Y(v).toFixed(1)+'" y2="'+Y(v).toFixed(1)+'" stroke="var(--mute)" stroke-opacity=".38" stroke-width="1" stroke-dasharray="4 4" vector-effect="non-scaling-stroke"/>').join('')
@@ -2060,7 +2061,7 @@ function hcShow(w,frac){
   const x=w.querySelector('.hcx'),p=w.querySelector('.hcp'),t=w.querySelector('.hct'),dot=w.querySelector('.hcdot');
   const L='calc((100% - 50px)*'+xf.toFixed(4)+')';x.style.left=L;p.style.left=L;p.style.top=(yf*100).toFixed(1)+'%';
   const d=new Date((D.x0+q[0]+dayNum('1970-01-01'))*864e5).toISOString().slice(0,10),ch=q[1]-D.p[0][1];
-  t.innerHTML='<b>'+fmt0(q[1])+'</b><span>'+niceDay(d)+'</span>'+(q.length>3?'<span class="hctx"><i style="background:var(--asset,#38bdf8)"></i>Assets '+fmt0(q[2])+'</span><span class="hctx"><i style="background:var(--cout)"></i>Owed '+fmt0(q[3])+'</span>':'')+(k?'<em class="'+(ch<0?'neg':'pos')+'">'+(ch<0?'-':'+')+fmt0(Math.abs(ch)).replace('-','')+' since start</em>':'');
+  t.innerHTML='<b>'+fmt0(q[1])+'</b><span>'+niceDay(d)+'</span>'+(q.length>3?'<span class="hctx"><i style="background:var(--asset,#38bdf8)"></i>Assets '+fmt0(q[2])+'</span><span class="hctx"><i style="background:var(--cout)"></i>Owed '+fmt0(q[3])+'</span>':'')+(k?'<em class="'+((D.inv?ch>0:ch<0)?'neg':'pos')+'">'+(ch<0?'-':'+')+fmt0(Math.abs(ch)).replace('-','')+' since start</em>':'');
   t.style.left='calc((100% - 50px)*'+xf.toFixed(4)+')';t.classList.toggle('r',xf>=.5);t.classList.toggle('l',xf<.5);
   x.hidden=p.hidden=t.hidden=false;if(dot) dot.style.opacity='.25';
 }
@@ -3074,7 +3075,7 @@ function loansHTML(ym){
   const owed=A.reduce((t,x)=>t+x.L.owed,0);
   return '<div class="card lnw go" role="button" tabindex="0" data-act="goloans"><div class="row" style="align-items:baseline;margin-bottom:8px"><h2 style="margin:0">Loans</h2><span class="spacer"></span><b class="lnwt">'+fmt0(owed)+'</b><i class="bkgo" aria-hidden="true">›</i></div>'
    +A.map(({a,L})=>{const pct=L.orig?Math.max(0,Math.min(100,(L.orig-L.owed)/L.orig*100)):null;
-    return '<div class="lnwr"><div class="lnwn"><span>'+esc(loanName(a))+'</span><em'+(!L.past&&L.months==null&&!(L.owed<0.5)&&L.hr&&L.pay?' class="bad"':'')+'>'+(L.past?'End of '+ymShort(ym):L.months!=null?inMonths(L.months):L.owed<0.5?'Paid off':L.hr&&L.pay?'Not at this payment':(pct!=null?'':'add rate'))+'</em></div>'+(pct!=null?'<div class="track"><div class="fill" style="width:'+pct.toFixed(1)+'%;background:var(--cin)"></div></div><div class="lnwp">'+Math.round(pct)+'% paid · '+fmt0(L.owed)+' left</div>':'<div class="lnwp">'+fmt0(L.owed)+' left · <u>set the original amount</u> to see progress</div>')+'</div>';}).join('')+'</div>';
+    return '<div class="lnwr go" role="button" tabindex="0" data-act="goloans" aria-label="Open '+esc(loanName(a))+'"><div class="lnwn"><span>'+esc(loanName(a))+'</span><em'+(!L.past&&L.months==null&&!(L.owed<0.5)&&L.hr&&L.pay?' class="bad"':'')+'>'+(L.past?'End of '+ymShort(ym):L.months!=null?inMonths(L.months):L.owed<0.5?'Paid off':L.hr&&L.pay?'Not at this payment':(pct!=null?'':'add rate'))+'</em></div>'+(pct!=null?'<div class="track"><div class="fill" style="width:'+pct.toFixed(1)+'%;background:var(--cin)"></div></div><div class="lnwp">'+Math.round(pct)+'% paid · '+fmt0(L.owed)+' left</div>':'<div class="lnwp">'+fmt0(L.owed)+' left · <u>set the original amount</u> to see progress</div>')+'</div>';}).join('')+'</div>';
 }
 // interest paid so far this year: each month's payment carries about one month of interest on the balance owed before it
 function ytdInt(L){if(!L||!(L.rate>0)) return null;const H=(L.hist||[]).slice().sort((x,y)=>x[0]<y[0]?-1:1);if(!H.length) return null;
@@ -4024,7 +4025,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<details class="itip"><summary><i>i</i><span>About</span></summary><p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p></details><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.76.0';
+const APP_VERSION='1.76.1';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
