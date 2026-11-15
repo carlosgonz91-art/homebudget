@@ -2524,7 +2524,7 @@ function invWidgetHTML(ym){
   mv.sort((a,b)=>b.p-a.p);const best=mv[0],worst=mv.length>1?mv[mv.length-1]:null;
   const chip=(l,x,c)=>'<span class="ivc" style="--c:'+c+'"><small>'+l+'</small><b>'+esc(x.k)+'</b><em>'+pf(x.p)+'</em></span>';
   const at=Math.max(0,...R.map(r=>+r.at||0)),ago=ms=>{const m=Math.round((Date.now()-ms)/6e4);return m<2?'just now':m<60?m+' min ago':m<1440?Math.round(m/60)+' h ago':agoTxt(ms);};
-  const foot='<div class="ivf">'+(at?'<span class="sub">Updated '+ago(at)+'</span>':'')+'<span class="spacer"></span><button class="btn ghost small" data-act="invgo">All positions</button></div>';
+  const foot=at?'<div class="ivf"><span class="sub">Updated '+ago(at)+'</span></div>':'';
   return '<section class="card"><h2>Investments</h2>'+tiles+rows+foot+'</section>';
 }
 // Investments as they stood at the end of a past month: account values from statements and bank history
@@ -3977,7 +3977,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.73.2';
+const APP_VERSION='1.73.3';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
