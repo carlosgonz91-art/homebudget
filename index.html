@@ -792,7 +792,7 @@ html,body{touch-action:pan-x pan-y}
 .dvup{background:var(--soft);border-radius:14px;padding:10px 12px;margin:10px 0}.dvr{display:flex;align-items:baseline;gap:8px;padding:3px 0}.dvr .sub{flex:1;min-width:0}.dva{color:var(--cin)}
 .hxt>span{white-space:nowrap}
 .itip{margin:2px 0 8px}.itip>summary{list-style:none;cursor:pointer;display:inline-flex;align-items:center;gap:5px;width:fit-content;font-size:12px;color:var(--mute);padding:2px 0}.itip>summary span{font-weight:600}.itip[open]>summary{color:var(--brand)}.itip>p,.itip>div{margin-top:4px!important}.itip>summary::-webkit-details-marker{display:none}.itip>summary i{display:inline-grid;place-items:center;width:15px;height:15px;font-size:10px!important;border-radius:50%;border:1.5px solid var(--mute);color:var(--mute);font:italic 700 11px/1 Georgia,serif}.itip[open]>summary i{border-color:var(--brand);color:var(--brand)}.itip>p{margin:6px 0 0;font-size:12.5px}
-.bcal{margin:0 auto}.bcal .cc{position:relative}.bcal .bdots{position:absolute;left:0;right:0;bottom:4px;display:flex;justify-content:center;gap:2px;height:5px}.bcal .bdots b{width:5px;height:5px;border-radius:50%}.bcal .bdots .bpd{box-shadow:0 0 0 1.5px #0a9c6c}.bcal .bdots .bsn{box-shadow:0 0 0 1.5px #d5790a}.bcal .bdots .bdu{box-shadow:0 0 0 1.5px #4c5870}.bcal .bdots .bpd{background:var(--cin)}.bcal .bdots .bsn{background:#f59e0b}.bcal .bdots .bdu{background:#64748b}
+.bcal{margin:0 auto}.bcal .cc{position:relative}.bcal .bdots{position:absolute;top:5px;right:5px;display:flex;justify-content:flex-end;gap:2px;height:5px}.bcal .bdots b{width:5px;height:5px;border-radius:50%}.bcal .bdots .bpd{box-shadow:0 0 0 1.5px #0a9c6c}.bcal .bdots .bsn{box-shadow:0 0 0 1.5px #d5790a}.bcal .bdots .bdu{box-shadow:0 0 0 1.5px #4c5870}.bcal .bdots .bpd{background:var(--cin)}.bcal .bdots .bsn{background:#f59e0b}.bcal .bdots .bdu{background:#64748b}
 /* horizontal pill rows only scroll sideways (no small vertical wiggle) */
 .snav,.wts,.hcr,.secch{overflow-y:hidden}
 
@@ -4025,7 +4025,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<details class="itip"><summary><i>i</i><span>About</span></summary><p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p></details><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.76.4';
+const APP_VERSION='1.76.5';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
