@@ -806,6 +806,21 @@ html,body{touch-action:pan-x pan-y}
 .fill{background:var(--fill,var(--brand))}
 .fill.over{background:var(--cout)!important}
 .insbar,.mixbar,.lnbar,.agbar{height:8px!important;border-radius:99px!important;gap:2px!important}
+
+/* ---- one look for every chart: dotted horizontal grid only, value labels on the right, 2.6px rounded lines,
+   the same tooltip card and the same legend swatches (short line; dashed = comparison / plan) ---- */
+.hcw svg line[stroke-dasharray="2 4"]{display:none}
+.hcw svg line[stroke-dasharray="4 4"]{stroke:var(--line);stroke-opacity:1;stroke-dasharray:2 4}
+.hcw svg polyline:not([stroke-dasharray]){stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.hxcw svg line[stroke-opacity=".12"]{stroke-dasharray:2 4;stroke-opacity:.22}
+.hxcw svg path[stroke-width="3"]{stroke-width:2.6}
+.hxy span{left:auto;right:0}
+.hct,.tip,.hxtt{background:var(--card)!important;color:var(--ink)!important;border:1px solid var(--line)!important;border-radius:12px!important;padding:8px 11px!important;font-size:12.5px!important;line-height:1.4!important;box-shadow:0 10px 24px rgba(0,0,0,.22)!important}
+.hct b,.tip b,.hxtt b{font-size:14px}
+.hct span,.tip span,.hxtt span{color:var(--mute)}
+.legend,.hcleg{font-size:12px!important;font-weight:600!important;color:var(--mute)!important;gap:8px 14px!important;flex-wrap:wrap}
+.legend i.dot{width:14px!important;height:3px!important;border-radius:2px!important}
+.tip .pos,.tip em.pos{color:var(--cin)!important}.tip .neg,.tip em.neg{color:var(--cout)!important}
 </style>
 <header><div class="bar"><span class="logo"><span class="mk mkc" aria-hidden="true"></span>HomeBudget <span class="ver" id="ver"></span></span>
 <nav>
@@ -2225,12 +2240,12 @@ function trendTitle(tm){
   const n=UI.trN||6;return n==='all'?'All time':'Last '+n+' months';
 }
 function trendHTML(td,cur){
-  const W=320,H=190,L=34,Rr=10,T=14,B=26,pw=W-L-Rr,ph=H-T-B,n=td.length;
+  const W=320,H=190,L=6,Rr=40,T=14,B=26,pw=W-L-Rr,ph=H-T-B,n=td.length;
   const top=Math.max(1,...td.map(([,x])=>Math.max(x.income,x.spend))),step=(()=>{const raw=top/3,p=Math.pow(10,Math.floor(Math.log10(raw))),m=raw/p;return (m<=1?1:m<=2?2:m<=5?5:10)*p;})(),mx=step*3;
   const X=i=>L+(n>1?i/(n-1):.5)*pw,Y=v=>T+ph-(Math.max(0,v)/mx)*ph,k=v=>v>=1000?'$'+(v/1000).toFixed(v%1000?1:0).replace(/\.0$/,'')+'k':'$'+v;
   const pi=td.map(([,x],i)=>[X(i),Y(x.income)]),ps=td.map(([,x],i)=>[X(i),Y(x.spend)]);
   const li=smoothPath(pi),ls=smoothPath(ps),base=T+ph;
-  let g='';for(let i=0;i<=3;i++){const y=Y(step*i);g+='<line x1="'+L+'" x2="'+(W-Rr)+'" y1="'+y+'" y2="'+y+'" stroke="var(--line)" stroke-dasharray="'+(i?'2 4':'0')+'"/><text x="'+(L-6)+'" y="'+(y+3.5)+'" text-anchor="end" font-size="9.5" style="fill:var(--mute)">'+k(step*i)+'</text>';}
+  let g='';for(let i=0;i<=3;i++){const y=Y(step*i);g+='<line x1="'+L+'" x2="'+(W-Rr)+'" y1="'+y+'" y2="'+y+'" stroke="var(--line)" stroke-dasharray="'+(i?'2 4':'0')+'"/><text x="'+(W-Rr+6)+'" y="'+(y+3.5)+'" text-anchor="start" font-size="9.5" font-weight="600" style="fill:var(--mute)">'+k(step*i)+'</text>';}
   const ci=td.findIndex(([m])=>m===cur),lstep=n>24?4:n>14?3:n>8?2:1;
   const cols=td.map(([m,x],i)=>{const w=pw/(n-1||1);return '<rect class="hit" data-ti="'+i+'" x="'+(X(i)-w/2)+'" y="'+T+'" width="'+w+'" height="'+ph+'" fill="transparent"/>';}).join('');
   const lab=td.map(([m],i)=>(n-1-i)%lstep?'':'<text x="'+X(i)+'" y="'+(H-8)+'" text-anchor="middle" font-size="10" font-weight="'+(i===ci?800:500)+'" style="fill:'+(i===ci?'var(--ink)':'var(--mute)')+'">'+shortMonth(m)+'</text>').join('');
@@ -3985,7 +4000,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<details class="itip"><summary><i>i</i><span>About</span></summary><p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p></details><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.75.0';
+const APP_VERSION='1.76.0';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
