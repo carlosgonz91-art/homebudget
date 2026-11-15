@@ -2527,6 +2527,13 @@ function invWidgetHTML(ym){
   const foot=at?'<div class="ivf"><span class="sub">Updated '+ago(at)+'</span></div>':'';
   return '<section class="card"><h2>Investments</h2>'+tiles+rows+foot+'</section>';
 }
+// Investments tab = accounts (total, return, cash, each account) + the mix (donut, types, positions); the mix's gain line is the Return tile already
+function invAllHTML(ym){
+  const a=invWidgetHTML(ym);if(pastYM(ym)||!hasInv()) return a;
+  const m=invMixHTML();if(!m) return a;
+  const body=m.replace(/^\s*<section class="card">/,'').replace(/<\/section>\s*$/,'').replace(/<h2>Investment mix<\/h2>/,'<h3 class="blh" style="margin:16px 0 8px">Mix</h3>').replace(/<div class="mxgain">[\s\S]*?<\/div>/,'');
+  return a.replace(/<\/section>\s*$/,body+'</section>');
+}
 // Investments as they stood at the end of a past month: account values from statements and bank history
 function invPastHTML(ym,cur){
   const end=cur?todayISO():ymEnd(ym),wh=cur?'latest statements':'end of '+ymShort(ym),prev=ymEnd(addMonths(ym,-1));
@@ -3496,11 +3503,11 @@ function viewDash(){
     flow:()=>d.spend>0?'<section class="card"><h2>Where the money went</h2><div class="flowbar"><span class="sub">'+fmt0(d.spend)+' spent'+(d.income>0?' of '+fmt0(d.income)+' earned':'')+'</span><span class="spacer"></span><button type="button" class="btn ghost small" data-act="flowsave" data-ym="'+UI.month+'" title="Save the chart as a picture">Save picture</button>'+(navigator.share?'<button type="button" class="btn ghost small" data-act="flowshare" data-ym="'+UI.month+'">Share</button>':'')+'</div>'+flowHTML(UI.month)+'</section>':'',
     cal:()=>'<section class="card"><h2>Day by day</h2>'+calHTML(UI.month)+'</section>',
     merch:()=>topSpendHTML(UI.month),
-    accts:()=>accountsHTML(UI.month),inv:()=>invWidgetHTML(UI.month),usual:()=>usualHTML(UI.month),recur:()=>recurHTML(UI.month),bills:()=>billsHTML(UI.month),bank:bankConnHTML,mix:()=>nowOnly(invMixHTML(),UI.month),cds:()=>nowOnly(cdWidgetHTML(),UI.month),loans:()=>loansHTML(UI.month),tick:tickHTML,bubble:bubbleHTML};
+    accts:()=>accountsHTML(UI.month),inv:()=>invAllHTML(UI.month),usual:()=>usualHTML(UI.month),recur:()=>recurHTML(UI.month),bills:()=>billsHTML(UI.month),bank:bankConnHTML,mix:()=>nowOnly(invMixHTML(),UI.month),cds:()=>nowOnly(cdWidgetHTML(),UI.month),loans:()=>loansHTML(UI.month),tick:tickHTML,bubble:bubbleHTML};
   const HW={accts:H0.accts,bills:H0.bills,
     spend:()=>tabbedCard('spend','Spending',[['cat','By category'],['flow','Where it went'],['merch','Top spending']],H0),
     trends:()=>tabbedCard('trends','Trends',[['trend','Months'],['cal','Day by day']],H0),
-    money:()=>tabbedCard('money','Investments & loans',[['inv','Investments'],['mix','Mix'],['loans','Loans'],['cds','CDs']],H0),
+    money:()=>tabbedCard('money','Investments & loans',[['inv','Investments'],['loans','Loans'],['cds','CDs']],H0),
     markets:()=>tabbedCard('markets','Markets',[['tick','Stock lookup'],['bubble','AI crash alarm']],H0)};
   h+=widgetsHTML(HW,anim);
   return h;
@@ -3977,7 +3984,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.73.3';
+const APP_VERSION='1.74.0';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
