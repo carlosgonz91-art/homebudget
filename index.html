@@ -2215,7 +2215,7 @@ function hxShow(w,frac){
   if(D.P[i]!=null){q2.style.left=(xf*100)+'%';q2.style.top=(yf(D.P[i])*100)+'%';q2.hidden=false;}else q2.hidden=true;
   const day=D.ym+'-'+String(i+1).padStart(2,'0'),dd=has?D.C[i]-(D.P[i]||0):null;
   t.innerHTML='<span>'+niceDay(day)+'</span>'+(has?'<b>'+fmt0(D.C[i])+' spent so far</b>'+(D.dv[i]>0?'<em>'+fmt0(D.dv[i])+' that day</em>':'<em>Nothing spent that day</em>'):(D.pace?'<b>Pace: about '+fmt0(Math.round(D.pace*(i+1)/D.n))+'</b>':'<b>Not here yet</b>'))
-    +(D.P[i]!=null?'<em>Last month by now: '+fmt0(D.P[i])+(dd!=null?' <i class="'+(dd>0?'bad':'ok')+'">'+(dd>0?'+':'−')+fmt0(Math.abs(dd)).replace('-','')+'</i>':'')+'</em>':'');
+    +(D.P[i]!=null?'<em>Last month by now: '+fmt0(D.P[i])+'</em>':'');
   t.hidden=false;t.classList.remove('r');{const cw=w.querySelector('.hxcw').clientWidth,tw=t.offsetWidth,x=xf*cw;let L=x+10;if(L+tw>cw) L=x-10-tw;if(L<0) L=Math.max(0,Math.min(cw-tw,x-tw/2));t.style.left=L+'px';}
   const d0=w.querySelector('.hxd');if(d0) d0.style.opacity='.3';
 }
@@ -4025,7 +4025,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<details class="itip"><summary><i>i</i><span>About</span></summary><p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p></details><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.76.2';
+const APP_VERSION='1.76.3';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
