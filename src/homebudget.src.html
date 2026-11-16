@@ -2042,11 +2042,11 @@ function histChart(P0,o){
   };
   const span=x1-x0,isoOf=n=>{const d=new Date(Date.UTC(1970,0,1)+n*864e5);return d.toISOString().slice(0,10);},dn0=dayNum('1970-01-01'),TK=(span<=5?Array.from({length:span+1},(_,i)=>x0+i):[0,1,2,3].map(i=>Math.round(x0+span*i/3))).map(n=>({x:pd+(n-x0)/Math.max(1,span)*(W-2*pd),d:isoOf(n-dn0)}));
   const hp=JSON.stringify({x0,x1,lo,sp,pd,W,H:Hh,inv:!!o.inv,p:P.map(q=>ex?[dayNum(q[0])-x0,Math.round(q[1]*100)/100,Math.round(q[2]),Math.round(q[3])]:[dayNum(q[0])-x0,Math.round(q[1]*100)/100]),c:col});
-  const exL=ex?[[2,'var(--asset,#38bdf8)'],[3,'var(--cout)']].map(([k,c])=>'<polyline points="'+P.map(p=>X(p[0]).toFixed(1)+','+Y(p[k]).toFixed(1)).join(' ')+'" fill="none" stroke="'+c+'" stroke-width="1.6" stroke-dasharray="5 3" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>').join(''):'';
+  const exL=ex?[[2,'var(--asset,#38bdf8)'],[3,'var(--cout)']].map(([k,c])=>'<path d="'+smoothPath(thinPts(P.map(p=>[X(p[0]),Y(p[k])])))+'" fill="none" stroke="'+c+'" stroke-width="1.6" stroke-dasharray="5 3" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>').join(''):'';
   return '<div class="hc">'+seg+'<div class="hcw" data-hp="'+esc(hp)+'" tabindex="0" aria-label="'+esc((o.label||'Value')+' chart. Hover, touch or use arrow keys to see values.')+'"><svg viewBox="0 0 '+W+' '+Hh+'" preserveAspectRatio="none" role="img" aria-label="'+esc((o.label||'Value')+' from '+niceDay(P[0][0])+' to '+niceDay(P[P.length-1][0])+': '+fmt0(d0)+' to '+fmt0(d1))+'"><defs><linearGradient id="'+id+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+col+'" stop-opacity=".28"/><stop offset="1" stop-color="'+col+'" stop-opacity="0"/></linearGradient></defs>'
    +G.map(v=>'<line x1="0" x2="'+W+'" y1="'+Y(v).toFixed(1)+'" y2="'+Y(v).toFixed(1)+'" stroke="var(--mute)" stroke-opacity=".38" stroke-width="1" stroke-dasharray="4 4" vector-effect="non-scaling-stroke"/>').join('')
    +TK.map(t=>'<line y1="0" y2="'+Hh+'" x1="'+t.x.toFixed(1)+'" x2="'+t.x.toFixed(1)+'" stroke="var(--mute)" stroke-opacity=".38" stroke-width="1" stroke-dasharray="2 4" vector-effect="non-scaling-stroke"/>').join('')
-   +'<path d="M'+pts.join(' L')+' L'+X(P[P.length-1][0]).toFixed(1)+','+Hh+' L'+X(P[0][0]).toFixed(1)+','+Hh+' Z" fill="url(#'+id+')"/>'+exL+'<polyline points="'+pts.join(' ')+'" fill="none" stroke="'+col+'" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg>'
+   +'<path d="'+smoothPath(thinPts(P.map(p=>[X(p[0]),Y(p[1])])))+' L'+X(P[P.length-1][0]).toFixed(1)+','+Hh+' L'+X(P[0][0]).toFixed(1)+','+Hh+' Z" fill="url(#'+id+')"/>'+exL+'<path d="'+smoothPath(thinPts(P.map(p=>[X(p[0]),Y(p[1])])))+'" fill="none" stroke="'+col+'" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg>'
    +'<div class="hcy" aria-hidden="true">'+G.map(v=>'<span style="top:'+(Y(v)/Hh*100).toFixed(1)+'%">'+kf(v)+'</span>').join('')+'</div><i class="hcdot" style="left:calc((100% - 50px)*'+(X(P[P.length-1][0])/W).toFixed(4)+');top:'+(Y(d1)/Hh*100).toFixed(1)+'%;background:'+col+'"></i><i class="hcx" hidden></i><i class="hcp" hidden style="background:'+col+'"></i><div class="hct" hidden></div></div>'
    +'<div class="hcax hcax2"><div>'+TK.map((t,i)=>'<span class="'+(i===0?'a':i===TK.length-1?'z':'')+'" style="left:'+(t.x/W*100).toFixed(2)+'%">'+(span>300?new Date(t.d+'T12:00:00').toLocaleDateString('en-US',{month:'short',year:'2-digit'}).replace(' ',' \u2019'):shortDate(t.d))+'</span>').join('')+'</div></div>'+(ex?'<div class="hcleg"><span><i style="background:'+col+'"></i>Net worth</span><span><i class="d" style="border-color:var(--asset,#38bdf8)"></i>Assets</span><span><i class="d" style="border-color:var(--cout)"></i>Owed</span></div>':'')+''+hcFoot()+'</div>';
 }
@@ -2082,7 +2082,7 @@ function lineChart(S0,o){
   const X=x=>pd+(x-x0)/Math.max(1e-9,x1-x0)*(W-2*pd),Y=v=>pd+(1-(v-lo)/sp)*(Hh-2*pd);
   const kf=o.kf||(v=>{const a=Math.abs(v),sg=v<0?'-':'';return sg+(a>=1e6?'$'+(a/1e6).toFixed(2)+'M':a>=1e4?'$'+(a/1e3).toFixed(1)+'K':a>=1e3?'$'+(a/1e3).toFixed(2)+'K':'$'+Math.round(a));}),vf=o.vf||fmt0;
   const G=[hi,(hi+lo)/2,lo],TK=(o.ticks||[0,1,2,3].map(i=>x0+(x1-x0)*i/3)).filter(x=>x>=x0-1e-9&&x<=x1+1e-9),id='lc'+(o.id||'x');
-  const pts=s=>s.p.map(q=>X(q[0]).toFixed(1)+','+Y(q[1]).toFixed(1)),crv=s=>smoothPath(s.p.map(q=>[X(q[0]),Y(q[1])]));
+  const pts=s=>s.p.map(q=>X(q[0]).toFixed(1)+','+Y(q[1]).toFixed(1)),crv=s=>smoothPath(thinPts(s.p.map(q=>[X(q[0]),Y(q[1])]),36));
   const at=(s,x)=>{if(x<s.p[0][0]-1e-9||x>s.p[s.p.length-1][0]+1e-9) return null;let b=s.p[0];for(const q of s.p){if(Math.abs(q[0]-x)<Math.abs(b[0]-x)) b=q;}return b;};
   const XS=[...new Set(allX)].sort((a,b)=>a-b);
   const D={W,pd,x0,x1,H:Hh,xs:XS.map(x=>+((X(x)/W).toFixed(4))),dots:[],tt:[]};
@@ -2201,6 +2201,10 @@ function dailyData(ym){
   }
   return days;
 }
+// for drawing only: many noisy points become ~n averaged ones (first and last stay exact) so the curve reads as a trend
+const thinPts=(a,n)=>{n=n||24;if(a.length<=n) return a;const x0=a[0][0],x1=a[a.length-1][0],o=[a[0]],B=Array.from({length:n-2},()=>[0,0,0]);
+  for(let i=1;i<a.length-1;i++){const k=Math.min(n-3,Math.max(0,Math.floor((a[i][0]-x0)/Math.max(1e-9,x1-x0)*(n-2))));B[k][0]+=a[i][0];B[k][1]+=a[i][1];B[k][2]++;}
+  B.forEach(b=>{if(b[2]) o.push([b[0]/b[2],b[1]/b[2]]);});o.push(a[a.length-1]);return o;};
 const smoothPath=pts=>{ // gentle curve through the points that never overshoots between them
   if(pts.length<2) return pts.length?'M'+pts[0][0]+','+pts[0][1]:'';
   let d='M'+pts[0][0].toFixed(1)+','+pts[0][1].toFixed(1);
@@ -4112,7 +4116,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<details class="itip"><summary><i>i</i><span>About</span></summary><p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p></details><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.82.3';
+const APP_VERSION='1.82.4';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
