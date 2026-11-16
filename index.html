@@ -140,7 +140,7 @@ h1{font-size:28px;font-weight:800;letter-spacing:-.03em;margin:2px 0 12px}h2{fon
 .possort{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin:2px 2px 12px;font-size:13px;color:var(--mute);font-weight:600}.possort select{width:auto;min-width:150px;padding:8px 30px 8px 12px;font-size:13.5px;border-radius:12px}
 .mxgain{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:2px 0 12px;padding:11px 14px;border-radius:14px;background:var(--soft);font-size:13px;font-weight:600;color:var(--mute)}.mxgain b{font-size:17px;font-variant-numeric:tabular-nums;white-space:nowrap}.mxgain small{font-size:12.5px;font-weight:700;opacity:.85}
 .lnpt{margin:8px 0 4px}
-.lnsg{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:12px 0 10px}.lnsf{display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:700;color:var(--mute);margin:0}
+.lnsg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0 14px}.lnsf>span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.lnsi input{height:48px;border-radius:14px!important;-moz-appearance:textfield}.lnsi input::-webkit-inner-spin-button,.lnsi input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}.lnsi i{line-height:1;margin-top:1px}input.lnsl.lnsl{-webkit-appearance:none;appearance:none;width:100%;height:6px;min-height:0;padding:0;border:0;border-radius:99px;background:linear-gradient(var(--cin),var(--cin)) 0/var(--p,0%) 100% no-repeat,var(--track);outline:none;margin:16px 0 14px;box-shadow:none}.lnsl+.lnslx{margin-top:0}.lnsl::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:#fff;border:3px solid var(--cin);box-shadow:0 2px 6px rgba(0,0,0,.3);cursor:pointer}.lnsl::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:#fff;border:3px solid var(--cin);cursor:pointer}.itb{display:inline-grid;place-items:center;vertical-align:middle;width:18px;height:18px;margin:-2px 0 0 8px;padding:0;border-radius:50%;border:1.5px solid var(--mute);background:none;color:var(--mute);font:italic 700 11px/1 Georgia,serif;cursor:pointer;opacity:.8;transition:color .15s,border-color .15s}.itb:hover,.itb[aria-expanded=true]{color:var(--brand);border-color:var(--brand);opacity:1}.itip.mv>summary{display:none}.itip.mv{margin:0}.itip.mv[open]{margin:0 0 10px}.lnsf{display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:700;color:var(--mute);margin:0}
 .lnsi{position:relative;display:block}.lnsi i{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-style:normal;font-weight:700;color:var(--mute);pointer-events:none}.lnsi input{width:100%;padding-left:28px!important;font-variant-numeric:tabular-nums;font-weight:700}
 .lnsl{width:100%;margin:2px 0 0;accent-color:#10b981;height:28px;padding:0;border:0;background:transparent}.lnslx{display:flex;justify-content:space-between;font-size:11.5px;color:var(--mute);margin:-2px 0 12px}
 .lnso{border-top:1px solid var(--line);padding-top:12px}.lnsr{margin-top:0}.lnsc{margin-top:12px}.lnsim .lnx{margin-top:10px}
@@ -3069,7 +3069,7 @@ function lnSimHTML(a){
   if(XA&&XA.months!=null){const sv=L.interest-XA.interest,dm=L.months-XA.months;
     res='<div class="ivst lnsr">'+st('Debt-free',inMonths(XA.months),'rdyc')+st('Sooner by',dm>0?monthsTxt(dm):'Under a month',dm>0?'rdyc':'')+st('Interest saved',fmt0(Math.max(0,sv)),'rdyc')+st('New monthly payment',fmt0(L.pay+x+(L.escrow||0)))+'</div>'
       +'<p class="sub" style="margin:8px 0 0">'+(x?'Paying <b>'+fmt0(x)+'</b> extra a month':'')+(x&&lump?' plus ':'')+(lump?'a one-time <b>'+fmt0(lump)+'</b> now':'')+' turns '+monthsTxt(L.months)+' into <b>'+monthsTxt(XA.months)+'</b>. Total interest drops from '+fmt0(L.interest)+' to '+fmt0(XA.interest)+'.</p>';
-  }else res='<details class="itip"><summary><i>i</i><span>About</span></summary><p class="sub" style="margin:0">Pick an amount, drag the slider, or type your own number to see the new payoff date.</p></details>';
+  }else res='';
   const proj=XA?projOf(XA.path):null;
   const chart=(L.hist.length>1||L.proj.length>1)?loanChart(L,proj):'';
   return res+(chart?'<div class="lnsc">'+chp('Balance over time',chart)+'</div>':'');
@@ -3081,14 +3081,14 @@ function lnSimCard(a,facts){
   return '<section class="card lnsim" data-ln="'+id+'"><h2>Pay it off faster</h2><details class="itip"><summary><i>i</i><span>About</span></summary><p class="sub" style="margin:-4px 0 12px">Try any extra amount. The numbers and the chart update as you go. Nothing is saved or sent to your lender.</p></details>'
    +'<div class="lnsg"><label class="lnsf"><span>Extra each month</span><span class="lnsi"><i>$</i><input type="number" inputmode="decimal" min="0" max="100000" step="25" value="'+(x||'')+'" placeholder="0" data-inp="lnx" data-id="'+id+'" aria-label="Extra each month in dollars"></span></label>'
    +'<label class="lnsf"><span>One-time extra now</span><span class="lnsi"><i>$</i><input type="number" inputmode="decimal" min="0" max="'+Math.floor(L.owed)+'" step="100" value="'+(l||'')+'" placeholder="0" data-inp="lnl" data-id="'+id+'" aria-label="One-time extra payment in dollars"></span></label></div>'
-   +'<input type="range" class="lnsl" min="0" max="'+mx+'" step="25" value="'+Math.min(mx,x)+'" data-inp="lnxr" data-id="'+id+'" aria-label="Extra each month slider"><div class="lnslx"><span>$0</span><span>'+fmt0(mx)+'/mo</span></div>'
+   +'<input type="range" class="lnsl" style="--p:'+(Math.min(mx,x)/mx*100).toFixed(1)+'%" min="0" max="'+mx+'" step="25" value="'+Math.min(mx,x)+'" data-inp="lnxr" data-id="'+id+'" aria-label="Extra each month slider"><div class="lnslx"><span>$0</span><span>'+fmt0(mx)+'/mo</span></div>'
    +'<div class="lnso" aria-live="polite">'+lnSimHTML(a)+'</div>'+(facts.length?'<div class="sub lnx">'+facts.join(' · ')+'</div>':'')+'</section>';
 }
 function lnSimPaint(id,from){
   const a=S.accounts.find(z=>z.id===id),box=document.querySelector('.lnsim[data-ln="'+(window.CSS&&CSS.escape?CSS.escape(id):id)+'"]');if(!a||!box) return;
   const {x}=lnSim(a);box.querySelector('.lnso').innerHTML=lnSimHTML(a);
   box.querySelectorAll('.lnch button').forEach(b=>{const on=+b.dataset.v===x;b.classList.toggle('on',on);b.setAttribute('aria-pressed',String(on));});
-  const ni=box.querySelector('[data-inp=lnx]'),sl=box.querySelector('[data-inp=lnxr]');if(from!=='n'&&ni) ni.value=x||'';if(from!=='r'&&sl) sl.value=Math.min(+sl.max,x);
+  const ni=box.querySelector('[data-inp=lnx]'),sl=box.querySelector('[data-inp=lnxr]');if(from!=='n'&&ni) ni.value=x||'';if(from!=='r'&&sl) sl.value=Math.min(+sl.max,x);if(sl) sl.style.setProperty('--p',(+sl.value/(+sl.max||1)*100).toFixed(1)+'%');
 }
 // a loan's balance: the bank link when there is one, else the newest statement
 function loanBal(a){const b=a.sf&&S.balSf&&S.balSf[a.sf];if(b) return b;const P=stmtPoints(a.id),l=P[P.length-1];return l?{v:l[1],at:new Date(l[0]+'T12:00:00').getTime(),stmt:true}:null;}
@@ -3491,6 +3491,11 @@ function bigHTML(ym){
 }
 // after 'Show less', bring the top of that list's card back into view
 function moreBack(sk){const b=document.querySelector(sk);if(!b) return;const c=b.closest('section,.card,.w,.agnw')||b;const top=c.getBoundingClientRect().top;if(top<70) scrollTo({top:scrollY+top-80,behavior:'smooth'});}
+// an "About" note right under a heading becomes a small (i) next to that heading
+function itipHead(root){(root||document).querySelectorAll('details.itip:not(.mv)').forEach(d=>{const h=d.previousElementSibling;if(!h||!/^H[1-4]$/.test(h.tagName)||h.querySelector('.itb')) return;
+  d.classList.add('mv');const b=document.createElement('button');b.type='button';b.className='itb';b.textContent='i';b.setAttribute('aria-label','About this');b.setAttribute('aria-expanded',String(!!d.open));h.appendChild(b);});}
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('.itb');if(!b) return;e.preventDefault();e.stopPropagation();const d=b.parentElement.nextElementSibling;if(d&&d.tagName==='DETAILS'){d.open=!d.open;b.setAttribute('aria-expanded',String(d.open));}},true);
+try{new MutationObserver(()=>itipHead()).observe(document.documentElement,{childList:true,subtree:true});}catch(e){}
 // one 'Show N more / Show less' button for every list
 function moreBtn(act,hidden,open,attrs){return '<button type="button" class="btn ghost small rcmore" data-act="'+act+'"'+(attrs||'')+' aria-expanded="'+!!open+'">'+(open?'Show less':'Show '+hidden+' more')+'</button>';}
 // merchants / purchases in one widget
@@ -4131,7 +4136,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<details class="itip"><summary><i>i</i><span>About</span></summary><p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p></details><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.82.1';
+const APP_VERSION='1.82.2';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
