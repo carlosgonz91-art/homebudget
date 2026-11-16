@@ -472,7 +472,7 @@ td.ds{max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .wh{touch-action:none;cursor:grab;border:0;background:var(--track);color:var(--mute);width:34px;height:34px;border-radius:10px;font-size:18px;line-height:1;display:grid;place-items:center;user-select:none;-webkit-user-select:none}.wh:active{cursor:grabbing}
 .wx{border:0;background:var(--track);color:var(--bad);width:34px;height:34px;border-radius:10px;font-size:20px;line-height:1;cursor:pointer}
 .editing .w{border:2px dashed color-mix(in srgb,var(--brand) 40%,var(--line));border-radius:24px;padding:6px 8px 8px;margin-bottom:12px;background:color-mix(in srgb,var(--brand) 4%,transparent)}
-.editing .w{padding:6px 8px 8px;margin-bottom:14px;cursor:grab;-webkit-user-select:none;user-select:none}.editing .wbody{pointer-events:none}.editing .wbar{padding:0 0 6px;gap:10px}.editing .wt{font-size:13px;color:var(--mute)}.editing .wh{width:38px;height:34px;background:color-mix(in srgb,var(--brand) 16%,var(--track));color:var(--brand)}
+.editing .w{padding:6px 8px 8px;margin-bottom:14px;cursor:grab;-webkit-user-select:none;user-select:none}.editing .wbody{pointer-events:none}.editing .wbar{padding:0 0 6px;gap:10px}.wsz{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 12px;border:0;border-radius:10px;background:var(--track);color:var(--ink);font:inherit;font-size:12.5px;font-weight:700;cursor:pointer}.wsz svg{width:16px;height:16px;color:var(--brand)}.wsz:hover{background:color-mix(in srgb,var(--brand) 14%,var(--track))}@media (max-width:719px){.wsz{display:none}}.editing .wt{font-size:13px;color:var(--mute)}.editing .wh{width:38px;height:34px;background:color-mix(in srgb,var(--brand) 16%,var(--track));color:var(--brand)}
 .w.dragging{position:relative;z-index:40;opacity:.92;box-shadow:0 24px 50px -12px rgba(10,14,40,.5);transition:none;cursor:grabbing}
 .wtray{margin-top:14px}
 .pill.rt{background:color-mix(in srgb,var(--good) 14%,var(--card));color:var(--good)}
@@ -575,7 +575,7 @@ td.ds{max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .dn svg{margin:0}
   .ov2{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:stretch}.ov2 .trend{height:230px}
   .ov2>.card{margin-bottom:0}
-  .wgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px;grid-auto-flow:row dense;align-items:stretch}.w-full{grid-column:1/-1}.w .wbody{height:100%}.wgrid .wbody>.card{margin-bottom:0;height:100%}.wgrid .trend{height:230px}
+  .wgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px;grid-auto-flow:row;align-items:stretch}.w-full,.w-solo{grid-column:1/-1}.w .wbody{height:100%}.wgrid .wbody>.card{margin-bottom:0;height:100%}.wgrid .trend{height:230px}
   .mp{max-width:none}
   .mprow .mp{max-width:none}
 }
@@ -2578,7 +2578,9 @@ function seedRules(){
   return true;
 }
 function addCdWidget(){if(S.wCds) return false;S.wCds=1;const W=S.widgets;if(W&&Array.isArray(W.order)&&!W.order.includes('cds')){W.hidden=(W.hidden||[]).filter(i=>i!=='cds');W.order.push('cds');}return true;}
-function wSave(st){S.widgets={order:st.order,hidden:st.hidden};save();}
+function wSave(st){const o=S.widgets||{};S.widgets={order:st.order,hidden:st.hidden,size:o.size||{},bwV:o.bwV};save();}
+// a widget's width on wide screens: half (two side by side) or full; you can change it while editing
+const wSz=id=>{const z=S.widgets&&S.widgets.size&&S.widgets.size[id];return z==='half'||z==='full'?z:((WID.find(x=>x.id===id)||{}).w||'full');};
 const CASHSYM=/^(SPAXX|FDRXX|FZFXX|FCASH|SPRXX|FZDXX|FDLXX|FTEXX|VMFXX|SWVXX|SNVXX|FDIC|CORE)$/;
 function isCashPos(h){const t=((h.sym||'')+' '+(h.desc||'')).toUpperCase();if(/\bCD\b|CERTIFICATE OF DEPOSIT|TREASURY|\bBOND\b|\bNOTE\b/.test(t)&&!/MONEY MARKET/.test(t)) return false;return CASHSYM.test((h.sym||'').toUpperCase())||/MONEY MARKET|FDIC INSURED DEPOSIT|CASH SWEEP|CORE (ACCOUNT|POSITION)|BANK DEPOSIT SWEEP/.test(t);}
 const ivNm=id=>{const a=S.accounts.find(x=>x.sf===id),r=(S.sfRaw||[]).find(x=>x.id===id);return a?a.name:(r?String(r.name||'').replace(/\s*\(\d{4}\)\s*$/,''):id);};
@@ -3510,15 +3512,18 @@ function widgetsHTML(H,anim){
   const st=wState(),ed=!!UI.wedit,meta=Object.fromEntries(WID.map(x=>[x.id,x]));
   const card=(id,html)=>{
     if(!html){if(!ed) return '';html='<section class="card"><h2>'+esc(meta[id].t)+'</h2><p class="mute" style="margin:0">Nothing to show right now.</p></section>';}
-    return '<div class="w w-'+meta[id].w+'" data-w="'+id+'">'+(ed?'<div class="wbar"><button type="button" class="wx" data-act="wrem" data-id="'+esc(id)+'" aria-label="Remove '+esc(meta[id].t)+'">×</button><span class="wt">'+esc(meta[id].t)+'</span><button type="button" class="wh" data-wh="'+id+'" aria-label="Move '+esc(meta[id].t)+'. Drag, or use the up and down arrow keys.">⠿</button></div>':'')+'<div class="wbody">'+html+'</div></div>';
+    const sz=wSz(id);return '<div class="w w-'+sz+'" data-w="'+id+'">'+(ed?'<div class="wbar"><button type="button" class="wx" data-act="wrem" data-id="'+esc(id)+'" aria-label="Remove '+esc(meta[id].t)+'">×</button><span class="wt">'+esc(meta[id].t)+'</span><button type="button" class="wsz" data-act="wsize" data-id="'+esc(id)+'" aria-label="Make '+esc(meta[id].t)+(sz==='half'?' full width':' half width')+'" title="'+(sz==='half'?'Make full width':'Make half width')+'"><svg viewBox="0 0 24 24" aria-hidden="true">'+(sz==='half'?'<rect x="3" y="5" width="8" height="14" rx="2" fill="currentColor"/><rect x="13" y="5" width="8" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-dasharray="2.5 2"/>':'<rect x="3" y="5" width="18" height="14" rx="2" fill="currentColor"/>')+'</svg><span>'+(sz==='half'?'Half':'Full')+'</span></button><button type="button" class="wh" data-wh="'+id+'" aria-label="Move '+esc(meta[id].t)+'. Drag, or use the up and down arrow keys.">⠿</button></div>':'')+'<div class="wbody">'+html+'</div></div>';
   };
   let h='<div id="wmain"></div>';
   if(ed){
     const can=st.hidden;
     h+='<div class="wtop" id="wtop"><b>Edit widgets</b><span class="spacer"></span><button class="btn small ghost" data-act="wreset">Reset</button><button class="btn small" data-act="wdone">Done</button></div>'
-     +'<section class="card wtray"><h2>Add a widget</h2>'+(can.length?'<div class="row" style="gap:8px;flex-wrap:wrap">'+can.map(i=>'<button class="btn ghost small" data-act="wadd" data-id="'+i+'">＋ '+esc(meta[i].t)+'</button>').join('')+'</div>':'<p class="mute" style="margin:0">Every widget is on the page.</p>')+'<details class="itip"><summary><i>i</i><span>About</span></summary><p class="sub" style="margin:10px 0 0">Drag a widget (or its ⠿ grip) to move it, × to remove.</p></details></section>';
+     +'<section class="card wtray"><h2>Add a widget</h2>'+(can.length?'<div class="row" style="gap:8px;flex-wrap:wrap">'+can.map(i=>'<button class="btn ghost small" data-act="wadd" data-id="'+i+'">＋ '+esc(meta[i].t)+'</button>').join('')+'</div>':'<p class="mute" style="margin:0">Every widget is on the page.</p>')+'<details class="itip"><summary><i>i</i><span>About</span></summary><p class="sub" style="margin:10px 0 0">Drag a widget (or its ⠿ grip) to move it, × to remove. On a wide screen, Half / Full sets its width so two half widgets sit side by side.</p></details></section>';
   }
-  h+='<div class="chv'+(anim?'':' still')+(ed?' editing':'')+'"><div class="wgrid">'+st.order.map(id=>card(id,typeof H[id]==='function'?H[id]():H[id])).join('')+'</div></div>';
+  // a half widget with no half partner next to it fills the row, so there is never an empty gap
+  const C=st.order.map(id=>[id,card(id,typeof H[id]==='function'?H[id]():H[id])]).filter(x=>x[1]);
+  for(let i=0;i<C.length;i++){if(wSz(C[i][0])!=='half') continue;if(i+1<C.length&&wSz(C[i+1][0])==='half'){i++;continue;}C[i][1]=C[i][1].replace('class="w w-half"','class="w w-half w-solo"');}
+  h+='<div class="chv'+(anim?'':' still')+(ed?' editing':'')+'"><div class="wgrid">'+C.map(x=>x[1]).join('')+'</div></div>';
   return h;
 }
 // drag to reorder widgets (mouse and touch)
@@ -3548,7 +3553,7 @@ function widgetsHTML(H,anim){
     raf=requestAnimationFrame(scroll);
   };
   document.addEventListener('pointerdown',e=>{
-    let hd=e.target.closest&&e.target.closest('.wh');if(!hd&&e.pointerType!=='touch'&&!(e.target.closest&&e.target.closest('.wx'))){const ww=e.target.closest&&e.target.closest('.editing .w');if(ww) hd=ww;}
+    let hd=e.target.closest&&e.target.closest('.wh');if(!hd&&e.pointerType!=='touch'&&!(e.target.closest&&e.target.closest('.wx,.wsz'))){const ww=e.target.closest&&e.target.closest('.editing .w');if(ww) hd=ww;}
     if(!hd||(e.pointerType==='mouse'&&e.button!==0)) return;
     e.preventDefault();const w=hd.closest('.w')||hd,r=w.getBoundingClientRect();
     D={w,pid:e.pointerId,gx:e.clientX-r.left,gy:e.clientY-r.top,x:e.clientX,y:e.clientY,hd};
@@ -4116,7 +4121,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<details class="itip"><summary><i>i</i><span>About</span></summary><p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p></details><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.82.4';
+const APP_VERSION='1.83.0';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -5001,6 +5006,7 @@ const ACT={
   wedit(){UI.wedit=true;UI.goto='wtop';render();},
   wdone(){UI.wedit=false;UI.goto='wmain';render();},
   wreset(){S.widgets=null;save();render();},
+  wsize(el){const id=el.dataset.id,st=wState();S.widgets=S.widgets||{order:st.order,hidden:st.hidden};S.widgets.size=S.widgets.size||{};S.widgets.size[id]=wSz(id)==='half'?'full':'half';save();render();requestAnimationFrame(()=>{const n=document.querySelector('.wsz[data-id="'+id+'"]');if(n) n.focus({preventScroll:true});});},
   wrem(el){const nm=(WID.find?((WID.find(w=>w.id===el.dataset.id)||{}).t):'')||'this widget';dialog({msg:'Remove "'+nm+'" from Overview? You can add it back anytime from "Add a widget".',ok:'Remove',bad:true,onOk:()=>ACT._wrem(el)});},
   _wrem(el){const st=wState();st.order=st.order.filter(i=>i!==el.dataset.id);st.hidden.push(el.dataset.id);wSave(st);render();},
   wadd(el){const st=wState();st.hidden=st.hidden.filter(i=>i!==el.dataset.id);st.order.push(el.dataset.id);wSave(st);render();
