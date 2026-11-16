@@ -365,6 +365,7 @@ label select,label input{display:block;margin-top:4px;color:var(--ink)}
 .tkc.up{background:color-mix(in srgb,#10b981 18%,var(--card));color:color-mix(in srgb,#10b981 80%,var(--ink))}.tkc.dn{background:color-mix(in srgb,#ef4444 16%,var(--card));color:color-mix(in srgb,#ef4444 85%,var(--ink))}.tkc.fl{background:var(--track);color:var(--mute)}
 .tkpg{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;font-size:12.5px;color:var(--mute)}.tkpg .btn{min-width:40px}
 .lnb{margin:2px 0 16px}.lnb:last-child{margin-bottom:0}.lnh{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}.lnh b{font-size:16px}.lnhero{display:flex;align-items:center;gap:16px;margin:4px 0 12px}.lnk{min-width:0;flex:1}.lnbig{font-size:clamp(24px,8.4vw,32px);font-weight:800;font-variant-numeric:tabular-nums;line-height:1.1;white-space:nowrap}.lnpd{margin-top:4px;font-weight:800;color:#059669;font-size:14px}
+.lnts{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:6px;margin:0 0 12px}.lnt{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:0;padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:var(--soft);color:var(--ink);font:inherit;text-align:left;text-decoration:none;cursor:pointer}.lnt span{font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--mute)}.lnt b{font-size:13.5px;color:var(--brand);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;display:flex;align-items:center;gap:4px}.lnt b svg{width:13px;height:13px}.lnt.hot{border-color:var(--brand)}.secsel{margin:6px 0 4px}.secsel select{flex:1;max-width:none}
 .lnbt{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.lnbt .btn{padding:7px 12px;font-size:13px;min-height:34px}.lnbt .hot{border-color:var(--brand);color:var(--brand)}
 @media (max-width:520px){.lnh{flex-direction:column;align-items:stretch}.lnhero svg{width:96px;height:96px}.lnb .lnms{grid-template-columns:repeat(2,minmax(0,1fr))}.lnb .lnm{display:flex;justify-content:space-between;align-items:center;gap:8px;text-align:left;padding:8px 11px}.lnb .lnm b{font-size:14px}.lnb .lnm span{font-size:12px}}
 .lneta{display:grid;grid-template-columns:auto auto auto;justify-content:space-between;column-gap:16px;row-gap:4px;margin:0 0 12px;padding:11px 13px;border-radius:14px;background:linear-gradient(135deg,color-mix(in srgb,#10b981 15%,var(--card)),color-mix(in srgb,#0ea5e9 11%,var(--card)));border:1px solid color-mix(in srgb,#10b981 28%,var(--line))}.lneta>div{min-width:0}.lneta small{display:block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:color-mix(in srgb,#10b981 70%,var(--ink))}.lneta b{display:block;margin-top:2px;font-size:16px;white-space:nowrap}.lneta>div:last-child{text-align:right}@media (max-width:380px){.lneta{column-gap:10px;padding:11px 11px}.lneta b{font-size:15px}.lneta small{font-size:10px;letter-spacing:.04em}}
@@ -2463,11 +2464,11 @@ function merchHTML(ym){
     if(t.date.slice(0,7)!==ym||EXCLUDED.includes(t.cat)||isInc(t.cat)) continue;
     const k=merchantKey(t.desc)||'other',o=m[k]||(m[k]={k,v:0,n:0,c:{}});o.v-=t.amount;o.n++;o.c[t.cat]=(o.c[t.cat]||0)+1;
   }
-  const L=Object.values(m).filter(x=>x.v>0.005).sort((a,b)=>b.v-a.v).slice(0,5);
+  const L=Object.values(m).filter(x=>x.v>0.005).sort((a,b)=>b.v-a.v).slice(0,10);
   if(!L.length) return '<p class="mute">No spending this month.</p>';
   const mx=L[0].v,tc=s=>s.replace(/\b[a-z]/g,c=>c.toUpperCase());
-  return '<div class="mer">'+L.map((x,i)=>{const cat=Object.entries(x.c).sort((a,b)=>b[1]-a[1])[0][0];
-    return topRow(i,cat,tc(x.k),'',x.v,cat+' · '+x.n+' purchase'+(x.n>1?'s':''),x.v/mx*100,'data-act="mergo" data-k="'+esc(x.k)+'" data-m="'+ym+'"');}).join('')+'</div>';
+  return '<div class="mer">'+L.slice(0,UI.tsAll?10:5).map((x,i)=>{const cat=Object.entries(x.c).sort((a,b)=>b[1]-a[1])[0][0];
+    return topRow(i,cat,tc(x.k),'',x.v,cat+' · '+x.n+' purchase'+(x.n>1?'s':''),x.v/mx*100,'data-act="mergo" data-k="'+esc(x.k)+'" data-m="'+ym+'"');}).join('')+'</div>'+(L.length>5?moreBtn('tsall',L.length-5,UI.tsAll):'');
 }
 // hover / tap behaviour for the charts (one set of listeners; the charts are redrawn freely)
 (function(){
@@ -2797,7 +2798,7 @@ function insightsHTML(noFetch){
   if(INS.busy) h+='<p class="sub insp" role="status">Loading '+INS.done+' of '+INS.total+'… this is paced to stay inside the free plan.</p>';
   else if(INS.err) h+='<p class="sub insp" role="status">'+(INS.err==='rate'?'Finnhub asked us to slow down. The rest loads in about a minute.':INS.err==='deny'?'Finnhub refused the key. Check it under Market watch.':'Could not reach Finnhub. Showing what was saved.')+'</p>';
   if(secL.length){const srow=([k,v],i)=>{const M=(SECM[k]||[]).sort((a,b)=>b.v-a.v);return '<details class="inss" data-tg="insS_'+esc(k)+'"'+(UI['insS_'+k]?' open':'')+'><summary class="insr"><span><i class="dot" style="background:'+secColor(k)+'"></i>'+esc(k)+'<small>'+M.length+'</small></span><b>'+fmt0(v)+'</b><em>'+(v/secT<.01?'<1':Math.round(v/secT*100))+'%</em></summary><div class="inssb">'+M.map(m=>'<div class="insr"><span><b>'+esc(m.s)+'</b><small>'+esc(m.nm)+(m.ac?' · '+esc(m.ac):'')+'</small></span><b>'+fmt0(m.v)+'</b><em>'+Math.round(m.v/v*100)+'%</em></div>').join('')+'</div></details>';};
-    h+='<h3 class="insh">Sectors</h3><div class="secch" role="group" aria-label="Show sectors for">'+[['','All accounts']].concat(SD.accts).map(([id,nm])=>'<button type="button" class="secc'+((UI.secAcct||'')===id?' on':'')+'" aria-pressed="'+((UI.secAcct||'')===id)+'" data-act="secacct" data-id="'+esc(id)+'">'+esc(nm)+'</button>').join('')+'</div><p class="sub" style="margin:6px 0 8px"><b>'+fmt0(secT)+'</b> across '+secL.length+' groups.</p><div class="insbar" aria-hidden="true">'+secL.map(([k,v],i)=>'<i style="width:'+(v/secT*100).toFixed(2)+'%;background:'+secColor(k)+'"></i>').join('')+'</div><div class="insl">'+secL.slice(0,8).map(srow).join('')+(secL.length>8?(UI.insSecAll?secL.slice(8).map((x,i)=>srow(x,i+8)).join(''):'')+'<button type="button" class="insmorebtn" data-act="inssecall" aria-expanded="'+!!UI.insSecAll+'">'+(UI.insSecAll?'− Show fewer groups':'+ '+(secL.length-8)+' smaller groups')+'</button>':'')+'</div><details class="itip"><summary><i>i</i><span>About</span></summary><p class="sub" style="margin:8px 0 0">Stocks and ETFs are grouped by the industry of the company. Mutual funds, CDs and cash are grouped by what they are.'+(SD.pend?' '+SD.pend+' holding'+(SD.pend===1?' is':'s are')+' still waiting for an industry.':'')+'</p></details>';}
+    h+='<h3 class="insh">Sectors</h3>'+(SD.accts.length?'<label class="sechc secsel"><span>Account</span><select data-chg="secacct" aria-label="Show sectors for">'+[['','All accounts']].concat(SD.accts).map(([id,nm])=>'<option value="'+esc(id)+'"'+((UI.secAcct||'')===id?' selected':'')+'>'+esc(nm)+'</option>').join('')+'</select></label>':'')+'<p class="sub" style="margin:6px 0 8px"><b>'+fmt0(secT)+'</b> across '+secL.length+' groups.</p><div class="insbar" aria-hidden="true">'+secL.map(([k,v],i)=>'<i style="width:'+(v/secT*100).toFixed(2)+'%;background:'+secColor(k)+'"></i>').join('')+'</div><div class="insl">'+secL.slice(0,8).map(srow).join('')+(secL.length>8?(UI.insSecAll?secL.slice(8).map((x,i)=>srow(x,i+8)).join(''):'')+moreBtn('inssecall',secL.length-8,UI.insSecAll):'')+'</div><details class="itip"><summary><i>i</i><span>About</span></summary><p class="sub" style="margin:8px 0 0">Stocks and ETFs are grouped by the industry of the company. Mutual funds, CDs and cash are grouped by what they are.'+(SD.pend?' '+SD.pend+' holding'+(SD.pend===1?' is':'s are')+' still waiting for an industry.':'')+'</p></details>';}
   if(E.length) h+='<h3 class="insh">Upcoming earnings</h3><div class="insl">'+E.slice(0,6).map(e=>'<div class="insr"><span><b>'+esc(e.s)+'</b></span><b>'+wd(e.d)+'</b><em>'+esc(e.h)+'</em></div>').join('')+'</div>';
   // only stocks with a dividend or an analyst rating; ones with neither are hidden
   const rows=H.filter(x=>{const d=c.div[x.s],r=c.rec[x.s];return (d&&d.dy>0)||(r&&lab(r));});
@@ -3072,8 +3073,9 @@ function loanBlock(a,split){
     let wi='';
     if(L.A&&L.owed>=0.5){wi='<div class="lnwi"><div class="lnwh">What if you paid extra each month?</div><div class="lnch">'+LNX.map(v=>'<button type="button" data-act="lnextra" data-id="'+esc(a.id)+'" data-v="'+v+'" class="'+(v===ex?'on':'')+'" aria-pressed="'+(v===ex)+'">'+(v?'+$'+v:'None')+'</button>').join('')+'</div>'+(XA?'<div class="lnres">Debt-free <b>'+monthsTxt(L.months-XA.months)+' sooner</b> ('+inMonths(XA.months)+') · saves <b>'+fmt0(L.interest-XA.interest)+'</b> in interest</div>':'<div class="sub" style="margin-top:6px">Pick an amount to see how much sooner you would finish.</div>')+'</div>';}
     const facts=[];if(L.escrow) facts.push('Escrow '+fmt0(L.escrow)+'/mo not counted');if(L.last) facts.push('Last payment '+L.last+(L.lastAmt?' · '+fmt0(L.lastAmt):''));if(L.at) facts.push('Balance as of '+new Date(L.at).toLocaleDateString('en-US',{month:'short',day:'numeric'}));
-    const links='<button class="btn ghost small'+(a.rate==null?' hot':'')+'" data-act="rateacct" data-id="'+esc(a.id)+'">'+(a.rate!=null?(esc(+a.rate)+'%'):'Set rate')+'</button><button class="btn ghost small" data-act="loanpay" data-id="'+esc(a.id)+'">Payment</button><button class="btn ghost small'+(L.orig?'':' hot')+'" data-act="loanorig" data-id="'+esc(a.id)+'">'+(L.orig?'Original '+fmt0(L.orig):'Set original amount')+'</button>'+(L.url?'<a class="btn ghost small" href="'+esc(L.url)+'" target="_blank" rel="noopener">Servicer '+EXTI+'</a>':'');
-    const head='<div class="lnh"><div style="min-width:0"><b>'+nm+'</b>'+(L.org?'<div class="sub">'+esc(L.org)+'</div>':'')+'</div><span class="lnbt">'+links+'</span></div>';
+    const lt=(k,v,at,hot)=>'<'+(at.startsWith('href')?'a':'button type="button"')+' class="lnt'+(hot?' hot':'')+'" '+at+'><span>'+k+'</span><b>'+v+'</b></'+(at.startsWith('href')?'a':'button')+'>';
+    const links='<div class="lnts" style="--n:'+(L.url?4:3)+'">'+lt('Rate',a.rate!=null?esc(+a.rate)+'%':'Set','data-act="rateacct" data-id="'+esc(a.id)+'"',a.rate==null)+lt('Payment',L.pay>0?fmt0(L.pay):'Set','data-act="loanpay" data-id="'+esc(a.id)+'"',!(L.pay>0))+lt('Original',L.orig?(L.orig>=1e5?'$'+Math.round(L.orig/1000)+'K':fmt0(L.orig)):'Set','data-act="loanorig" data-id="'+esc(a.id)+'"',!L.orig)+(L.url?lt('Servicer','Open '+EXTI,'href="'+esc(L.url)+'" target="_blank" rel="noopener"'):'')+'</div>';
+    const head='<div class="lnh"><div style="min-width:0"><b>'+nm+'</b>'+(L.org?'<div class="sub">'+esc(L.org)+'</div>':'')+'</div></div>'+links;
     const chart=(L.hist.length>1||L.proj.length>1)?loanChart(L,XA?projOf(XA.path):null)+'<div class="legend">'+(L.hist.length>1?'<span><i class="dot" style="background:#f97316"></i>Balance</span>':'')+(L.proj.length>1?'<span><i class="dot" style="background:#6366f1"></i>Your plan</span>':'')+(XA?'<span><i class="dot" style="background:#10b981"></i>With +$'+ex+'</span>':'')+'</div>':'';
     if(split){
       const st=(l,v,c)=>'<div><small>'+l+'</small><b'+(c?' class="'+c+'"':'')+'>'+v+'</b></div>';
@@ -3328,7 +3330,7 @@ function billAskHTML(){
   return '<div class="blask"><h3 class="blh">Is this a bill? <span class="sub">· '+A.length+'</span></h3><details class="itip"><summary><i>i</i><span>About</span></summary><p class="sub" style="margin:0 0 6px">Looks like a bill, but it was paid only once (or too far apart to tell). Pick how often it repeats and it will show up here when it is due.</p></details>'
     +L.map(b=>'<div class="bla"><div class="ip rcr go" role="button" tabindex="0" data-act="mergo" data-k="'+esc(b.k)+'">'+avHTML(b.cat)+'<div class="l"><b class="bnm"><span>'+esc(b.name)+'</span>'+kindPill(b)+'</b><span>'+esc(b.cat)+' · paid '+niceDay(b.last)+(b.n>1?' · '+b.n+' times':'')+'</span></div><div class="r"><b>'+fmt(b.amt)+'</b></div></div>'
       +'<div class="blbtn">'+[['month','Monthly'],['quarter','Every 3 mo'],['half','Every 6 mo'],['year','Yearly'],['no','Not a bill']].map(([c,t])=>'<button type="button" class="btn small ghost" data-act="blans" data-k="'+esc(b.k)+'" data-c="'+c+'">'+t+'</button>').join('')+'</div></div>').join('')
-    +(A.length>3?'<button type="button" class="btn ghost small rcmore" data-act="blaskall">'+(UI.blAskAll?'Show less':'Show '+(A.length-3)+' more')+'</button>':'')+'</div>';
+    +(A.length>3?moreBtn('blaskall',A.length-3,UI.blAskAll):'')+'</div>';
 }
 // a short label for what a bill is for (AT&T → Internet, Farmers → Auto insurance), from the merchant name
 const BILLKIND=[['Internet',/\b(at ?&? ?t|att|xfinity|comcast|spectrum|frontier|fiber|internet|google fi(ber)?|starlink|cox)\b/],['Phone',/\b(t ?mobile|verizon|wireless|mint mobile|visible|cricket|boost)\b/],['Gas',/\b(atmos|gas co|natural gas|centerpoint)\b/],['Water',/\bwater|\bsewer\b/],['Electricity',/\b(electric|energy|power|txu|reliant|oncor|direct energy|green mountain)\b/],['Utilities',/\b(city of|utility|utilities)\b/],['Trash',/\b(trash|waste|republic services|recycl)\b/],['Auto insurance',/\b(farmers|geico|progressive|allstate|state farm|usaa|liberty mutual|auto ins)\b/],['Insurance',/\binsurance|\bins\b/],['Mortgage',/mortgage|loansphere|firstunited|first united/],['Loan',/\bloan\b/],['HOA',/\bhoa\b|homeowners assoc/],['Rent',/\brent\b/],['Streaming',/\b(youtube ?tv|hulu|netflix|disney|hbo|max|peacock|paramount|sling|apple tv)\b/],['Streaming',/\b(spotify|pandora(?! karaoke)|apple music|tidal|sirius)\b/],['Pets',/\b(banfield|vet|petco|chewy|rover)\b/],['Apps & cloud',/\bnord|vpn\b/],['Streaming',/\b(audible)\b/],['Membership',/\b(amazon prime|prime|costco|sams club|walmart plus)\b/],['Apps & cloud',/\b(icloud|google one|google google|dropbox|onedrive|google storage|apple com bill)\b/],['Entertainment',/\b(cinemark|amc|regal|karaoke)\b/],['Health',/\b(health|medical|clinic|dental|vision|texashealth)\b/],['Gym',/\b(gym|fitness|planet fitness|ymca)\b/],['Childcare',/\b(daycare|child ?care|preschool)\b/],['School',/\b(tuition|school|college|community)\b/],['Security',/\b(adt|simplisafe|ring|security)\b/]];
@@ -3389,7 +3391,7 @@ function billsHTML(pym){
     const G=[['Not paid yet',U.filter(b=>!b.paidNow&&b.inDays<0)],['Due this week',U.filter(b=>b.inDays>=0&&b.inDays<=7)],['Later in '+ymShort(ym).split(' ')[0],U.filter(b=>!b.late&&b.inDays>7&&dstr(b.due).slice(0,7)<=ym)],['Next month',U.filter(b=>!b.late&&b.inDays>7&&dstr(b.due).slice(0,7)===nm)]].filter(g=>g[1].length);
     const cap=UI.blAll?1e9:8;let shown=0;
     body=(G.length?G.map(([h,L])=>{const vis=L.slice(0,Math.max(0,cap-shown));shown+=vis.length;return vis.length?'<h3 class="blh">'+h+sumL(L)+'</h3>'+vis.map(b=>row(b,false)).join(''):'';}).join(''):'<p class="sub" style="margin:4px 0 0">Nothing due in the next few weeks.</p>')
-      +(U.length>8?'<button type="button" class="btn ghost small rcmore" data-act="blall" aria-expanded="'+!!UI.blAll+'">'+(UI.blAll?'Show less':'Show '+(U.length-8)+' more')+'</button>':'')
+      +(U.length>8?moreBtn('blall',U.length-8,UI.blAll):'')
       +(paid.length?'<details class="bld"'+(UI.blPaid?' open':'')+' data-tg="blPaid"><summary>Paid this month <span class="sub">· '+paid.length+' · '+fmt0(paid.reduce((t,b)=>t+b.lastAmt,0))+'</span></summary>'+paid.map(b=>row(b,true)).join('')+'</details>':'');
   }else if(tab==='cal'){
     body=billCalHTML(R,row);
@@ -3406,7 +3408,7 @@ function recurPastHTML(ym){
   const tiles=stiles([{k:'In '+ymShort(ym).split(' ')[0],v:fmtT(tot),s:hit.length+' charge'+(hit.length===1?'':'s'),c:'#6366f1'},{k:'Per year',v:fmtT(tot*12),s:'at that pace',c:'#0ea5e9'},{k:'Not charged',v:String(R.length-hit.length),s:'that month',c:'#94a3b8'}]);
   return wCard('Recurring charges','',tiles+R.slice().sort((a,b)=>(M[b.k]?M[b.k].a:-1)-(M[a.k]?M[a.k].a:-1)).slice(0,UI.rcAll?R.length:7).map(x=>{const p=M[x.k];
       return '<div class="ip rcr go" role="button" tabindex="0" data-act="mergo" data-k="'+esc(x.k)+'">'+avHTML(x.cat)+'<div class="l"><b>'+esc(titleCase(x.k))+'</b><span>'+esc(x.cat)+'</span></div><div class="r"><b>'+(p?fmt(p.a):'–')+'</b><span class="rdue">'+(p?niceDay(p.d):'Not charged')+'</span></div></div>';}).join('')
-    +(R.length>7?'<button type="button" class="btn ghost small rcmore" data-act="rcall" aria-expanded="'+!!UI.rcAll+'">'+(UI.rcAll?'Show less':'Show '+(R.length-7)+' more')+'</button>':''));
+    +(R.length>7?moreBtn('rcall',R.length-7,UI.rcAll):''));
 }
 function recurHTML(ym){
   if(pastYM(ym)) return recurPastHTML(ym);
@@ -3418,7 +3420,7 @@ function recurHTML(ym){
   return wCard('Recurring charges','',tiles+
     R.slice(0,UI.rcAll?R.length:7).map(x=>{const soon=dd(x)<=7;
       return '<div class="ip rcr go" role="button" tabindex="0" data-act="mergo" data-k="'+esc(x.k)+'">'+avHTML(x.cat)+'<div class="l"><b>'+esc(titleCase(x.k))+'</b><span>'+esc(x.cat)+'</span></div><div class="r"><b>'+fmt(x.amt)+'</b><span class="rdue'+(soon?' soon':'')+'">'+when(x)+'</span></div></div>';}).join('')
-    +(R.length>7?'<button type="button" class="btn ghost small rcmore" data-act="rcall" aria-expanded="'+!!UI.rcAll+'">'+(UI.rcAll?'Show less':'Show '+(R.length-7)+' more')+'</button>':''));
+    +(R.length>7?moreBtn('rcall',R.length-7,UI.rcAll):''));
 }
 // 4. spending pace
 // 5. compared with usual
@@ -3440,11 +3442,13 @@ function usualHTML(ym){
 }
 // 6. biggest purchases
 function bigHTML(ym){
-  const L=S.txns.filter(t=>t.date.slice(0,7)===ym&&t.amount<0&&!EXCLUDED.includes(t.cat)&&!isInc(t.cat)).sort((a,b)=>a.amount-b.amount).slice(0,5);
+  const L=S.txns.filter(t=>t.date.slice(0,7)===ym&&t.amount<0&&!EXCLUDED.includes(t.cat)&&!isInc(t.cat)).sort((a,b)=>a.amount-b.amount).slice(0,10);
   if(!L.length) return '<p class="mute">No spending this month.</p>';
   const mx=-L[0].amount,tc=s=>s.replace(/\b[a-z]/g,c=>c.toUpperCase());
-  return '<div class="mer">'+L.map((t,i)=>topRow(i,t.cat,t.nick||tc(merchantKey(t.desc)||t.desc),t.desc,-t.amount,t.cat+' · '+shortDate(t.date),-t.amount/mx*100,'data-act="mergo" data-k="'+esc(merchantKey(t.desc)||'other')+'" data-m="'+ym+'"')).join('')+'</div>';
+  return '<div class="mer">'+L.slice(0,UI.tsAll?10:5).map((t,i)=>topRow(i,t.cat,t.nick||tc(merchantKey(t.desc)||t.desc),t.desc,-t.amount,t.cat+' · '+shortDate(t.date),-t.amount/mx*100,'data-act="mergo" data-k="'+esc(merchantKey(t.desc)||'other')+'" data-m="'+ym+'"')).join('')+'</div>'+(L.length>5?moreBtn('tsall',L.length-5,UI.tsAll):'');
 }
+// one 'Show N more / Show less' button for every list
+function moreBtn(act,hidden,open,attrs){return '<button type="button" class="btn ghost small rcmore" data-act="'+act+'"'+(attrs||'')+' aria-expanded="'+!!open+'">'+(open?'Show less':'Show '+hidden+' more')+'</button>';}
 // merchants / purchases in one widget
 const mpMode=()=>{if(!UI.mpm){try{UI.mpm=localStorage.getItem('hb-mpm')==='p'?'p':'m';}catch(e){UI.mpm='m';}}return UI.mpm==='p'?'p':'m';};
 function topSpendHTML(ym){
@@ -3580,7 +3584,7 @@ function viewDash(){
   const catCard='<section class="card"><h2>Spending by category</h2>'+donutHTML(cats.filter(e=>e[1]>0),catsT)+budHead+bC.slice(0,UI.bwAll?bC.length:7).map(([c,v])=>{
     const b=budgetOf(c,UI.month),max=Math.max(b,v,1),over=v>b+0.005;
     return '<div class="cr go" role="button" tabindex="0" data-act="gocatm" data-cat="'+esc(c)+'"><div class="crh"><span><i class="cdot" style="background:'+catColor(c)+'"></i>'+esc(c)+'</span><span><b'+(over?' class="bad"':'')+'>'+fmt0(v)+'</b> <span class="mute">/ '+fmt0(b)+'</span></span></div><div class="track"><div class="fill '+(over?'over':'')+'" style="width:'+Math.max(0,v)/max*100+'%;'+(over?'':'background:'+catColor(c))+'"></div>'+(over?'<i class="mark" style="left:'+b/max*100+'%"></i>':'')+'</div></div>';
-  }).join('')+(bC.length>7?'<button type="button" class="btn ghost small" style="margin-top:10px" data-act="bwall">'+(UI.bwAll?'Show less':'Show all '+bC.length)+'</button>':'')+(cats.length||bC.length?'':'<p class="mute">No spending this month.</p>')+'</section>';
+  }).join('')+(bC.length>7?moreBtn('bwall',bC.length-7,UI.bwAll):'')+(cats.length||bC.length?'':'<p class="mute">No spending this month.</p>')+'</section>';
   const tm=trendMonths();
   const td=tm.map(m=>[m,md(m)]);const mx=Math.max(1,...td.map(([,x])=>Math.max(x.income,x.spend)));
   const trendCard='<section class="card"><div class="trh"><h2>'+trendTitle(tm)+'</h2><div class="seg2" role="group" aria-label="Time range">'+[[3,'3M'],[6,'6M'],[12,'12M'],['all','All']].map(([n,l])=>'<button type="button" data-act="trrange" data-n="'+n+'" class="'+(!UI.trZ&&(UI.trN||6)===n?'on':'')+'" aria-pressed="'+(!UI.trZ&&(UI.trN||6)===n)+'">'+l+'</button>').join('')+'</div></div>'+(UI.trZ||(UI.trN||6)!==6?'<div class="trr"><button type="button" class="btn ghost small" data-act="trreset">Reset zoom</button></div>':'')+trendHTML(td,UI.month)+'</section>';
@@ -3886,7 +3890,7 @@ function budgetWidgetHTML(ym){
   const top=rows.slice(0,UI.bwAll?rows.length:5).map(x=>'<div class="bwr"><div class="bwn"><span>'+esc(x.c)+'</span><b class="'+(x.sp>x.b?'bad':'')+'">'+fmt0(x.sp)+' <small>/ '+fmt0(x.b)+'</small></b></div>'+bar(x.sp,x.b,CATCOL[x.c]||catColor(x.c))+'</div>').join('');
   return '<section class="card go" role="button" tabindex="0" data-act="tab" data-tab="budgets" aria-label="Open Budgets"><div class="wth"><h2>Budgets</h2><span class="spacer"></span><span class="sub">'+(over?over+' over':'On track')+' ›</span></div>'
     +'<div class="bwt"><b>'+fmt0(Math.abs(left))+'</b><span class="sub">'+(left<0?'over':'left')+' of '+fmt0(tb)+'</span></div>'+bar(ts,tb)
-    +'<div class="bwl">'+top+'</div>'+(rows.length>5?'<button type="button" class="btn ghost small" style="margin-top:10px" data-act="bwall">'+(UI.bwAll?'Show less':'Show all '+rows.length)+'</button>':'')+'</section>';
+    +'<div class="bwl">'+top+'</div>'+(rows.length>5?moreBtn('bwall',rows.length-5,UI.bwAll):'')+'</section>';
 }
 function catRowHTML(c,ym){
   const d=md(ym),b=budgetOf(c,ym),carry=rolloverIn(c,ym),spent=d.byCat[c]||0,avail=b+carry,left=avail-spent,has=b||carry;
@@ -4083,7 +4087,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<details class="itip"><summary><i>i</i><span>About</span></summary><p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p></details><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.80.4';
+const APP_VERSION='1.81.0';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -4162,7 +4166,7 @@ function viewInvest0(){
   const mode=posMode(),pa=!!UI._posAnim,agg={};UI._posAnim=false;
   rows.forEach(r=>r.L.forEach(x=>{const k=x.sym||x.desc||'Other',key=mode==='acct'?r.id+'|'+k:k,o=agg[key]=agg[key]||{k,v:0,d:x.desc,by:{},fi:fixedInc(x)};o.v+=x.value||0;o.by[r.id]=(o.by[r.id]||0)+(x.value||0);}));
   const top=Object.values(agg).filter(x=>x.v>0).sort((a,b)=>b.v-a.v),mx=top.length?top[0].v:1,pN=Math.max(8,UI.posN||8),all=pN>=top.length,shown=top.slice(0,pN);
-  if(top.length>1)h+='<section class="card"><div class="row" style="align-items:center;margin-bottom:4px"><h2 style="margin:0">Biggest positions</h2><span class="spacer"></span><div class="seg2" role="group" aria-label="Group positions"><button type="button" data-act="posmode" data-m="asset" class="'+(mode==='asset'?'on':'')+'" aria-pressed="'+(mode==='asset')+'">By asset</button><button type="button" data-act="posmode" data-m="acct" class="'+(mode==='acct'?'on':'')+'" aria-pressed="'+(mode==='acct')+'">By account</button></div></div><p class="sub" style="margin:0 0 8px">'+fmt0(inPos)+' in positions · '+(mode==='asset'?'accounts combined':'by account')+'</p>'+shown.map((x,i)=>'<div class="cr'+(pa?' pa':'')+'" style="margin:10px 0;--i:'+Math.min(i,14)+'"><div class="crh pr"><span class="pn"><i class="cdot" style="background:'+CATPAL[i%CATPAL.length]+'"></i><span class="pt">'+(x.fi?'<span class="tl">'+fxTitle(x.fi.issuer)+'</span><span class="fiw"><span class="mute fi2">'+x.fi.kind+' · '+x.fi.rate+'% · '+matShort(x.fi.mat)+'</span>'+acctTags(x,l4)+'</span>':'<span class="tl">'+fxTitle(x.k)+(x.d&&x.d!==x.k?' <span class="mute">'+esc(x.d)+'</span>':'')+'</span>'+acctTags(x,l4))+'</span></span><span>'+fmt0(x.v)+' <span class="mute">'+(x.v/inPos*100).toFixed(1)+'%</span></span></div><div class="track"><div class="fill" style="width:'+(x.v/mx*100).toFixed(1)+'%;--fill:'+CATPAL[i%CATPAL.length]+'"></div></div></div>').join('')+(top.length>8?'<p style="margin:10px 0 0">'+(all?'':'<button type="button" class="btn ghost small" data-act="posmore">Load '+Math.min(10,top.length-pN)+' more</button> ')+(pN>8?'<button type="button" class="btn ghost small" data-act="posall">Show fewer</button> ':'')+'<span class="sub" style="margin-left:6px">Showing '+shown.length+' of '+top.length+'</span></p>':'')+'</section>';
+  if(top.length>1)h+='<section class="card"><div class="row" style="align-items:center;margin-bottom:4px"><h2 style="margin:0">Biggest positions</h2><span class="spacer"></span><div class="seg2" role="group" aria-label="Group positions"><button type="button" data-act="posmode" data-m="asset" class="'+(mode==='asset'?'on':'')+'" aria-pressed="'+(mode==='asset')+'">By asset</button><button type="button" data-act="posmode" data-m="acct" class="'+(mode==='acct'?'on':'')+'" aria-pressed="'+(mode==='acct')+'">By account</button></div></div><p class="sub" style="margin:0 0 8px">'+fmt0(inPos)+' in positions · '+(mode==='asset'?'accounts combined':'by account')+'</p>'+shown.map((x,i)=>'<div class="cr'+(pa?' pa':'')+'" style="margin:10px 0;--i:'+Math.min(i,14)+'"><div class="crh pr"><span class="pn"><i class="cdot" style="background:'+CATPAL[i%CATPAL.length]+'"></i><span class="pt">'+(x.fi?'<span class="tl">'+fxTitle(x.fi.issuer)+'</span><span class="fiw"><span class="mute fi2">'+x.fi.kind+' · '+x.fi.rate+'% · '+matShort(x.fi.mat)+'</span>'+acctTags(x,l4)+'</span>':'<span class="tl">'+fxTitle(x.k)+(x.d&&x.d!==x.k?' <span class="mute">'+esc(x.d)+'</span>':'')+'</span>'+acctTags(x,l4))+'</span></span><span>'+fmt0(x.v)+' <span class="mute">'+(x.v/inPos*100).toFixed(1)+'%</span></span></div><div class="track"><div class="fill" style="width:'+(x.v/mx*100).toFixed(1)+'%;--fill:'+CATPAL[i%CATPAL.length]+'"></div></div></div>').join('')+(top.length>8?moreBtn('posmore',top.length-8,pN>8):'')+'</section>';
   // "ready to invest" is already on the total card and on each account below, so no separate card
   const OPEN=invOpen();
   const PS=FOLD.get('hb-possort')||'value',gOf=x=>(x.value!=null&&x.cost>0&&!fixedInc(x))?x.value-x.cost:null,pOf=x=>{const g=gOf(x);return g==null?null:g/x.cost;};
@@ -4174,7 +4178,7 @@ function viewInvest0(){
     const cash=(r.inf.bal!=null?r.inf.bal:r.pos)-r.pos;
     const open=OPEN.includes(r.id);
     const SDo=(()=>{try{return secData(insLoad(),r.id);}catch(e){return {L:[]};}})();
-    h+='<section class="card" id="iv-'+esc(r.id)+'"><button type="button" class="ivh" data-act="invtoggle" data-id="'+esc(r.id)+'" aria-expanded="'+open+'"><i class="chv2">›</i><h2>'+esc(r.inf.name)+'</h2><span class="spacer"></span><b class="invv">'+fmt0(r.inf.bal!=null?r.inf.bal:r.pos)+'</b></button><div class="sub" style="margin:2px 0 6px 24px">'+esc(r.inf.org)+(r.inf.org?' · ':'')+r.L.length+' position'+(r.L.length===1?'':'s')+(CB.by[r.id]?' · <b class="rdyc">'+fmt0(CB.by[r.id])+' ready to invest</b>':'')+'</div>'+(r.gl?'<div class="glr"><span class="'+(r.gl.d<0?'neg':'pos')+'">'+(r.gl.d<0?'-':'+')+fmt0(Math.abs(r.gl.d)).replace('-','')+' ('+pf(r.gl.p)+')</span> gain/loss'+'</div>':'')
+    h+='<section class="card" id="iv-'+esc(r.id)+'"><button type="button" class="ivh" data-act="invtoggle" data-id="'+esc(r.id)+'" aria-expanded="'+open+'"><i class="chv2">›</i><h2>'+esc(r.inf.name)+'</h2><span class="spacer"></span><b class="invv">'+fmt0(r.inf.bal!=null?r.inf.bal:r.pos)+'</b></button><div class="sub" style="margin:2px 0 6px 24px">'+esc(r.inf.org)+(r.inf.org?' · ':'')+r.L.length+' position'+(r.L.length===1?'':'s')+'</div>'+(r.gl||CB.by[r.id]?'<div class="glr">'+(r.gl?'<span class="'+(r.gl.d<0?'neg':'pos')+'">'+(r.gl.d<0?'-':'+')+fmt0(Math.abs(r.gl.d)).replace('-','')+' ('+pf(r.gl.p)+')</span> gain/loss':'')+(r.gl&&CB.by[r.id]?' · ':'')+(CB.by[r.id]?'<b class="rdyc">'+fmt0(CB.by[r.id])+' ready to invest</b>':'')+'</div>':'')
      +(()=>{
        // one spot, two views: balance over time or what it holds (switch with the tabs)
        const pie=acctSecPie(r.id),vw=(UI.ivVw||{})[r.id]==='pie'&&pie?'pie':'bal';
@@ -4185,7 +4189,7 @@ function viewInvest0(){
      +(()=>{const all=!!(UI.ivAll||{})[r.id],LL=all?r.L:r.L.slice(0,8);return LL;})().map(x=>{const fi=fixedInc(x),g=(x.value!=null&&x.cost!=null&&!fi)?x.value-x.cost:null;
        const pk=posClass(x,insLoad()),pci=SDo.L.findIndex(q=>q[0]===pk),pcol=secColor(pk);
        return '<div class="ip"><div class="l"><div class="ipt">'+fxTitle(fi?fi.issuer:(x.sym||x.desc||'Position'))+'<span class="pcl" style="color:'+pcol+';background:'+pcol+'1f;border-color:'+pcol+'55" title="'+(pk==='Other'?'No ticker and not a CD, bond, cash, fund or commodity':pk==='Not loaded yet'?'Sector loads with a Finnhub key (Markets → Stock lookup)':esc(pk))+'">'+esc(pk)+'</span></div>'+(fi?'<span class="fi">'+fi.kind+' · <b>'+fi.rate+'%</b> · '+matText(fi.mat)+(x.value>0?' · ≈'+fmt0(x.value*fi.rate/100)+'/yr':'')+'</span>':'<span>'+esc(x.sym&&x.desc?x.desc:'')+(x.shares!=null?(x.sym&&x.desc?' · ':'')+(+x.shares.toFixed(4))+' sh':'')+(x.price!=null?' @ '+fmt(x.price):'')+(x.since&&dayNum(todayISO())-dayNum(x.since)>30?' · since '+new Date(x.since+'T12:00:00').toLocaleDateString('en-US',{month:'short',year:'numeric'}):'')+'</span>')+'</div><div class="r"><b>'+(x.value!=null?fmt(x.value):'–')+'</b>'+(g!=null?'<span class="'+(g<0?'neg':'pos')+'">'+(g<0?'-':'+')+fmt(Math.abs(g)).replace('-','')+' · '+pf(g/x.cost*100)+'</span>':'<span>&nbsp;</span>')+'</div></div>';}).join('')
-     +(r.L.length>8?'<button type="button" class="btn ghost small ivmore" data-act="ivall" data-id="'+esc(r.id)+'" aria-expanded="'+!!(UI.ivAll||{})[r.id]+'">'+((UI.ivAll||{})[r.id]?'Show fewer':'Show '+(r.L.length-8)+' more positions')+'</button>':'')
+     +(r.L.length>8?moreBtn('ivall',r.L.length-8,(UI.ivAll||{})[r.id],' data-id="'+esc(r.id)+'"'):'')
      +(Math.abs(cash)>=1?'<div class="ip"><div class="l"><b>Cash &amp; other</b><span>Not in a position</span></div><div class="r"><b>'+fmt(cash)+'</b><span>&nbsp;</span></div></div>':'')+'</div></section>';
   });
   h+=insightsHTML();
@@ -5089,6 +5093,7 @@ const ACT={
   audgo(el){jmp();UI.filters={q:'',acct:'',cat:'',month:'',ids:String(el.dataset.ids||'').split(',').filter(Boolean),label:el.dataset.label||'Selected transactions'};UI.limit=200;UI.tab='txns';render();window.scrollTo(0,0);},
   mergo(el){const k=el.dataset.k,ym=el.dataset.m||'';const ids=S.txns.filter(t=>(merchantKey(t.desc)||'other')===k&&(!ym||t.date.startsWith(ym))).map(t=>t.id);jmp();UI.filters={q:'',acct:'',cat:'',month:'',ids,label:titleCase(k)+(ym?' · '+monthLabel(ym):' · all')};UI.limit=200;UI.tab='txns';render();window.scrollTo(0,0);},
   bwall(){UI.bwAll=!UI.bwAll;render();},
+  tsall(){UI.tsAll=!UI.tsAll;render();},
   blcald(el){UI.blCalD=UI.blCalD===el.dataset.d?null:el.dataset.d;render();},
   blcalm(el){const c=todayISO().slice(0,7);UI.blCalM=addMonths(UI.blCalM||c,+el.dataset.n);UI.blCalD=null;render();},
   blall(){UI.blAll=!UI.blAll;render();},
@@ -5115,7 +5120,7 @@ const ACT={
   pdfskip(el){UI.pdf.items[+el.dataset.i].choice='';recomputePdf();render();toast('Skipped. Pick an account on it to bring it back.');},
   pdfflipgo(el){const it=UI.pdf.items[+el.dataset.i];it.flip=!it.flip;recomputePdf();render();},
   pdfrows(el){const c=el.closest('.pvchk').parentElement.querySelector('details');if(c){c.open=true;c.scrollIntoView({block:'nearest',behavior:'smooth'});}},
-  posall(){UI.posN=8;render();},posmore(){const y=scrollY;UI.posN=Math.max(8,UI.posN||8)+10;render();scrollTo(0,y);},
+  posall(){UI.posN=8;render();},posmore(){UI.posN=(UI.posN||8)>8?8:1e9;render();},
   pgprev(){UI.page=Math.max(0,(UI.page||0)-1);renderTxnList();window.scrollTo(0,0);},
   pgnext(){UI.page=(UI.page||0)+1;renderTxnList();window.scrollTo(0,0);},
   delrule(el){const r=S.rules[+el.dataset.i];if(!r) return;dialog({msg:'Delete the rule "'+r.match+'" → '+r.cat+'? Transactions already sorted keep their category.',ok:'Delete rule',bad:true,onOk:()=>ACT._delrule(el)});},
@@ -5303,6 +5308,7 @@ const ACT={
   }
 };
 const CHG={
+  secacct(el){UI.secAcct=el.value||'';insPaint();},
   bdcat(el){const b=$('#bdNewBox');if(b){b.hidden=el.value!=='__new__';if(el.value==='__new__'){const i=$('#bdNewCat');if(i) setTimeout(()=>i.focus(),30);}}},
   devname(el){const v=el.value.trim();try{if(v) localStorage.setItem('hb-device',v);else localStorage.removeItem('hb-device');}catch(e){}toast('Device name saved');},
   month(el){UI.month=el.value;render();},
