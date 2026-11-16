@@ -546,7 +546,7 @@ td.ds{max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .nk{font-weight:400;color:var(--mute);font-size:12px;margin-left:4px}
 .t1 .ds{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
 .t1 .amt{white-space:nowrap;font-weight:750;font-variant-numeric:tabular-nums}
-.t1 .amt.pos{color:var(--good)}
+.t1 .amt.pos{color:var(--good)}.t1 .amt.neg{color:var(--ink)}summary>.sub{margin-left:4px}
 .t2{margin-top:5px}
 .t2 .sub{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .t2 select{max-width:46%;font-size:12.5px;padding:5px 26px 5px 10px;border-radius:99px;background-position:right 9px center;font-weight:600;color:var(--mute)}
@@ -1891,10 +1891,10 @@ function months(){
 }
 // the newest month that has data and is not in the future (a stray future date must not become the home screen)
 function latestMonth(){const now=new Date(),cur=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');const m=[...new Set(S.txns.map(t=>t.date.slice(0,7)))].sort();const ok=m.filter(x=>x<=cur);return ok.length?ok[ok.length-1]:(m.length?m[0]:cur);}
-function monthData(ym){
+function monthData(ym,upTo){
   let income=0,spend=0,interest=0;const byCat={};
   for(const t of S.txns){
-    if(t.date.slice(0,7)!==ym||EXCLUDED.includes(t.cat)) continue;
+    if(t.date.slice(0,7)!==ym||EXCLUDED.includes(t.cat)||(upTo&&t.date.slice(8,10)>upTo)) continue;
     if(isInc(t.cat)){income+=t.amount;if(t.cat==='Interest')interest+=t.amount;continue;}
     spend-=t.amount;byCat[t.cat]=(byCat[t.cat]||0)-t.amount;
   }
@@ -2041,7 +2041,7 @@ function balSeries(ids,split){
   return D.map(d=>[d,units.reduce((t,u)=>t+uv(u,d),0)]);
 }
 // time ranges for over-time charts; each chart remembers its own pick
-const HCR=[['1m','1M',30],['3m','3M',91],['6m','6M',182],['ytd','YTD',0],['1y','1Y',365],['all','All',1e9]];
+const HCR=[['1m','1M',30],['3m','3M',91],['6m','6M',182],['1y','1Y',365],['all','All',1e9]];
 function histChart(P0,o){
   o=o||{};
   const cid=o.id||'x',full=P0||[],span0=full.length>1?dayNum(full[full.length-1][0])-dayNum(full[0][0]):0;
@@ -2242,9 +2242,9 @@ const smoothPath=pts=>{ // gentle curve through the points that never overshoots
 // The month card on the Overview: net for the month, the three totals (each compared with last month),
 // and a chart of spending through the month you can scrub: last month as a ghost, the pace to month end, and your budget line.
 function heroCardHTML(ym,d){
-  const pym=addMonths(ym,-1),pd=md(pym),net=d.income-d.spend,mon=new Date(ym+'-15T12:00:00').toLocaleDateString('en-US',{month:'long'}),pmon=new Date(pym+'-15T12:00:00').toLocaleDateString('en-US',{month:'short'});
+  const pym=addMonths(ym,-1),isNow=ym===todayISO().slice(0,7),pd=isNow?monthData(pym,todayISO().slice(8,10)):md(pym),net=d.income-d.spend,mon=new Date(ym+'-15T12:00:00').toLocaleDateString('en-US',{month:'long'}),pmon=new Date(pym+'-15T12:00:00').toLocaleDateString('en-US',{month:'short'});
   const tb=plannedExpenses(ym)||0,bs=tb?budgetedSpend(ym,d):0,left=tb-bs;
-  const dl=(a,b,good)=>{if(!(b>0.5)) return '';const ch=(a-b)/b*100;if(Math.abs(ch)<0.5) return '<em>same as '+pmon+'</em>';const up=ch>0,ok=good==='up'?up:!up;return '<em class="'+(ok?'ok':'bad')+'">'+(up?'▲ ':'▼ ')+Math.abs(ch).toFixed(0)+'% vs '+pmon+'</em>';};
+  const dl=(a,b,good)=>{if(!(b>0.5)) return '';const ch=(a-b)/b*100;if(Math.abs(ch)<0.5) return '<em>same as '+pmon+(isNow?' so far':'')+'</em>';const up=ch>0,ok=good==='up'?up:!up;return '<em class="'+(ok?'ok':'bad')+'">'+(up?'▲ ':'▼ ')+Math.abs(ch).toFixed(0)+'% vs '+pmon+(isNow?' so far':'')+'</em>';};
   const pill=d.income>0?'<span class="hxp'+(net<0?' warn':'')+'">'+(net<0?'Spent '+Math.round((d.spend/d.income-1)*100)+'% more than earned':'Kept '+Math.round(net/d.income*100)+'% of income')+'</span>':'';
   const tile=(k,lab,val,sub)=>'<div class="hxt" role="button" tabindex="0" data-act="herogo" data-k="'+k+'"><span>'+lab+'</span><b>'+val+'</b>'+(sub||'')+'</div>';
   return '<div class="hero hx"><div class="hxh"><div class="hxm"><div class="hxl">'+esc(mon)+' · net</div><div class="hxn'+(net<0?' neg':'')+'">'+(net<0?'−':'')+fmt0(Math.abs(net)).replace('-','')+'</div>'+pill+'</div>'
@@ -2550,7 +2550,7 @@ function merchHTML(ym){
     else if(ss&&svg){skReset(svg);svg.dataset.g=ss.dataset.ss;$$(svg,'[data-ss="'+ss.dataset.ss+'"]').forEach(x=>x.classList.add('f'));}
     else if(svg&&(svg.dataset.f||svg.dataset.g)) skReset(svg);
     const hi=t.closest('.tr .hit');if(hi) trFocus(hi.closest('.tr'),+hi.dataset.ti);
-    const cc=t.closest('.cc');if(cc){const ci=cc.closest('.cal').querySelector('.cinfo');ci.textContent=cc.dataset.info;}
+    const cc=t.closest('.cc');if(cc){const ci=cc.closest('.cal')&&cc.closest('.cal').querySelector('.cinfo');if(ci) ci.textContent=cc.dataset.info;}
     else{const ci=document.querySelector('.cal .cinfo');if(ci&&ci.textContent!==ci.dataset.d&&!t.closest('.cal')) ci.textContent=ci.dataset.d;}
   });
   document.addEventListener('click',e=>{
@@ -2559,7 +2559,7 @@ function merchHTML(ym){
     const nt=e.target.closest&&e.target.closest('.sk [data-note]');
     if(nt){const box=nt.closest('.sk').querySelector('.skn');if(box){const N=nt.dataset.note||'',k=N.indexOf(' · '),t=k>0?N.slice(0,k):N,rest=k>0?N.slice(k+3):'',m=rest.match(/^(.*?%[^.]*)\.\s*(.*)$/),det=m?m[1]:rest,nt2=m?m[2]:'';box.querySelector('span').innerHTML='<b class="skt">'+esc(t)+'</b>'+(det?'<span class="skd">'+esc(det)+'</span>':'')+(nt2?'<small class="skm">'+esc(nt2)+'</small>':'');const g=box.querySelector('.skcta'),sb=box.querySelector('.skb');box.dataset.go=nt.dataset.go||'';if(g) g.hidden=!nt.dataset.go;if(sb){sb.classList.toggle('nogo',!nt.dataset.go);sb.setAttribute('aria-disabled',String(!nt.dataset.go));}box.hidden=false;if(window._skKb){window._skKb=false;box._from=nt.dataset.sk!=null?'[data-sk="'+nt.dataset.sk+'"].ht':'[data-ss="'+nt.dataset.ss+'"].ht';(g&&!g.hidden&&sb?sb:box.querySelector('.skx')).focus();}}return;}
     if(e.target.closest&&e.target.closest('.skx')){const bx=e.target.closest('.skn');bx.hidden=true;if(bx._from){const n=bx.closest('.sk').querySelector(bx._from);bx._from=null;if(n) n.focus();}return;}
-    const cc=e.target.closest&&e.target.closest('.cc');if(cc) cc.closest('.cal').querySelector('.cinfo').textContent=cc.dataset.info;
+    const cc=e.target.closest&&e.target.closest('.cc'),ci=cc&&cc.closest('.cal')&&cc.closest('.cal').querySelector('.cinfo');if(ci) ci.textContent=cc.dataset.info;
   });
   document.addEventListener('toggle',e=>{const t=e.target;if(t&&t.classList&&t.classList.contains('ag')&&t.dataset.ag){(UI.agOpen=UI.agOpen||{})[t.dataset.ag]=t.open;}},true);
   (function(){let d=null;window.__trDrag=()=>d&&d.moved;
@@ -3503,6 +3503,8 @@ function itipHead(root){(root||document).querySelectorAll('details.itip:not(.mv)
   d.classList.add('mv');const b=document.createElement('button');b.type='button';b.className='itb';b.textContent='i';b.setAttribute('aria-label','About this');b.setAttribute('aria-expanded',String(!!d.open));h.appendChild(b);});}
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('.itb');if(!b) return;e.preventDefault();e.stopPropagation();const d=b.parentElement.nextElementSibling;if(d&&d.tagName==='DETAILS'){d.open=!d.open;b.setAttribute('aria-expanded',String(d.open));}},true);
 try{new MutationObserver(()=>itipHead()).observe(document.documentElement,{childList:true,subtree:true});}catch(e){}
+// phone/browser Back goes to the previous tab instead of leaving the app
+try{history.replaceState({tab:'dash'},'');addEventListener('popstate',e=>{const t=e.state&&e.state.tab;if(t&&TABNM[t]){UI.jump=null;UI.tab=t;render();scrollTo(0,0);}});}catch(e){}
 // one 'Show N more / Show less' button for every list
 function moreBtn(act,hidden,open,attrs){return '<button type="button" class="btn ghost small rcmore" data-act="'+act+'"'+(attrs||'')+' aria-expanded="'+!!open+'">'+(open?'Show less':'Show '+hidden+' more')+'</button>';}
 // merchants / purchases in one widget
@@ -3646,7 +3648,7 @@ function viewDash(){
   }).join('')+(bC.length>7?moreBtn('bwall',bC.length-7,UI.bwAll):'')+(cats.length||bC.length?'':'<p class="mute">No spending this month.</p>')+'</section>';
   const tm=trendMonths();
   const td=tm.map(m=>[m,md(m)]);const mx=Math.max(1,...td.map(([,x])=>Math.max(x.income,x.spend)));
-  const trendCard='<section class="card"><div class="trh"><h2>'+trendTitle(tm)+'</h2><div class="seg2" role="group" aria-label="Time range">'+[[3,'3M'],[6,'6M'],[12,'12M'],['all','All']].map(([n,l])=>'<button type="button" data-act="trrange" data-n="'+n+'" class="'+(!UI.trZ&&(UI.trN||6)===n?'on':'')+'" aria-pressed="'+(!UI.trZ&&(UI.trN||6)===n)+'">'+l+'</button>').join('')+'</div></div>'+(UI.trZ||(UI.trN||6)!==6?'<div class="trr"><button type="button" class="btn ghost small" data-act="trreset">Reset zoom</button></div>':'')+trendHTML(td,UI.month)+'</section>';
+  const trendCard='<section class="card"><div class="trh"><h2>'+trendTitle(tm)+'</h2><div class="seg2" role="group" aria-label="Time range">'+[[3,'3M'],[6,'6M'],[12,'1Y'],['all','All']].map(([n,l])=>'<button type="button" data-act="trrange" data-n="'+n+'" class="'+(!UI.trZ&&(UI.trN||6)===n?'on':'')+'" aria-pressed="'+(!UI.trZ&&(UI.trN||6)===n)+'">'+l+'</button>').join('')+'</div></div>'+(UI.trZ||(UI.trN||6)!==6?'<div class="trr"><button type="button" class="btn ghost small" data-act="trreset">Reset zoom</button></div>':'')+trendHTML(td,UI.month)+'</section>';
   const H0={cat:catCard,trend:trendCard,
     // the save / share buttons sit on the chart's own summary line, top right of the picture
     flow:()=>d.spend>0?'<section class="card"><h2>Where the money went</h2><div class="flowbar"><span class="sub">'+fmt0(d.spend)+' spent'+(d.income>0?' of '+fmt0(d.income)+' earned':'')+'</span><span class="spacer"></span><button type="button" class="btn ghost small" data-act="flowsave" data-ym="'+UI.month+'" title="Save the chart as a picture">Save picture</button>'+(navigator.share?'<button type="button" class="btn ghost small" data-act="flowshare" data-ym="'+UI.month+'">Share</button>':'')+'</div>'+flowHTML(UI.month)+'</section>':'',
@@ -4146,7 +4148,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<details class="itip"><summary><i>i</i><span>About</span></summary><p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p></details><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.83.1';
+const APP_VERSION='1.84.0';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -5020,17 +5022,18 @@ function applyCat(id,cat){
   const mk=merchantKey(t.desc);
   if(cat!=='Uncategorized'&&mk.length>=3){
     const similar=S.txns.filter(x=>x.id!==id&&x.cat!==cat&&(x.amount>0)===(t.amount>0)&&merchantKey(x.desc)===mk),prevCats=similar.map(x=>[x,x.cat]),prevRules=S.rules.slice();
-    similar.forEach(x=>x.cat=cat);S.rules=S.rules.filter(r=>r.match!==mk);S.rules.unshift({match:mk,cat});save();
-    toast('Saved: “'+mk+'” → '+cat+(similar.length?' · updated '+similar.length+' earlier':'')+' · applies to all new ones',{label:'Undo',fn:()=>{t.cat=oldCat;prevCats.forEach(([x,c])=>x.cat=c);S.rules=prevRules;save();render();toast('Undone');}});
+    // only this row changes; the toast offers to do the same for similar ones (and future ones)
+    toast('Changed to '+cat+(similar.length?' · '+similar.length+' similar':''),{label:similar.length?'Apply to all':'Always',fn:()=>{similar.forEach(x=>x.cat=cat);S.rules=S.rules.filter(r=>r.match!==mk);S.rules.unshift({match:mk,cat});save();render();
+      toast('“'+mk+'” → '+cat+(similar.length?' · updated '+similar.length:'')+' · applies to new ones too',{label:'Undo',fn:()=>{prevCats.forEach(([x,c])=>x.cat=c);S.rules=prevRules;save();render();toast('Undone');}});}});
   }
   renderTxnList();
 }
 const ACT={
   jmpback(){const j=UI.jump;UI.jump=null;UI.tab=j?j.tab:'dash';render();window.scrollTo(0,j?j.y:0);if(j&&j.f) setTimeout(()=>refocus(j.f),10);},
-  tab(el){UI.jump=null;if(UI.filters.ids){delete UI.filters.ids;delete UI.filters.label;}UI.tab=el.dataset.tab;render();window.scrollTo(0,0);},
+  tab(el){if(el.dataset.tab!==UI.tab){try{history.pushState({tab:el.dataset.tab},'');}catch(e){}}UI.jump=null;if(UI.filters.ids){delete UI.filters.ids;delete UI.filters.label;}if(el.dataset.tab==='txns'&&UI.tab!=='txns'&&(UI.filters.flow||UI.filters.day)){UI.filters.flow='';UI.filters.day='';UI.filters.cat='';}UI.tab=el.dataset.tab;render();window.scrollTo(0,0);},
   wedit(){UI.wedit=true;UI.goto='wtop';render();},
   wdone(){UI.wedit=false;UI.goto='wmain';render();},
-  wreset(){S.widgets=null;save();render();},
+  wreset(){dialog({msg:'Reset Overview to the default widgets, order and sizes?',ok:'Reset',bad:true,onOk:()=>{S.widgets=null;save();render();}});},
   wsize(el){const id=el.dataset.id,st=wState();S.widgets=S.widgets||{order:st.order,hidden:st.hidden};S.widgets.size=S.widgets.size||{};S.widgets.size[id]=wSz(id)==='half'?'full':'half';save();render();requestAnimationFrame(()=>{const n=document.querySelector('.wsz[data-id="'+id+'"]');if(n) n.focus({preventScroll:true});});},
   wrem(el){const nm=(WID.find?((WID.find(w=>w.id===el.dataset.id)||{}).t):'')||'this widget';dialog({msg:'Remove "'+nm+'" from Overview? You can add it back anytime from "Add a widget".',ok:'Remove',bad:true,onOk:()=>ACT._wrem(el)});},
   _wrem(el){const st=wState();st.order=st.order.filter(i=>i!==el.dataset.id);st.hidden.push(el.dataset.id);wSave(st);render();},
@@ -5331,14 +5334,14 @@ const ACT={
     const mn=m=>new Date(m+'-15T12:00:00').toLocaleDateString('en-US',{month:'short',year:'numeric'}),span=prev.length>1?mn(prev[prev.length-1])+' – '+mn(prev[0]):mn(prev[0]);
     const has=expenseCats().concat(['Income']).some(c=>budgetOf(c,UI.month));
     if(has&&!replace){dialog({msg:'You already have budgets. Replace all of them with your average spending from '+span+'? (Your earlier months keep their budgets.)',ok:'Replace',onOk:()=>ACT.suggest(null,'replace')});return;}
-    let n=0;
+    let n=0;const bak=JSON.stringify(S.budgets);
     for(const c of expenseCats()){
       const avg=prev.reduce((a,m)=>a+(md(m).byCat[c]||0),0)/prev.length;
       if(avg>=10){setBudget(c,UI.month,Math.ceil(avg/10)*10,false);n++;}
       else if(replace&&budgetOf(c,UI.month)) setBudget(c,UI.month,0,false);
     }
     {const ai=prev.reduce((a,m)=>a+md(m).income,0)/prev.length;if(ai>=100) setBudget('Income',UI.month,Math.round(ai/100)*100,false);}
-    save();render();toast(n?'Set '+n+' budgets from your average of '+span:'Nothing to suggest yet.');
+    save();render();toast(n?'Set '+n+' budgets from your average of '+span:'Nothing to suggest yet.',n?{label:'Undo',fn:()=>{S.budgets=JSON.parse(bak);save();render();toast('Undone');}}:null);
   },
 
   mergedupes(){
