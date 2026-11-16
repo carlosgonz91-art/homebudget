@@ -827,6 +827,8 @@ html,body{touch-action:pan-x pan-y}
 .cdm2 b{color:var(--ink);font-weight:750}
 .bwt{display:flex;align-items:baseline;gap:8px;margin:2px 0 8px}.bwt b{font-size:24px;font-weight:800}.bwl{display:grid;gap:10px;margin-top:14px}.bwn{display:flex;justify-content:space-between;gap:8px;font-size:13.5px;margin-bottom:5px}.bwn span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.bwn b{white-space:nowrap}.bwn b small{color:var(--mute);font-weight:500}.bwn b.bad{color:var(--cout)}
 .bwt b.bad,.crh b.bad{color:var(--cout)}
+/* purple card chart: legend under the chart */
+.hxc{display:flex;flex-direction:column}.hxc>*{order:1}.hxc>.hxcl{order:2;margin:10px 0 0}
 </style>
 <header><div class="bar"><span class="logo"><span class="mk mkc" aria-hidden="true"></span>HomeBudget <span class="ver" id="ver"></span></span>
 <nav>
@@ -4081,7 +4083,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<details class="itip"><summary><i>i</i><span>About</span></summary><p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p></details><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.80.1';
+const APP_VERSION='1.80.2';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
