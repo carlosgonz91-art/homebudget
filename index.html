@@ -3575,10 +3575,10 @@ function viewDash(){
   const bC=expenseCats().filter(c=>budgetOf(c,UI.month)>0).map(c=>[c,d.byCat[c]||0]).sort((a,b)=>b[1]-a[1]);
   const bT=bC.reduce((t,[c])=>t+budgetOf(c,UI.month),0),bS=bC.reduce((t,[,v])=>t+Math.max(0,v),0),bL=bT-bS;
   const budHead=bC.length?'<h3 style="margin:16px 0 4px">Budgets</h3><div class="bwt"><b class="'+(bL<0?'bad':'')+'">'+fmt0(Math.abs(bL))+'</b><span class="sub">'+(bL<0?'over':'left')+' of '+fmt0(bT)+'</span></div><div class="track" style="margin-bottom:12px"><div class="fill'+(bL<0?' over':'')+'" style="width:'+Math.min(100,bT>0?bS/bT*100:0).toFixed(1)+'%"></div></div>':'';
-  const catCard='<section class="card"><h2>Spending by category</h2>'+donutHTML(cats.filter(e=>e[1]>0),catsT)+budHead+bC.map(([c,v])=>{
+  const catCard='<section class="card"><h2>Spending by category</h2>'+donutHTML(cats.filter(e=>e[1]>0),catsT)+budHead+bC.slice(0,UI.bwAll?bC.length:7).map(([c,v])=>{
     const b=budgetOf(c,UI.month),max=Math.max(b,v,1),over=v>b+0.005;
     return '<div class="cr go" role="button" tabindex="0" data-act="gocatm" data-cat="'+esc(c)+'"><div class="crh"><span><i class="cdot" style="background:'+catColor(c)+'"></i>'+esc(c)+'</span><span><b'+(over?' class="bad"':'')+'>'+fmt0(v)+'</b> <span class="mute">/ '+fmt0(b)+'</span></span></div><div class="track"><div class="fill '+(over?'over':'')+'" style="width:'+Math.max(0,v)/max*100+'%;'+(over?'':'background:'+catColor(c))+'"></div>'+(over?'<i class="mark" style="left:'+b/max*100+'%"></i>':'')+'</div></div>';
-  }).join('')+(cats.length||bC.length?'':'<p class="mute">No spending this month.</p>')+'</section>';
+  }).join('')+(bC.length>7?'<button type="button" class="btn ghost small" style="margin-top:10px" data-act="bwall">'+(UI.bwAll?'Show less':'Show all '+bC.length)+'</button>':'')+(cats.length||bC.length?'':'<p class="mute">No spending this month.</p>')+'</section>';
   const tm=trendMonths();
   const td=tm.map(m=>[m,md(m)]);const mx=Math.max(1,...td.map(([,x])=>Math.max(x.income,x.spend)));
   const trendCard='<section class="card"><div class="trh"><h2>'+trendTitle(tm)+'</h2><div class="seg2" role="group" aria-label="Time range">'+[[3,'3M'],[6,'6M'],[12,'12M'],['all','All']].map(([n,l])=>'<button type="button" data-act="trrange" data-n="'+n+'" class="'+(!UI.trZ&&(UI.trN||6)===n?'on':'')+'" aria-pressed="'+(!UI.trZ&&(UI.trN||6)===n)+'">'+l+'</button>').join('')+'</div></div>'+(UI.trZ||(UI.trN||6)!==6?'<div class="trr"><button type="button" class="btn ghost small" data-act="trreset">Reset zoom</button></div>':'')+trendHTML(td,UI.month)+'</section>';
@@ -4081,7 +4081,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<details class="itip"><summary><i>i</i><span>About</span></summary><p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p></details><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.80.0';
+const APP_VERSION='1.80.1';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
