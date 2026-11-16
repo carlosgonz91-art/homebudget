@@ -545,7 +545,7 @@ td.ds{max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .nk{font-weight:400;color:var(--mute);font-size:12px;margin-left:4px}
 .t1 .ds{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
 .t1 .amt{white-space:nowrap;font-weight:750;font-variant-numeric:tabular-nums}
-.t1 .amt.pos{color:var(--good)}.t1 .amt.neg{color:var(--ink)}@media (min-width:720px){.w-full .bwg{display:grid;grid-template-columns:1fr 1fr;column-gap:32px}}.btn{border-radius:12px;font-size:14px;min-height:40px}.btn.small{min-height:34px;border-radius:10px;font-size:13px}@media (min-width:720px){.wtc .wts,.ivsw{width:auto;display:inline-flex;align-self:flex-start}.wtc .wts button,.ivsw button{flex:0 0 auto;padding:6px 16px}}.mphint{margin:0 0 6px;font-size:11.5px;color:var(--mute);text-align:center}summary>.sub{margin-left:4px}
+.t1 .amt.pos{color:var(--good)}.t1 .amt.neg{color:var(--ink)}.alr.go{cursor:pointer;border-radius:10px}.alr.go:hover{background:var(--soft)}.al.alt{cursor:pointer;border-radius:12px;transition:background .12s}.al.alt:hover{background:var(--soft)}.alchv{display:inline-block;width:14px;font-style:normal;font-weight:700;color:var(--mute);transition:transform .15s}.al.open .alchv{transform:rotate(90deg)}@media (min-width:720px){.w-full .bwg{display:grid;grid-template-columns:1fr 1fr;column-gap:32px}}.btn{border-radius:12px;font-size:14px;min-height:40px}.btn.small{min-height:34px;border-radius:10px;font-size:13px}@media (min-width:720px){.wtc .wts,.ivsw{width:auto;display:inline-flex;align-self:flex-start}.wtc .wts button,.ivsw button{flex:0 0 auto;padding:6px 16px}}.mphint{margin:0 0 6px;font-size:11.5px;color:var(--mute);text-align:center}summary>.sub{margin-left:4px}
 .t2{margin-top:5px}
 .t2 .sub{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .t2 select{max-width:46%;font-size:12.5px;padding:5px 26px 5px 10px;border-radius:99px;background-position:right 9px center;font-weight:600;color:var(--mute)}
@@ -831,6 +831,7 @@ html,body{touch-action:pan-x pan-y}
 .bwt b.bad,.crh b.bad{color:var(--cout)}
 /* purple card chart: legend under the chart */
 .hxc{display:flex;flex-direction:column}.hxc>*{order:1}.hxc>.hxcl{order:2;margin:10px 0 0}.hxc>.hxcl{flex-wrap:nowrap;justify-content:space-between;gap:6px;font-size:10.5px;white-space:nowrap}.hxc>.hxcl i{width:12px;margin-right:4px}
+#app .al.alt{flex-wrap:wrap!important}#app .al.alt>div:first-child{flex:1 1 100%}#app .al>.row.alb{flex:1 1 100%;margin-top:10px;justify-content:flex-start}
 </style>
 <header><div class="bar"><span class="logo"><span class="mk mkc" aria-hidden="true"></span>HomeBudget <span class="ver" id="ver"></span></span>
 <nav>
@@ -1490,7 +1491,7 @@ function auditCore(S0,today){
   else{
     const chk=files.filter(f=>f.reconcile),bad=chk.filter(f=>!f.reconcile.ok),none=files.filter(f=>!f.reconcile);
     if(bad.length) add('bad',bad.length+' statement'+(bad.length>1?'s don\'t':' doesn\'t')+' match the totals printed on '+(bad.length>1?'them':'it'),bad.map(f=>A(f.acct)+' '+per(f)+': statement says '+usd(f.reconcile.expected)+', read '+usd(f.reconcile.got)),null,'stmt');
-    if(chk.length>bad.length) add('ok',(chk.length-bad.length)+' of '+files.length+' saved files match the totals printed on them');
+    if(chk.length>bad.length) add(none.length?'info':'ok',(chk.length-bad.length)+' of '+files.length+' saved files match the totals printed on them',none.length?[none.length+' file'+(none.length>1?'s have':' has')+' no totals printed to check against (for example a CSV, or a statement with no activity).']:[]);
     // a statement with no transactions (e.g. an investment account that only changed in value) has nothing to add up
     const hasRows=new Set(S.txns.map(t=>t.src).filter(Boolean)),quiet=none.filter(f=>f.kind==='pdf'&&!hasRows.has(f.id)),none2=none.filter(f=>!quiet.includes(f));
     // a combined statement (Fidelity lists several accounts in one PDF) can have activity for one account and none for another
@@ -1543,7 +1544,7 @@ function auditCore(S0,today){
     const noL=noo.map(t=>t.date+' · '+AN(t.acct)+' · '+(t.amount<0?'-':'')+'$'+Math.abs(t.amount).toFixed(2)+' · '+t.desc+'  ('+(t.sf?'bank-synced, but not printed on the statement for these dates':'added by hand or from a file that is no longer saved')+')'),noR=noo.map(t=>({k:'noorig:'+t.id,id:t.id}));
     const note=skipped?[skipped+' bank-synced transaction'+(skipped>1?'s fall':' falls')+' outside your saved statements, so there is nothing to link '+(skipped>1?'them':'it')+' to.']:[];
     if(n) add('warn',n+' transaction'+(n>1?'s have':' has')+' no saved original',noL.concat(['That is '+n+' of '+rel.length+'. Re-add the matching statements in Settings → Import to link them, or tap Not an issue on the ones that are fine.'],note),noR.concat([null],note.map(()=>null)),'noorig');
-    else if(rel.length) add('ok','All '+rel.length+' transactions link to a saved original',note);
+    else if(rel.length) add('ok','All '+rel.length+' transactions that appear on a statement link to a saved original'+(skipped?' ('+skipped+' others are bank-only)':''),note);
   }
   // 5. transfers should appear on both sides
   // Moves inside one account (SoFi vaults/pockets) have no second account to match.
@@ -2424,11 +2425,11 @@ function flowHTML(ym){
   let src=Object.entries(inc).filter(e=>e[1]>0.005).sort((a,b)=>b[1]-a[1]).map(([n,v],i)=>({n,v,col:['#10b981','#14b8a6','#22c55e','#84cc16','#06b6d4'][i%5]}));
   if(src.length>4){const r=src.slice(3).reduce((a,x)=>a+x.v,0);src=src.slice(0,3).concat([{n:'Other income',v:r,col:'#06b6d4'}]);}
   if(-left>0.005) src.push({n:'Savings & other',v:-left,col:'#94a3b8'});
-  const mob=window.innerWidth<560,total=items.reduce((a,x)=>a+x.v,0),W=mob?330:470,FS=mob?12:11.5,LS=mob?9:16,LC=mob?11:17,gap=7,minH=17,minS=30,n=items.length,H0=Math.max(220,n*30);
+  const mob=window.innerWidth<560,total=items.reduce((a,x)=>a+x.v,0),W=mob?330:470,FS=11.5,LS=mob?11:16,LC=17,gap=7,minH=17,minS=30,n=items.length,H0=Math.max(220,n*30);
   const sc=(H0-(n-1)*gap)/total;
   items.forEach(x=>x.h=Math.max(minH,x.v*sc));src.forEach(x=>x.h=Math.max(minS,x.v*sc));
   const hC=items.reduce((a,x)=>a+x.h,0)+(n-1)*gap,hS=src.reduce((a,x)=>a+x.h,0)+Math.max(0,src.length-1)*gap,H=Math.max(hC,hS,total*sc),Lh=Math.min(H,total*sc),py0=(H-Lh)/2;
-  const sx=mob?72:92,sw=10,px=mob?132:190,pw=10,cx=mob?206:312,cw=10,m1=(sx+sw+px)/2,m2=(px+pw+cx)/2;
+  const sx=mob?84:92,sw=10,px=mob?126:190,pw=10,cx=mob?176:312,cw=10,m1=(sx+sw+px)/2,m2=(px+pw+cx)/2;
   let rib='',nodes='',lab='',srib='',snodes='',slab='',hits='';
   const NOGO=['Left over','Everything else'],NOTE={'Left over':'Income not spent this month.','Everything else':'Smaller categories, grouped together.'},
     bse=d.income>0.005?d.income:spent,bw=d.income>0.005?'income':'spending',pc=v=>{const q=bse>0?v/bse*100:0;return (q>=10?Math.round(q):(+q.toFixed(1)))+'% of '+bw;},
@@ -2441,7 +2442,8 @@ function flowHTML(ym){
     srib+='<path class="rb sr" data-ss="'+i+'"'+goS(x)+' d="M'+(sx+sw)+','+a.toFixed(1)+' C'+m1+','+a.toFixed(1)+' '+m1+','+c.toFixed(1)+' '+px+','+c.toFixed(1)+' L'+px+','+d2.toFixed(1)+' C'+m1+','+d2.toFixed(1)+' '+m1+','+b.toFixed(1)+' '+(sx+sw)+','+b.toFixed(1)+' Z" fill="'+x.col+'" fill-opacity=".30" style="animation-delay:'+(i*60)+'ms"/>';
     snodes+='<rect class="nd sr" data-ss="'+i+'"'+goS(x)+' x="'+sx+'" y="'+a.toFixed(1)+'" width="'+sw+'" height="'+x.h.toFixed(1)+'" rx="4" fill="'+x.col+'"/>';
     hits+='<rect class="ht" tabindex="0" role="button" aria-label="'+esc(x.n+', '+fmt0(x.v))+'" data-ss="'+i+'"'+goS(x)+' x="0" y="'+(a-gap/2).toFixed(1)+'" width="'+(sx+sw)+'" height="'+(x.h+gap).toFixed(1)+'" fill="transparent"/>';
-    slab+='<text class="lb sr" data-ss="'+i+'"'+goS(x)+' x="'+(sx-8)+'" y="'+(a+x.h/2-2).toFixed(1)+'" text-anchor="end" font-size="'+FS+'" font-weight="650" style="fill:var(--ink)">'+esc(x.n.length>LS?x.n.slice(0,LS-1)+'…':x.n)+'</text><text class="lb sr" data-ss="'+i+'" x="'+(sx-8)+'" y="'+(a+x.h/2+12).toFixed(1)+'" text-anchor="end" font-size="'+(FS-.5)+'" style="fill:var(--mute)">'+fmt0(x.v)+'</text>';
+    const wl=(()=>{const t=x.n;if(t.length<=LS) return [t];const w=t.split(' ');let a1='';while(w.length&&(a1+(a1?' ':'')+w[0]).length<=LS) a1+=(a1?' ':'')+w.shift();if(!a1) return [t.slice(0,LS-1)+'…'];let b1=w.join(' ');if(b1.length>LS) b1=b1.slice(0,LS-1)+'…';return x.h>=40?[a1,b1]:[a1+'…'];})(),dy=(wl.length-1)*13;
+    slab+='<text class="lb sr" data-ss="'+i+'"'+goS(x)+' x="'+(sx-8)+'" y="'+(a+x.h/2-2-dy/2).toFixed(1)+'" text-anchor="end" font-size="'+FS+'" font-weight="650" style="fill:var(--ink)">'+wl.map((l,k)=>'<tspan x="'+(sx-8)+'"'+(k?' dy="13"':'')+'>'+esc(l)+'</tspan>').join('')+'</text><text class="lb sr" data-ss="'+i+'" x="'+(sx-8)+'" y="'+(a+x.h/2+12+dy/2).toFixed(1)+'" text-anchor="end" font-size="'+(FS-.5)+'" style="fill:var(--mute)">'+fmt0(x.v)+'</text>';
   });
   // pool -> categories
   let cc=0;cp=py0;
@@ -3197,7 +3199,7 @@ function cdWidgetHTML(){
   const left=x=>x.days<0?'Matured':x.days===0?'Today':x.days<=90?x.days+' day'+(x.days===1?'':'s'):Math.round(x.days/30.4)+' months';
   const nm=x=>titleCase(String(x.issuer).replace(/\b(NATL|NATIONAL) (ASSN|ASSOCIATION)\b|\bN ?\.? ?A\.?$|\bNA\b/gi,'').replace(/\bBK\b/gi,'Bank').replace(/\s+/g,' ').trim().toLowerCase()).replace(/\bJpmorgan\b/,'JPMorgan');
   const nx=L[0];
-  const tiles=stiles([{k:'In CDs',v:fmtT(tot),s:L.length+' CD'+(L.length===1?'':'s'),c:'#0d9488'},{k:'Avg rate',v:(+avg.toFixed(2))+'%',s:'≈'+fmtT(yr)+'/yr',c:'#10b981'},{k:'Next up',v:left(nx),s:esc(nm(nx)),c:CDSC(nx.days)}]);
+  const tiles=stiles([{k:'In CDs',v:fmtT(tot),s:L.length+' CD'+(L.length===1?'':'s'),c:'#0d9488'},{k:'Avg rate',v:(+avg.toFixed(2))+'%',s:'≈'+fmtT(yr)+'/yr',c:'#10b981'},{k:'Next up',v:left(nx),s:esc((n=>/^bank of /i.test(n)?n.split(' ').slice(0,3).join(' '):n.split(' ')[0])(nm(nx))),c:CDSC(nx.days)}]);
   // same row look as the investment accounts: name + amount, a thin bar, rate · date and time left
   setTimeout(()=>cdBuyScan(),300);
   return wCard('CD maturities','',tiles+L.map(x=>{
@@ -3822,12 +3824,12 @@ function accountsCardHTML(HL){
   let h='<section class="card" id="acctcard">'+(n||CL.length?'<div class="row ach"><button type="button" class="ivh" data-act="acctview" data-v="'+(mn?'compact':'min')+'" aria-expanded="'+!mn+'"><i class="chv2">›</i><h2 style="margin:0">Accounts <span class="sub">'+n+(CL.length?' · '+CL.length+' closed':'')+(mn&&HL.on&&!HL.issues.length?' · <span class="okg">✓ all healthy</span>':'')+'</span></h2></button>'+(mn?'':'<button type="button" class="btn ghost small" data-act="acctview" data-v="'+(av==='full'?'compact':'full')+'">'+(av==='full'?'Compact':'Details')+'</button>')+'</div>':'<h2>Accounts</h2>')+(mn&&HL.on&&!HL.issues.length?'':healthCardHTML(HL));
   if(mn){}
   else if(n&&av!=='full'){
-    h+='<div class="alc">'+openAccts().map(a=>{const bal=a.sf&&S.balSf&&S.balSf[a.sf],bad=HL.by[a.id]&&!HL.by[a.id].ok;return '<div class="alr'+(bad?' bad':'')+'"><i class="ald" aria-hidden="true"></i><span class="aln">'+esc(a.name)+(acctBank(a)?'<small class="alk">'+esc(acctBank(a))+'</small>':'')+'</span><span class="pill">'+(isCD(a)?'CD':TYPES[a.type])+'</span><b class="alb">'+(bal?fmt0(bal.v):'')+'</b></div>';}).join('')+'</div>'
+    h+='<div class="alc">'+openAccts().map(a=>{const bal=a.sf&&S.balSf&&S.balSf[a.sf],bad=HL.by[a.id]&&!HL.by[a.id].ok;return '<div class="alr go'+(bad?' bad':'')+'" role="button" tabindex="0" data-act="almanage" data-id="'+esc(a.id)+'" aria-label="Manage '+esc(a.name)+'"><i class="ald" aria-hidden="true"></i><span class="aln">'+esc(a.name)+(acctBank(a)?'<small class="alk">'+esc(acctBank(a))+'</small>':'')+'</span><span class="pill">'+(isCD(a)?'CD':TYPES[a.type])+'</span><b class="alb">'+(bal?fmt0(bal.v):'')+'</b></div>';}).join('')+'</div>'
       +(CL.length?'<details class="alcl" data-tg="acctClosed"'+(UI.acctClosed?' open':'')+'><summary>Closed accounts ('+CL.length+')</summary><div class="alc">'+CL.map(a=>'<div class="alr closed"><i class="ald" aria-hidden="true"></i><span class="aln">'+esc(a.name)+'<small class="alk">Closed '+esc(closedDay(a.closed))+(acctBank(a)?' · '+esc(acctBank(a)):'')+'</small></span><button type="button" class="btn ghost small" data-act="reopenacct" data-id="'+esc(a.id)+'">Reopen</button></div>').join('')+'</div></details>':'');
   }
   else if(n||CL.length){
     const TBA=new Map();S.txns.forEach(t=>{let g=TBA.get(t.acct);if(!g){g=[];TBA.set(t.acct,g);}g.push(t);});
-    h+=openAccts().concat(CL).map(a=>{const ts=TBA.get(a.id)||[],nf=S.files.filter(f=>f.acct===a.id).length;const last=ts.reduce((m,t)=>t.date>m?t.date:m,''),bal=a.sf&&S.balSf&&S.balSf[a.sf];return '<div class="al'+((HL.by[a.id]&&!HL.by[a.id].ok)?' bad':'')+'"><div><b>'+esc(a.name)+'</b>'+(acctBank(a)?' <span class="sub">· '+esc(acctBank(a))+'</span>':'')+' <span class="pill">'+(isCD(a)?'CD':TYPES[a.type])+'</span> '+(a.closed?'<span class="pill clp">Closed '+esc(closedDay(a.closed))+'</span>':rateChip(a)+acctChip(HL,a.id))+'<div class="sub">'+(bal?'<b>'+fmt(bal.v)+'</b> · ':'')+(yearlyInterest(a)!=null?'≈ '+fmt0(yearlyInterest(a))+'/yr interest · ':'')+ts.length+' txns'+(last?' · latest '+last:'')+(nf?' · '+nf+' original'+(nf>1?'s':'')+' kept':'')+'</div>'+acctNote(HL,a.id)+'</div> <span class="row" style="gap:6px"><button class="btn ghost small" data-act="renacct" data-id="'+esc(a.id)+'" aria-label="Rename '+esc(a.name)+'">Rename</button>'+(a.closed?'<button class="btn ghost small" data-act="reopenacct" data-id="'+esc(a.id)+'">Reopen</button>':'<button class="btn ghost small" data-act="closeacct" data-id="'+esc(a.id)+'">Mark closed</button>')+'<button class="btn danger small" data-act="delacct" data-id="'+esc(a.id)+'" aria-label="Delete '+esc(a.name)+'">Delete</button></span></div>';}).join('');
+    h+=openAccts().concat(CL).map(a=>{const ts=TBA.get(a.id)||[],nf=S.files.filter(f=>f.acct===a.id).length;const last=ts.reduce((m,t)=>t.date>m?t.date:m,''),bal=a.sf&&S.balSf&&S.balSf[a.sf];const op=UI.alOpen===a.id;return '<div class="al alt'+(op?' open':'')+((HL.by[a.id]&&!HL.by[a.id].ok)?' bad':'')+'" role="button" tabindex="0" data-act="altog" data-id="'+esc(a.id)+'" aria-expanded="'+op+'"><div><i class="alchv" aria-hidden="true">›</i><b>'+esc(a.name)+'</b>'+(acctBank(a)?' <span class="sub">· '+esc(acctBank(a))+'</span>':'')+' <span class="pill">'+(isCD(a)?'CD':TYPES[a.type])+'</span> '+(a.closed?'<span class="pill clp">Closed '+esc(closedDay(a.closed))+'</span>':rateChip(a)+acctChip(HL,a.id))+'<div class="sub">'+(bal?'<b>'+fmt(bal.v)+'</b> · ':'')+(yearlyInterest(a)!=null?'≈ '+fmt0(yearlyInterest(a))+'/yr interest · ':'')+ts.length+' txns'+(last?' · latest '+niceDay(last):'')+(nf?' · '+nf+' original'+(nf>1?'s':'')+' kept':'')+'</div>'+acctNote(HL,a.id)+'</div>'+(op?'<span class="row alb" style="gap:6px"><button class="btn ghost small" data-act="renacct" data-id="'+esc(a.id)+'" aria-label="Rename '+esc(a.name)+'">Rename</button>'+(a.closed?'<button class="btn ghost small" data-act="reopenacct" data-id="'+esc(a.id)+'">Reopen</button>':'<button class="btn ghost small" data-act="closeacct" data-id="'+esc(a.id)+'">Mark closed</button>')+'<button class="btn danger small" data-act="delacct" data-id="'+esc(a.id)+'" aria-label="Delete '+esc(a.name)+'">Delete</button></span>':'')+'</div>';}).join('');
   } else h+='<p class="mute">No accounts yet. Add your first one below.</p>';
   if(!mn) h+='<details style="margin-top:10px" '+(S.accounts.length?'':'open')+'><summary>Add an account manually</summary><div class="row" style="margin-top:10px"><input type="text" id="newName" placeholder="e.g. Chase Checking" style="flex:1;min-width:150px"><select id="newType" aria-label="Account type">'+Object.entries(TYPES).map(([k,v])=>'<option value="'+k+'">'+v+'</option>').join('')+'</select><button class="btn" data-act="addacct">Add account</button></div></details>';
   h+='</section>';
@@ -4126,7 +4128,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<details class="itip"><summary><i>i</i><span>About</span></summary><p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p></details><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.85.1';
+const APP_VERSION='1.85.3';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -4281,6 +4283,7 @@ async function profileText(){
 function profileCardHTML(){
   return '<section class="card" id="s-data"><h2>Backup &amp; help</h2><details class="itip"><summary><i>i</i><span>About</span></summary><p class="mute" style="margin-top:0">Your data stays in this browser. Export a profile to back it up or move it to another device. Your bank link is not included.</p></details><div class="bkgrid'+(navigator.share?'':' one')+'"><button class="btn" data-act="backup">Export profile</button>'+(navigator.share?'<button class="btn" data-act="sharebackup">Share backup</button>':'')+'<span class="btn ghost pick" style="margin:0">Import profile<input type="file" accept=".json,application/json,text/plain" data-chg="restore" aria-label="Import profile"></span><button class="btn ghost" data-act="exportcsv">Export CSV</button></div>'
    +'<label class="fld" style="margin:12px 0 4px">This device\'s name <span class="sub">(added to backup file names)</span><input type="text" id="devName" maxlength="40" data-chg="devname" value="'+esc(devName())+'" placeholder="e.g. Carlos phone"></label>'
+   +'<label class="fld" style="margin:8px 0 4px">Theme <span class="sub">(also the button at the top right)</span><select data-chg="theme" aria-label="Theme">'+[['auto','Follow my device'],['light','Light'],['dark','Dark'],['schedule','Day / Night (by time)']].map(([k,l])=>'<option value="'+k+'"'+(themeMode()===k?' selected':'')+'>'+l+'</option>').join('')+'</select></label>'
    +'<details class="itip"><summary><i>i</i><span>About</span></summary><p class="sub">New device: import the profile, then add a new SimpleFIN token from the same login. It\'s a one-time copy. <b>Share backup</b> sends it to Drive, email or text. Keep it private: it has your financial data.</p></details>'+(S.files.length?'<p class="sub">Includes '+S.files.length+' saved statement'+(S.files.length===1?'':'s')+'.</p>':'')+(S.lastBackup?'<p class="sub">Last export: '+new Date(S.lastBackup).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})+'</p>':'<p class="sub">Never exported.</p>')+'</section>';
 }
 function viewSettings(){
@@ -4327,7 +4330,7 @@ function viewAudit(){
   // one card: re-check at the top, the findings, then what you marked OK and the statements on file, folded away
   const K=Object.keys(S.auditOk||{});
   h+='<section class="card"><div class="wth"><h2>Findings</h2><span class="spacer"></span><button class="btn small" data-act="recheck" '+(S.files.length&&!(R&&R.busy)?'':'disabled style="opacity:.5"')+'>'+(R&&R.busy?esc(R.progress):'Re-check originals')+'</button></div>'
-    +(S.files.length?(R&&!R.busy&&R.at?'<p class="sub" style="margin:-4px 0 4px">Last checked '+new Date(R.at).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})+'</p>':'')+'<details class="itip"><summary><i>i</i><span>About</span></summary><p class="sub">'+nBlobs+' original file'+(nBlobs>1?'s':'')+' kept in this browser ('+kb(bytes)+'). Re-check re-reads each one and compares it with your ledger.</p></details>':'<p class="sub" style="margin:-4px 0 8px">No originals saved yet. Drop your statements into Import again — duplicates are skipped and the files get attached.</p>')
+    +(S.files.length?(R&&!R.busy&&R.at?'<p class="sub" style="margin:-4px 0 4px">Last checked '+new Date(R.at).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})+'</p>':'')+'<details class="itip"><summary><i>i</i><span>About</span></summary><p class="sub">'+nBlobs+' original file'+(nBlobs>1?'s':'')+' kept in this browser ('+kb(bytes)+').'+(S.files.length>nBlobs?' The other '+(S.files.length-nBlobs)+' of your '+S.files.length+' statements are recorded, but the file itself isn\'t stored here (imported on another device, or before files were kept).':'')+' Re-check re-reads each one and compares it with your ledger.</p></details>':'<p class="sub" style="margin:-4px 0 8px">No originals saved yet. Drop your statements into Import again — duplicates are skipped and the files get attached.</p>')
     +F.map(findingHTML).join('')
     +(K.length?'<details class="aud2"><summary>Marked as OK <span class="sub">· '+K.length+'</span></summary>'+K.map(k=>'<div class="stp"><span>'+esc(S.auditOk[k]||k)+'</span><button class="btn ghost small" data-act="audoff" data-k="'+esc(k)+'">Undo</button></div>').join('')+'</details>':'')
     +(S.files.length?'<details class="aud2"><summary>Statements on file <span class="sub">· '+S.files.length+'</span></summary>'+S.accounts.filter(a=>S.files.some(f=>f.acct===a.id)).map(a=>'<details><summary>'+esc(a.name)+'</summary>'
@@ -5183,6 +5186,8 @@ const ACT={
   pgnext(){UI.page=(UI.page||0)+1;renderTxnList();window.scrollTo(0,0);},
   delrule(el){const r=S.rules[+el.dataset.i];if(!r) return;dialog({msg:'Delete the rule "'+r.match+'" → '+r.cat+'? Transactions already sorted keep their category.',ok:'Delete rule',bad:true,onOk:()=>ACT._delrule(el)});},
   _delrule(el){S.rules.splice(+el.dataset.i,1);const pages=Math.max(1,Math.ceil(S.rules.length/RULE_PG));if((UI.rulePg||0)>=pages) UI.rulePg=pages-1;save();render();},
+  almanage(el){try{FOLD.set('hb-acctview','full');}catch(e){}UI.alOpen=el.dataset.id;render();requestAnimationFrame(()=>{const r=document.querySelector('.al.open');if(r) r.scrollIntoView({block:'center'});});},
+  altog(el,e){if(e&&e.target.closest('.alb')) return;UI.alOpen=UI.alOpen===el.dataset.id?null:el.dataset.id;render();},
   rulestoggle(){UI.rulesOpen=!UI.rulesOpen;render();},
   catstoggle(){UI.catsOpen=!UI.catsOpen;render();},
   catren(el){const c=el.dataset.c;dialog({msg:'Rename "'+c+'"',input:true,value:c,ok:'Rename',onOk:v=>{v=String(v||'').trim();if(!v||v===c) return;if(allCats().includes(v)){toast('"'+v+'" already exists. Use Merge into… instead.');return;}const k=catMove(c,v,true);toast('Renamed to '+v+' · '+k+' transactions');}});},
@@ -5369,6 +5374,7 @@ const ACT={
   }
 };
 const CHG={
+  theme(el){setTheme(el.value);toast('Theme: '+el.options[el.selectedIndex].text);},
   secacct(el){UI.secAcct=el.value||'';insPaint();},
   bdcat(el){const b=$('#bdNewBox');if(b){b.hidden=el.value!=='__new__';if(el.value==='__new__'){const i=$('#bdNewCat');if(i) setTimeout(()=>i.focus(),30);}}},
   devname(el){const v=el.value.trim();try{if(v) localStorage.setItem('hb-device',v);else localStorage.removeItem('hb-device');}catch(e){}toast('Device name saved');},
