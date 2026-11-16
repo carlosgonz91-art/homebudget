@@ -828,7 +828,7 @@ html,body{touch-action:pan-x pan-y}
 .bwt{display:flex;align-items:baseline;gap:8px;margin:2px 0 8px}.bwt b{font-size:24px;font-weight:800}.bwl{display:grid;gap:10px;margin-top:14px}.bwn{display:flex;justify-content:space-between;gap:8px;font-size:13.5px;margin-bottom:5px}.bwn span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.bwn b{white-space:nowrap}.bwn b small{color:var(--mute);font-weight:500}.bwn b.bad{color:var(--cout)}
 .bwt b.bad,.crh b.bad{color:var(--cout)}
 /* purple card chart: legend under the chart */
-.hxc{display:flex;flex-direction:column}.hxc>*{order:1}.hxc>.hxcl{order:2;margin:10px 0 0}
+.hxc{display:flex;flex-direction:column}.hxc>*{order:1}.hxc>.hxcl{order:2;margin:10px 0 0}.hxc>.hxcl{flex-wrap:nowrap;justify-content:space-between;gap:6px;font-size:10.5px;white-space:nowrap}.hxc>.hxcl i{width:12px;margin-right:4px}
 </style>
 <header><div class="bar"><span class="logo"><span class="mk mkc" aria-hidden="true"></span>HomeBudget <span class="ver" id="ver"></span></span>
 <nav>
@@ -2213,7 +2213,7 @@ function heroChart(ym,tb){
   const yl=[max/1.08,max/2.16].map(v=>'<span style="top:'+(Y(v)/H*100).toFixed(1)+'%">'+(v>=1e4?'$'+(v/1e3).toFixed(0)+'K':v>=1e3?'$'+(v/1e3).toFixed(1)+'K':'$'+Math.round(v))+'</span>').join('');
   const md0=new Date(ym+'-15T12:00:00').toLocaleDateString('en-US',{month:'short'});
   return '<div class="hxc" data-hx="'+esc(hp)+'" tabindex="0" aria-label="Spending through '+esc(md0)+'. Hover, touch or use the arrow keys to see each day.">'
-   +'<div class="hxcl"><span class="a"><i class="s1"></i>Spent so far</span><span><i class="s2"></i>Last month</span>'+(pace?'<span><i class="s3"></i>On pace for '+fmt0(pace)+'</span>':'')+(showB?'<span><i class="s4"></i>Budget '+fmt0(tb)+'</span>':'')+'</div>'
+   +'<div class="hxcl"><span class="a"><i class="s1"></i>Spent</span><span><i class="s2"></i>Last mo</span>'+(pace?'<span><i class="s3"></i>Pace '+fmt0(pace)+'</span>':'')+(showB?'<span><i class="s4"></i>Budget '+fmt0(tb)+'</span>':'')+'</div>'
    +'<div class="hxcw"><svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="hxg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2ff5c8" stop-opacity=".45"/><stop offset="1" stop-color="#2ff5c8" stop-opacity="0"/></linearGradient></defs>'
    +[.25,.5,.75].map(f=>'<line x1="0" x2="'+W+'" y1="'+(H*f).toFixed(1)+'" y2="'+(H*f).toFixed(1)+'" stroke="#fff" stroke-opacity=".12" vector-effect="non-scaling-stroke"/>').join('')
    +(showB?'<line x1="0" x2="'+W+'" y1="'+Y(tb).toFixed(1)+'" y2="'+Y(tb).toFixed(1)+'" stroke="#ff4f8b" stroke-width="1.8" stroke-dasharray="6 5" vector-effect="non-scaling-stroke"/>':'')
@@ -4083,7 +4083,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<details class="itip"><summary><i>i</i><span>About</span></summary><p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p></details><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.80.2';
+const APP_VERSION='1.80.3';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
