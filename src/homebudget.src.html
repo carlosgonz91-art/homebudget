@@ -286,7 +286,7 @@ label select,label input{display:block;margin-top:4px;color:var(--ink)}
 .tr .hit{cursor:pointer}.tr .pt{opacity:0;transition:opacity .15s}.tr .pt.f{opacity:1}
 .tip{position:absolute;top:0;transform:translateX(-50%);background:var(--ink);color:var(--card);border-radius:12px;padding:7px 11px;font-size:12px;display:flex;flex-direction:column;gap:2px;pointer-events:none;opacity:0;transition:opacity .15s,left .15s;white-space:nowrap;box-shadow:0 10px 24px -10px rgba(0,0,0,.5);z-index:2}
 .tip.on{opacity:1}.tip b{font-size:12.5px}.tip i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}.tip em{font-style:normal;font-weight:700}.tip .neg{color:var(--tn)}.tip .pos{color:var(--tp)}
-.sk svg{width:100%;height:auto;display:block;max-width:600px;margin:0 auto;overflow:visible}
+.sk svg{width:100%;height:auto;display:block;max-width:600px;margin:0 auto;overflow:visible}@media (max-width:559px){.sk .skh{paint-order:stroke;stroke:var(--card);stroke-width:3px;stroke-opacity:.9;stroke-linejoin:round}}
 .sk .rb,.sk .nd{transition:fill-opacity .2s,opacity .2s}.sk [data-go],.sk [data-note]{cursor:pointer}
 .skn[hidden]{display:none}
 .skn{display:flex;gap:10px;align-items:flex-start;background:color-mix(in srgb,var(--brand) 10%,var(--card));border:1px solid color-mix(in srgb,var(--brand) 30%,var(--line));border-radius:14px;padding:10px 12px;margin:0 0 10px;font-size:13.5px;line-height:1.45;font-weight:550;animation:fadeup .25s ease both}
@@ -2426,11 +2426,11 @@ function flowHTML(ym){
   let src=Object.entries(inc).filter(e=>e[1]>0.005).sort((a,b)=>b[1]-a[1]).map(([n,v],i)=>({n,v,col:['#10b981','#14b8a6','#22c55e','#84cc16','#06b6d4'][i%5]}));
   if(src.length>4){const r=src.slice(3).reduce((a,x)=>a+x.v,0);src=src.slice(0,3).concat([{n:'Other income',v:r,col:'#06b6d4'}]);}
   if(-left>0.005) src.push({n:'Savings & other',v:-left,col:'#94a3b8'});
-  const mob=window.innerWidth<560,total=items.reduce((a,x)=>a+x.v,0),W=mob?Math.round(Math.max(300,Math.min(560,innerWidth-48))):470,FS=mob?12.5:11.5,LS=mob?11:16,LC=18,gap=7,minH=mob?24:17,minS=30,n=items.length,H0=Math.max(220,n*(mob?33:30));
+  const mob=window.innerWidth<560,total=items.reduce((a,x)=>a+x.v,0),W=mob?Math.round(Math.max(300,Math.min(560,innerWidth-48))):470,FS=mob?12.5:11.5,LS=mob?16:16,LC=mob?22:17,gap=mob?6:7,minH=mob?30:17,minS=mob?34:30,n=items.length,H0=Math.max(220,n*(mob?37:30));
   const sc=(H0-(n-1)*gap)/total;
   items.forEach(x=>x.h=Math.max(minH,x.v*sc));src.forEach(x=>x.h=Math.max(minS,x.v*sc));
   const hC=items.reduce((a,x)=>a+x.h,0)+(n-1)*gap,hS=src.reduce((a,x)=>a+x.h,0)+Math.max(0,src.length-1)*gap,H=Math.max(hC,hS,total*sc),Lh=Math.min(H,total*sc),py0=(H-Lh)/2;
-  const sx=mob?80:92,sw=10,px=mob?Math.round(80+(W-120-80)*.45):190,pw=10,cx=mob?W-122:312,cw=10,m1=(sx+sw+px)/2,m2=(px+pw+cx)/2;
+  const sx=mob?0:92,sw=10,px=mob?Math.round(W*.36):190,pw=10,cx=mob?W-10:312,cw=10,m1=(sx+sw+px)/2,m2=(px+pw+cx)/2;
   let rib='',nodes='',lab='',srib='',snodes='',slab='',hits='';
   const NOGO=['Left over','Everything else'],NOTE={'Left over':'Income not spent this month.','Everything else':'Smaller categories, grouped together.'},
     bse=d.income>0.005?d.income:spent,bw=d.income>0.005?'income':'spending',pc=v=>{const q=bse>0?v/bse*100:0;return (q>=10?Math.round(q):(+q.toFixed(1)))+'% of '+bw;},
@@ -2444,7 +2444,7 @@ function flowHTML(ym){
     snodes+='<rect class="nd sr" data-ss="'+i+'"'+goS(x)+' x="'+sx+'" y="'+a.toFixed(1)+'" width="'+sw+'" height="'+x.h.toFixed(1)+'" rx="4" fill="'+x.col+'"/>';
     hits+='<rect class="ht" tabindex="0" role="button" aria-label="'+esc(x.n+', '+fmt0(x.v))+'" data-ss="'+i+'"'+goS(x)+' x="0" y="'+(a-gap/2).toFixed(1)+'" width="'+(sx+sw)+'" height="'+(x.h+gap).toFixed(1)+'" fill="transparent"/>';
     const wl=(()=>{const t=x.n;if(t.length<=LS) return [t];const w=t.split(' ');let a1='';while(w.length&&(a1+(a1?' ':'')+w[0]).length<=LS) a1+=(a1?' ':'')+w.shift();if(!a1) return [t.slice(0,LS-1)+'…'];let b1=w.join(' ');if(b1.length>LS) b1=b1.slice(0,LS-1)+'…';return x.h>=40?[a1,b1]:[a1+'…'];})(),dy=(wl.length-1)*13;
-    slab+='<text class="lb sr" data-ss="'+i+'"'+goS(x)+' x="'+(sx-8)+'" y="'+(a+x.h/2-2-dy/2).toFixed(1)+'" text-anchor="end" font-size="'+FS+'" font-weight="650" style="fill:var(--ink)">'+wl.map((l,k)=>'<tspan x="'+(sx-8)+'"'+(k?' dy="13"':'')+'>'+esc(l)+'</tspan>').join('')+'</text><text class="lb sr" data-ss="'+i+'" x="'+(sx-8)+'" y="'+(a+x.h/2+12+dy/2).toFixed(1)+'" text-anchor="end" font-size="'+(FS-.5)+'" style="fill:var(--mute)">'+fmt0(x.v)+'</text>';
+    slab+='<text class="lb sr skh" data-ss="'+i+'"'+goS(x)+' x="'+(mob?sx+sw+7:sx-8)+'" y="'+(a+x.h/2-2-dy/2).toFixed(1)+'" text-anchor="'+(mob?'start':'end')+'" font-size="'+FS+'" font-weight="650" style="fill:var(--ink)">'+wl.map((l,k)=>'<tspan x="'+(mob?sx+sw+7:sx-8)+'"'+(k?' dy="13"':'')+'>'+esc(l)+'</tspan>').join('')+'</text><text class="lb sr skh" data-ss="'+i+'" x="'+(mob?sx+sw+7:sx-8)+'" y="'+(a+x.h/2+12+dy/2).toFixed(1)+'" text-anchor="'+(mob?'start':'end')+'" font-size="'+(FS-.5)+'" style="fill:var(--mute)">'+fmt0(x.v)+'</text>';
   });
   // pool -> categories
   let cc=0;cp=py0;
@@ -2453,7 +2453,7 @@ function flowHTML(ym){
     rib+='<path class="rb" data-sk="'+i+'" d="M'+(px+pw)+','+a.toFixed(1)+' C'+m2+','+a.toFixed(1)+' '+m2+','+c.toFixed(1)+' '+cx+','+c.toFixed(1)+' L'+cx+','+d2.toFixed(1)+' C'+m2+','+d2.toFixed(1)+' '+m2+','+b.toFixed(1)+' '+(px+pw)+','+b.toFixed(1)+' Z" fill="'+x.col+'" fill-opacity=".34"'+go(x)+' style="animation-delay:'+(250+i*60)+'ms"/>';
     nodes+='<rect class="nd" data-sk="'+i+'"'+go(x)+' x="'+cx+'" y="'+c.toFixed(1)+'" width="'+cw+'" height="'+x.h.toFixed(1)+'" rx="4" fill="'+x.col+'"/>';
     hits+='<rect class="ht" tabindex="0" role="button" aria-label="'+esc(x.c+', '+fmt0(x.v))+'" data-sk="'+i+'"'+go(x)+' x="'+cx+'" y="'+(c-gap/2).toFixed(1)+'" width="'+(W-cx)+'" height="'+(x.h+gap).toFixed(1)+'" fill="transparent"/>';
-    lab+=mob?'<text class="lb" data-sk="'+i+'"'+go(x)+' x="'+(cx+cw+8)+'" y="'+(c+x.h/2-1).toFixed(1)+'" font-size="'+FS+'" font-weight="650" style="fill:var(--ink)">'+esc(x.c.length>LC?x.c.slice(0,LC-1)+'…':x.c)+'</text><text class="lb" data-sk="'+i+'" x="'+(cx+cw+8)+'" y="'+(c+x.h/2+13).toFixed(1)+'" font-size="'+(FS-1)+'" style="fill:var(--mute)">'+fmt0(x.v)+'</text>':'<text class="lb" data-sk="'+i+'"'+go(x)+' x="'+(cx+cw+9)+'" y="'+(c+x.h/2+4).toFixed(1)+'" font-size="'+FS+'"><tspan font-weight="650" style="fill:var(--ink)">'+esc(x.c.length>LC?x.c.slice(0,LC-1)+'…':x.c)+'</tspan><tspan x="'+(W-2)+'" text-anchor="end" style="fill:var(--mute)">'+fmt0(x.v)+'</tspan></text>';
+    lab+=mob?'<text class="lb skh" data-sk="'+i+'"'+go(x)+' x="'+(cx-7)+'" y="'+(c+x.h/2-1).toFixed(1)+'" text-anchor="end" font-size="'+FS+'" font-weight="700" style="fill:var(--ink)">'+esc(x.c.length>LC?x.c.slice(0,LC-1)+'…':x.c)+'</text><text class="lb skh" data-sk="'+i+'" x="'+(cx-7)+'" y="'+(c+x.h/2+13).toFixed(1)+'" text-anchor="end" font-size="'+(FS-1)+'" font-weight="600" style="fill:var(--mute)">'+fmt0(x.v)+'</text>':'<text class="lb" data-sk="'+i+'"'+go(x)+' x="'+(cx+cw+9)+'" y="'+(c+x.h/2+4).toFixed(1)+'" font-size="'+FS+'"><tspan font-weight="650" style="fill:var(--ink)">'+esc(x.c.length>LC?x.c.slice(0,LC-1)+'…':x.c)+'</tspan><tspan x="'+(W-2)+'" text-anchor="end" style="fill:var(--mute)">'+fmt0(x.v)+'</tspan></text>';
   });
   return '<div class="sk"><div class="skn" role="status" hidden><button type="button" class="skb" data-act="skgo"><span></span><em class="skcta" hidden>See transactions ›</em></button><button type="button" class="skx" aria-label="Close">×</button></div><svg viewBox="-2 -4 '+(W+4)+' '+(H+8)+'" role="group" aria-label="Where this month\'s income came from and where it went. Each source and category is a button.">'
    +srib+rib+'<rect x="'+px+'" y="'+py0.toFixed(1)+'" width="'+pw+'" height="'+Lh.toFixed(1)+'" rx="4" style="fill:var(--ink)" fill-opacity=".85"/>'+snodes+nodes+slab+lab+hits+'</svg></div>'
@@ -4129,7 +4129,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<details class="itip"><summary><i>i</i><span>About</span></summary><p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p></details><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.85.6';
+const APP_VERSION='1.85.7';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
