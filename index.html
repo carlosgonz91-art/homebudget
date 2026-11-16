@@ -2542,6 +2542,10 @@ function merchHTML(ym){
     tip.innerHTML='<b>'+esc(x.m)+'</b><span><i style="background:var(--cin)"></i>In '+x.i+'</span><span><i style="background:var(--cout)"></i>Out '+x.s+'</span><em class="'+(x.n<0?'neg':'pos')+'">'+(x.n<0?'−':'+')+fmt0(Math.abs(x.n)).replace('-','')+' net</em>';
     const pct=cx/vb.width*100;tip.style.left=Math.min(78,Math.max(22,pct))+'%';tip.classList.add('on');
   }
+  function skHi(svg,si,ss){if(!svg) return;
+    if(si){skReset(svg);svg.dataset.f=si.dataset.sk;$$(svg,'[data-sk="'+si.dataset.sk+'"]').forEach(x=>x.classList.add('f'));}
+    else if(ss){skReset(svg);svg.dataset.g=ss.dataset.ss;$$(svg,'[data-ss="'+ss.dataset.ss+'"]').forEach(x=>x.classList.add('f'));}
+    else if(svg.dataset.f||svg.dataset.g) skReset(svg);}
   document.addEventListener('pointerover',e=>{
     const t=e.target;if(!t.closest) return;
     const dn=document.querySelector('.dn[data-f]'),di=t.closest('.dn [data-i]');
@@ -2549,14 +2553,14 @@ function merchHTML(ym){
     const sk=document.querySelector('.sk [data-f]')||document.querySelector('.sk svg[data-f]'),si=t.closest('.sk [data-sk]');
     const svg=document.querySelector('.sk svg');
     const ss=t.closest('.sk [data-ss]');
-    if(si&&svg){skReset(svg);svg.dataset.f=si.dataset.sk;$$(svg,'[data-sk="'+si.dataset.sk+'"]').forEach(x=>x.classList.add('f'));}
-    else if(ss&&svg){skReset(svg);svg.dataset.g=ss.dataset.ss;$$(svg,'[data-ss="'+ss.dataset.ss+'"]').forEach(x=>x.classList.add('f'));}
-    else if(svg&&(svg.dataset.f||svg.dataset.g)) skReset(svg);
+    // on touch, a finger passing over the flow while scrolling does nothing: only a tap highlights (see the click handler)
+    if(e.pointerType!=='touch') skHi(svg,si,ss);
     const hi=t.closest('.tr .hit');if(hi) trFocus(hi.closest('.tr'),+hi.dataset.ti);
     const cc=t.closest('.cc');if(cc){const ci=cc.closest('.cal')&&cc.closest('.cal').querySelector('.cinfo');if(ci) ci.textContent=cc.dataset.info;}
     else{const ci=document.querySelector('.cal .cinfo');if(ci&&ci.textContent!==ci.dataset.d&&!t.closest('.cal')) ci.textContent=ci.dataset.d;}
   });
   document.addEventListener('click',e=>{
+    if(e.target.closest){const svg=e.target.closest('.sk svg');if(svg) skHi(svg,e.target.closest('.sk [data-sk]'),e.target.closest('.sk [data-ss]'));}
     const hi=e.target.closest&&e.target.closest('.tr .hit');
     if(hi&&!window.__trSkip) trFocus(hi.closest('.tr'),+hi.dataset.ti);
     const nt=e.target.closest&&e.target.closest('.sk [data-note]');
@@ -4153,7 +4157,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<details class="itip"><summary><i>i</i><span>About</span></summary><p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p></details><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.85.10';
+const APP_VERSION='1.85.11';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
