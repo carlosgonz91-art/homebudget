@@ -2529,13 +2529,14 @@ const WID=[
 const WMERGE={cat:'spend',flow:'spend',usual:'spend',merch:'spend',big:'spend',trend:'trends',cal:'trends',inv:'money',mix:'money',loans:'money',cds:'money',nw:'accts',tick:'markets',bubble:'markets',recur:'bills',bank:null,pace:null};
 // default Overview: every widget, big picture first (money overall, this month, where it went, regular costs),
 // then investments and loans, and the market tools (stock lookup, AI crash alarm) at the bottom. Half-width cards sit in pairs.
-const WDEF=['accts','budget','spend','bills','trends','money','markets'];
+const WDEF=['accts','spend','budget','bills','trends','money','markets'];
 function wState(){
   const all=WID.map(x=>x.id),W=S.widgets;
   if(!W||!Array.isArray(W.order)) return {order:WDEF.filter(i=>all.includes(i)),hidden:[]};
   const mg=WMERGE;W.order=W.order.map(i=>i in mg?mg[i]:i).filter((i,k,a)=>i&&a.indexOf(i)===k);W.hidden=(W.hidden||[]).filter(i=>!(i in mg));
+  if(!W.bwV){W.bwV=1;const b=W.order.indexOf('budget'),sp=W.order.indexOf('spend');if(b>=0&&sp>b){W.order.splice(b,1);W.order.splice(W.order.indexOf('spend')+1,0,'budget');}}
   const order=W.order.filter(i=>all.includes(i)),hidden=(W.hidden||[]).filter(i=>all.includes(i)&&!order.includes(i));
-  all.forEach(i=>{if(!order.includes(i)&&!hidden.includes(i)){if(i==='bills') order.splice(Math.min(2,order.length),0,i);else if(i==='budget') order.splice(Math.min(1,order.length),0,i);else if(i==='cds'||i==='loans') order.push(i);else hidden.push(i);}});
+  all.forEach(i=>{if(!order.includes(i)&&!hidden.includes(i)){if(i==='bills') order.splice(Math.min(2,order.length),0,i);else if(i==='budget'){const k=order.indexOf('spend');order.splice(k>=0?k+1:Math.min(1,order.length),0,i);}else if(i==='cds'||i==='loans') order.push(i);else hidden.push(i);}});
   return {order,hidden};
 }
 // one-time: put the CD widget on pages that already have a saved layout (it stays hidden when there are no CDs)
@@ -3875,10 +3876,10 @@ function budgetWidgetHTML(ym){
   const rows=C.map(c=>{const b=budgetOf(c,ym)+(S.rollover[c]?rolloverIn(c,ym):0),sp=d.byCat[c]||0;return {c,b,sp,r:b>0?sp/b:0};}).sort((x,y)=>y.r-x.r);
   const tb=rows.reduce((t,x)=>t+x.b,0),ts=rows.reduce((t,x)=>t+x.sp,0),left=tb-ts,over=rows.filter(x=>x.sp>x.b+0.5).length;
   const bar=(sp,b,col)=>'<div class="track"><div class="fill'+(sp>b?' over':'')+'" style="width:'+Math.min(100,b>0?sp/b*100:0).toFixed(1)+'%'+(col&&sp<=b?';background:'+col:'')+'"></div></div>';
-  const top=rows.slice(0,5).map(x=>'<div class="bwr"><div class="bwn"><span>'+esc(x.c)+'</span><b class="'+(x.sp>x.b?'bad':'')+'">'+fmt0(x.sp)+' <small>/ '+fmt0(x.b)+'</small></b></div>'+bar(x.sp,x.b,CATCOL[x.c]||catColor(x.c))+'</div>').join('');
+  const top=rows.slice(0,UI.bwAll?rows.length:5).map(x=>'<div class="bwr"><div class="bwn"><span>'+esc(x.c)+'</span><b class="'+(x.sp>x.b?'bad':'')+'">'+fmt0(x.sp)+' <small>/ '+fmt0(x.b)+'</small></b></div>'+bar(x.sp,x.b,CATCOL[x.c]||catColor(x.c))+'</div>').join('');
   return '<section class="card go" role="button" tabindex="0" data-act="tab" data-tab="budgets" aria-label="Open Budgets"><div class="wth"><h2>Budgets</h2><span class="spacer"></span><span class="sub">'+(over?over+' over':'On track')+' ›</span></div>'
     +'<div class="bwt"><b>'+fmt0(Math.abs(left))+'</b><span class="sub">'+(left<0?'over':'left')+' of '+fmt0(tb)+'</span></div>'+bar(ts,tb)
-    +'<div class="bwl">'+top+'</div>'+(rows.length>5?'<p class="sub" style="margin:8px 0 0">+'+(rows.length-5)+' more categories</p>':'')+'</section>';
+    +'<div class="bwl">'+top+'</div>'+(rows.length>5?'<button type="button" class="btn ghost small" style="margin-top:10px" data-act="bwall">'+(UI.bwAll?'Show less':'Show all '+rows.length)+'</button>':'')+'</section>';
 }
 function catRowHTML(c,ym){
   const d=md(ym),b=budgetOf(c,ym),carry=rolloverIn(c,ym),spent=d.byCat[c]||0,avail=b+carry,left=avail-spent,has=b||carry;
@@ -4075,7 +4076,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<details class="itip"><summary><i>i</i><span>About</span></summary><p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p></details><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.79.0';
+const APP_VERSION='1.79.1';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -5080,6 +5081,7 @@ const ACT={
   gocat(el){jmp();UI.filters={q:'',acct:'',cat:el.dataset.cat,month:el.dataset.m||''};UI.limit=200;UI.tab='txns';render();window.scrollTo(0,0);},
   audgo(el){jmp();UI.filters={q:'',acct:'',cat:'',month:'',ids:String(el.dataset.ids||'').split(',').filter(Boolean),label:el.dataset.label||'Selected transactions'};UI.limit=200;UI.tab='txns';render();window.scrollTo(0,0);},
   mergo(el){const k=el.dataset.k,ym=el.dataset.m||'';const ids=S.txns.filter(t=>(merchantKey(t.desc)||'other')===k&&(!ym||t.date.startsWith(ym))).map(t=>t.id);jmp();UI.filters={q:'',acct:'',cat:'',month:'',ids,label:titleCase(k)+(ym?' · '+monthLabel(ym):' · all')};UI.limit=200;UI.tab='txns';render();window.scrollTo(0,0);},
+  bwall(){UI.bwAll=!UI.bwAll;render();},
   blcald(el){UI.blCalD=UI.blCalD===el.dataset.d?null:el.dataset.d;render();},
   blcalm(el){const c=todayISO().slice(0,7);UI.blCalM=addMonths(UI.blCalM||c,+el.dataset.n);UI.blCalD=null;render();},
   blall(){UI.blAll=!UI.blAll;render();},
