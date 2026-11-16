@@ -149,6 +149,7 @@ h1{font-size:28px;font-weight:800;letter-spacing:-.03em;margin:2px 0 12px}h2{fon
 .hct{position:absolute;top:2px;transform:translate(-50%,0);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:6px 9px;font-size:12px;line-height:1.3;white-space:nowrap;box-shadow:0 6px 18px rgba(0,0,0,.18);pointer-events:none;z-index:3;display:flex;flex-direction:column}
 .hct b{font-size:14px}.hct span{color:var(--mute)}.hct em{font-style:normal;font-weight:700}.hct em.pos{color:var(--good,#10b981)}.hct em.neg{color:#ef4444}
 .hct.r{transform:translate(calc(-100% - 8px),0)}.hct.l{transform:translate(8px,0)}
+.hcw[data-lc]{cursor:crosshair;touch-action:pan-y;outline:none}.hcw[data-lc]:focus-visible{box-shadow:0 0 0 2px var(--brand);border-radius:8px}.chp{margin:6px 0 0}.chp .hc{margin-top:8px}.hct b.pos{color:var(--good,#10b981)}.hct b.neg{color:#ef4444}
 .hcw[data-hp]{cursor:crosshair;touch-action:pan-y;outline:none}.hcw[data-hp]:focus-visible{box-shadow:0 0 0 2px var(--brand);border-radius:8px}
 .hcr{margin:2px 0 8px;display:inline-flex}
 [hidden].hxtt,[hidden].hct,[hidden].hxv,[hidden].hxq,[hidden].hxq2,[hidden].hcx,[hidden].hcp{display:none!important}
@@ -2071,6 +2072,52 @@ function hcHide(w){if(!w) return;['.hcx','.hcp','.hct'].forEach(s=>{const e=w.qu
     let D;try{D=w._hp||(w._hp=JSON.parse(w.dataset.hp));}catch(_){return;}const k=Math.max(0,Math.min(D.p.length-1,(w._k==null?D.p.length-1:w._k)+(e.key==='ArrowLeft'?-1:1)));hcShow(w,D.p[k][0]/Math.max(1,D.x1-D.x0));e.preventDefault();});
   document.addEventListener('focusout',e=>{const w=e.target.closest&&e.target.closest('.hcw[data-hp]');if(w) hcHide(w);});
 })();
+// one line chart for everything that plots values over time: same look and touch behaviour as the net worth chart
+// S: [{n:name,c:color,d:dashed,f:fill,p:[[x,v],...]}]  (series 0 is the main line). o: {id,label,xf(x) tick label,tf(x) tooltip date,kf(v) value label,vf(v) tooltip value,ticks,zero,foot,head(x,vals)}
+const chp=(lab,h)=>h?'<div class="agnw chp">'+(lab?'<span class="agnwl">'+lab+'</span>':'')+h+'</div>':'';
+function lineChart(S0,o){
+  o=o||{};const Sr=S0.filter(s=>s.p&&s.p.length>1);if(!Sr.length) return '';
+  const W=320,Hh=100,pd=6,allX=Sr.flatMap(s=>s.p.map(q=>q[0])),allV=Sr.flatMap(s=>s.p.map(q=>q[1])).concat(o.zero?[0]:[]);
+  const x0=Math.min(...allX),x1=Math.max(...allX),lo0=Math.min(...allV),hi0=Math.max(...allV),fp=Math.max(1e-6,Math.abs(hi0)*.01),lo=hi0-lo0<1e-9?lo0-fp:lo0,hi=hi0-lo0<1e-9?hi0+fp:hi0,sp=hi-lo;
+  const X=x=>pd+(x-x0)/Math.max(1e-9,x1-x0)*(W-2*pd),Y=v=>pd+(1-(v-lo)/sp)*(Hh-2*pd);
+  const kf=o.kf||(v=>{const a=Math.abs(v),sg=v<0?'-':'';return sg+(a>=1e6?'$'+(a/1e6).toFixed(2)+'M':a>=1e4?'$'+(a/1e3).toFixed(1)+'K':a>=1e3?'$'+(a/1e3).toFixed(2)+'K':'$'+Math.round(a));}),vf=o.vf||fmt0;
+  const G=[hi,(hi+lo)/2,lo],TK=(o.ticks||[0,1,2,3].map(i=>x0+(x1-x0)*i/3)).filter(x=>x>=x0-1e-9&&x<=x1+1e-9),id='lc'+(o.id||'x');
+  const pts=s=>s.p.map(q=>X(q[0]).toFixed(1)+','+Y(q[1]).toFixed(1));
+  const at=(s,x)=>{if(x<s.p[0][0]-1e-9||x>s.p[s.p.length-1][0]+1e-9) return null;let b=s.p[0];for(const q of s.p){if(Math.abs(q[0]-x)<Math.abs(b[0]-x)) b=q;}return b;};
+  const XS=[...new Set(allX)].sort((a,b)=>a-b);
+  const D={W,pd,x0,x1,H:Hh,xs:XS.map(x=>+((X(x)/W).toFixed(4))),dots:[],tt:[]};
+  XS.forEach(x=>{const v=Sr.map(s=>at(s,x));D.dots.push(v.map((q,i)=>q?[+((Y(q[1])/Hh).toFixed(4)),i]:null).filter(Boolean));
+    const vals=v.map(q=>q?q[1]:null);
+    D.tt.push((o.head?o.head(x,vals):(vals[0]!=null?'<b>'+vf(vals[0])+'</b>':''))+'<span>'+(o.tf?o.tf(x):String(x))+'</span>'+Sr.map((s,i)=>i&&vals[i]!=null?'<span class="hctx"><i style="background:'+s.c+'"></i>'+esc(s.n)+' '+vf(vals[i])+'</span>':'').join(''));});
+  D.c=Sr.map(s=>s.c);
+  const m=Sr[0],last=m.p[m.p.length-1];
+  return '<div class="hc">'+(o.seg||'')+'<div class="hcw" data-lc="'+esc(JSON.stringify(D))+'" tabindex="0" aria-label="'+esc((o.label||'Chart')+'. Hover, touch or use arrow keys to see values.')+'"><svg viewBox="0 0 '+W+' '+Hh+'" preserveAspectRatio="none" role="img" aria-label="'+esc(o.label||'Chart')+'"><defs>'+Sr.map((s,i)=>s.f?'<linearGradient id="'+id+i+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+s.c+'" stop-opacity=".28"/><stop offset="1" stop-color="'+s.c+'" stop-opacity="0"/></linearGradient>':'').join('')+'</defs>'
+   +G.map(v=>'<line x1="0" x2="'+W+'" y1="'+Y(v).toFixed(1)+'" y2="'+Y(v).toFixed(1)+'" stroke="var(--mute)" stroke-opacity=".38" stroke-width="1" stroke-dasharray="4 4" vector-effect="non-scaling-stroke"/>').join('')
+   +TK.map(t=>'<line y1="0" y2="'+Hh+'" x1="'+X(t).toFixed(1)+'" x2="'+X(t).toFixed(1)+'" stroke="var(--mute)" stroke-opacity=".38" stroke-width="1" stroke-dasharray="2 4" vector-effect="non-scaling-stroke"/>').join('')
+   +Sr.map((s,i)=>s.f&&(s.p[s.p.length-1][0]-s.p[0][0])>=(x1-x0)*.3?'<path d="M'+pts(s).join(' L')+' L'+X(s.p[s.p.length-1][0]).toFixed(1)+','+Hh+' L'+X(s.p[0][0]).toFixed(1)+','+Hh+' Z" fill="url(#'+id+i+')"/>':'').join('')
+   +Sr.slice().reverse().map(s=>'<polyline points="'+pts(s).join(' ')+'" fill="none" stroke="'+s.c+'" stroke-width="'+(s.d?1.6:2)+'"'+(s.d?' stroke-dasharray="5 3"':'')+' stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>').join('')+'</svg>'
+   +'<div class="hcy" aria-hidden="true">'+G.map(v=>'<span style="top:'+(Y(v)/Hh*100).toFixed(1)+'%">'+kf(v)+'</span>').join('')+'</div><i class="hcdot" style="left:calc((100% - 50px)*'+(X(last[0])/W).toFixed(4)+');top:'+(Y(last[1])/Hh*100).toFixed(1)+'%;background:'+m.c+'"></i><i class="hcx" hidden></i>'+Sr.map((s,i)=>'<i class="hcp lcp" data-i="'+i+'" hidden style="background:'+s.c+'"></i>').join('')+'<div class="hct" hidden></div></div>'
+   +'<div class="hcax hcax2"><div>'+TK.map((t,i)=>'<span class="'+(i===0&&X(t)<30?'a':i===TK.length-1&&X(t)>W-30?'z':'')+'" style="left:'+(X(t)/W*100).toFixed(2)+'%">'+(o.xf?o.xf(t):t)+'</span>').join('')+'</div></div>'
+   +(Sr.length>1?'<div class="hcleg">'+Sr.map(s=>'<span><i'+(s.d?' class="d" style="border-color:'+s.c+'"':' style="background:'+s.c+'"')+'></i>'+esc(s.n)+'</span>').join('')+'</div>':'')+(o.foot||'')+'</div>';
+}
+function lcShow(w,frac){
+  let D;try{D=w._lc||(w._lc=JSON.parse(w.dataset.lc));}catch(e){return;}
+  const f=Math.max(0,Math.min(1,frac))*(1-2*D.pd/D.W)+D.pd/D.W;let k=0;D.xs.forEach((x,i)=>{if(Math.abs(x-f)<Math.abs(D.xs[k]-f)) k=i;});w._k=k;
+  const xf=D.xs[k],L='calc((100% - 50px)*'+xf+')',x=w.querySelector('.hcx'),t=w.querySelector('.hct'),dot=w.querySelector('.hcdot');
+  x.style.left=L;x.hidden=false;w.querySelectorAll('.lcp').forEach(p=>p.hidden=true);
+  D.dots[k].forEach(([yf,i])=>{const p=w.querySelector('.lcp[data-i="'+i+'"]');if(p){p.style.left=L;p.style.top=(yf*100)+'%';p.hidden=false;}});
+  t.innerHTML=D.tt[k];t.style.left=L;t.classList.toggle('r',xf>=.5);t.classList.toggle('l',xf<.5);t.hidden=false;if(dot) dot.style.opacity='.25';
+}
+function lcHide(w){if(!w) return;w.querySelectorAll('.hcx,.lcp,.hct').forEach(e=>e.hidden=true);const dot=w.querySelector('.hcdot');if(dot) dot.style.opacity='';}
+(function(){
+  const fr=(w,e)=>{const r=w.getBoundingClientRect();return (e.clientX-r.left)/Math.max(1,r.width-50);},g=e=>e.target.closest&&e.target.closest('.hcw[data-lc]');
+  document.addEventListener('pointermove',e=>{const w=g(e);if(w) lcShow(w,fr(w,e));});
+  document.addEventListener('pointerdown',e=>{const w=g(e);if(w) lcShow(w,fr(w,e));});
+  document.addEventListener('pointerout',e=>{const w=g(e);if(w&&!w.contains(e.relatedTarget)) lcHide(w);});
+  document.addEventListener('keydown',e=>{const w=g(e);if(!w||!/^Arrow(Left|Right)$|^Escape$/.test(e.key)) return;if(e.key==='Escape'){lcHide(w);return;}
+    let D;try{D=w._lc||(w._lc=JSON.parse(w.dataset.lc));}catch(_){return;}const k=Math.max(0,Math.min(D.xs.length-1,(w._k==null?D.xs.length-1:w._k)+(e.key==='ArrowLeft'?-1:1)));lcShow(w,(D.xs[k]-D.pd/D.W)/(1-2*D.pd/D.W));e.preventDefault();});
+  document.addEventListener('focusout',e=>{const w=g(e);if(w) lcHide(w);});
+})();
 // estimated balance since the loan started: replay the original amount at today's rate and payment until it reaches what is owed now
 function loanPast(L){
   if(!L||!(L.orig>L.owed+1)||!(L.rate>0)||!(L.pay>0)) return null;
@@ -2085,7 +2132,7 @@ function loansWithChart(ym){
   const h=loansHTML(ym);if(!h||pastYM(ym)) return h;
   const A=loanAccts().map(a=>({a,L:loanInfo(a)})).filter(x=>x.L&&x.L.owed>0.5).sort((x,y)=>y.L.owed-x.L.owed);if(!A.length) return h;
   const c=loanHistCard(A[0].a);if(!c||!/<svg/.test(c)) return h;
-  const inner=c.replace(/^\s*<section class="card">/,'').replace(/<\/section>\s*$/,'').replace(/<h2>Balance over time<\/h2>[\s\S]*?(?=<div class="hc")/,'<h3 class="blh" style="margin:16px 0 6px">Balance over time'+(A.length>1?' · '+esc(A[0].a.name):'')+'</h3>');
+  const inner=c.replace(/^\s*<section class="card">/,'').replace(/<\/section>\s*$/,'').replace(/<h2>Balance over time<\/h2>[\s\S]*?(?=<div class="agnw chp")/,'<h3 class="blh" style="margin:16px 0 6px">Balance over time'+(A.length>1?' · '+esc(A[0].a.name):'')+'</h3>');
   // the list is one card (a div or a section): the chart goes inside it, before its last closing tag
   return h.replace(/<\/(section|div)>\s*$/,m=>inner+m);
 }
@@ -2093,7 +2140,7 @@ function loanHistCard(a){
   const L=loanInfo(a);if(!L) return '';
   // real history from imported statements wins over the estimate once it covers at least two months
   const real=L.hist.length>2&&dayNum(L.hist[L.hist.length-1][0])-dayNum(L.hist[0][0])>=60,est=real?null:loanPast(L),P=est||(L.hist.length>1?L.hist:null);if(!P) return L.orig?'':'<section class="card"><h2>Balance over time</h2><p class="sub" style="margin:0">Add the rate and payment to see the balance since the loan started.</p></section>';
-  return '<section class="card"><h2>Balance over time</h2><details class="itip"><summary><i>i</i><span>About</span></summary><p class="sub" style="margin:-4px 0 4px">'+(est?'Remaining balance since the loan started, about '+new Date(P[0][0]+'T12:00:00').toLocaleDateString('en-US',{month:'long',year:'numeric'})+'.':'Remaining balance from your statements and syncs, since '+new Date(P[0][0]+'T12:00:00').toLocaleDateString('en-US',{month:'long',year:'numeric'})+'.')+'</p></details>'+histChart(P,{id:'ln'+String(a.id).replace(/\W/g,''),label:'Loan balance',inv:true})+(est?'<details class="itip"><summary><i>i</i><span>About</span></summary><p class="sub" style="margin:6px 0 0">The past is estimated from the original amount, your rate and your payment, because the bank only sends today\'s balance. Earlier extra payments are not shown.</p></details>':'')+'</section>';
+  return '<section class="card"><h2>Balance over time</h2><details class="itip"><summary><i>i</i><span>About</span></summary><p class="sub" style="margin:-4px 0 4px">'+(est?'Remaining balance since the loan started, about '+new Date(P[0][0]+'T12:00:00').toLocaleDateString('en-US',{month:'long',year:'numeric'})+'.':'Remaining balance from your statements and syncs, since '+new Date(P[0][0]+'T12:00:00').toLocaleDateString('en-US',{month:'long',year:'numeric'})+'.')+'</p></details>'+chp('',histChart(P,{id:'ln'+String(a.id).replace(/\W/g,''),label:'Loan balance',inv:true}))+(est?'<details class="itip"><summary><i>i</i><span>About</span></summary><p class="sub" style="margin:6px 0 0">The past is estimated from the original amount, your rate and your payment, because the bank only sends today\'s balance. Earlier extra payments are not shown.</p></details>':'')+'</section>';
 }
 // statement-only accounts (no bank link) that are not just the statements of a linked account
 const isTwin=a=>!a.sf&&S.accounts.some(x=>x.sf&&x!==a&&stmtTwins(x,x.sf).includes(a.id));
@@ -2261,22 +2308,19 @@ function trendTitle(tm){
   const n=UI.trN||6;return n==='all'?'All time':'Last '+n+' months';
 }
 function trendHTML(td,cur){
-  const W=320,H=190,L=6,Rr=40,T=14,B=26,pw=W-L-Rr,ph=H-T-B,n=td.length;
-  const top=Math.max(1,...td.map(([,x])=>Math.max(x.income,x.spend))),step=(()=>{const raw=top/3,p=Math.pow(10,Math.floor(Math.log10(raw))),m=raw/p;return (m<=1?1:m<=2?2:m<=5?5:10)*p;})(),mx=step*3;
-  const X=i=>L+(n>1?i/(n-1):.5)*pw,Y=v=>T+ph-(Math.max(0,v)/mx)*ph,k=v=>v>=1000?'$'+(v/1000).toFixed(v%1000?1:0).replace(/\.0$/,'')+'k':'$'+v;
-  const pi=td.map(([,x],i)=>[X(i),Y(x.income)]),ps=td.map(([,x],i)=>[X(i),Y(x.spend)]);
-  const li=smoothPath(pi),ls=smoothPath(ps),base=T+ph;
-  let g='';for(let i=0;i<=3;i++){const y=Y(step*i);g+='<line x1="'+L+'" x2="'+(W-Rr)+'" y1="'+y+'" y2="'+y+'" stroke="var(--line)" stroke-dasharray="'+(i?'2 4':'0')+'"/><text x="'+(W-Rr+6)+'" y="'+(y+3.5)+'" text-anchor="start" font-size="9.5" font-weight="600" style="fill:var(--mute)">'+k(step*i)+'</text>';}
-  const ci=td.findIndex(([m])=>m===cur),lstep=n>24?4:n>14?3:n>8?2:1;
-  const cols=td.map(([m,x],i)=>{const w=pw/(n-1||1);return '<rect class="hit" data-ti="'+i+'" x="'+(X(i)-w/2)+'" y="'+T+'" width="'+w+'" height="'+ph+'" fill="transparent"/>';}).join('');
-  const lab=td.map(([m],i)=>(n-1-i)%lstep?'':'<text x="'+X(i)+'" y="'+(H-8)+'" text-anchor="middle" font-size="10" font-weight="'+(i===ci?800:500)+'" style="fill:'+(i===ci?'var(--ink)':'var(--mute)')+'">'+shortMonth(m)+'</text>').join('');
-  const dots=td.map(([m,x],i)=>'<g class="pt" data-i="'+i+'"><circle cx="'+X(i)+'" cy="'+Y(x.income)+'" r="4" fill="var(--card)" stroke="var(--cin)" stroke-width="2.2"/><circle cx="'+X(i)+'" cy="'+Y(x.spend)+'" r="4" fill="var(--card)" stroke="var(--cout)" stroke-width="2.2"/></g>').join('');
-  const data=esc(JSON.stringify(td.map(([m,x])=>({m:monthLabel(m),i:fmt0(x.income),s:fmt0(x.spend),n:x.income-x.spend,ym:m}))));
-  return '<div class="tr" data-tr="'+data+'" data-ci="'+ci+'"><svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Income and spending by month"><defs><linearGradient id="tgi" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--cin)" stop-opacity=".32"/><stop offset="1" stop-color="var(--cin)" stop-opacity="0"/></linearGradient><linearGradient id="tgs" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--cout)" stop-opacity=".30"/><stop offset="1" stop-color="var(--cout)" stop-opacity="0"/></linearGradient></defs>'+g+lab
-   +'<g class="plot"><path d="'+li+' L'+X(n-1)+','+base+' L'+X(0)+','+base+' Z" fill="url(#tgi)"/><path d="'+ls+' L'+X(n-1)+','+base+' L'+X(0)+','+base+' Z" fill="url(#tgs)"/>'
-   +'<path d="'+li+'" fill="none" stroke="var(--cin)" stroke-width="2.6" stroke-linecap="round"/><path d="'+ls+'" fill="none" stroke="var(--cout)" stroke-width="2.6" stroke-linecap="round"/>'+dots+'</g>'
-   +(ci>=0?'<line class="cur" x1="'+X(ci)+'" x2="'+X(ci)+'" y1="'+T+'" y2="'+base+'" stroke="var(--brand)" stroke-opacity=".5" stroke-dasharray="3 3"/>':'<line class="cur" x1="0" x2="0" y1="'+T+'" y2="'+base+'" stroke="none"/>')+'<rect class="brush" y="'+T+'" height="'+ph+'" x="0" width="0" rx="6"/>'+cols+'</svg><div class="tip"></div></div>'
-   +'<div class="legend"><span><i class="dot" style="background:var(--cin)"></i>Income</span><span><i class="dot" style="background:var(--cout)"></i>Spending</span></div>';
+  // same chart as net worth: net (money in minus money out) is the main line, income and spending dashed
+  const n=td.length;if(n<2) return '<p class="sub hcn">The chart appears once there are two months of data.</p>';
+  const yr=n>12,mL=i=>{const m=td[Math.round(i)][0];return yr?shortMonth(m)+' \u2019'+m.slice(2,4):shortMonth(m);};
+  const net=td.reduce((t,[,x])=>t+x.income-x.spend,0),sg=v=>(v<0?'-':'+')+fmt0(Math.abs(v)).replace('-','');
+  const tk=n<=7?td.map((_,i)=>i):[0,1,2,3].map(k=>Math.round((n-1)*k/3));
+  const ch=lineChart([
+    {n:'Net',c:'var(--cin)',f:1,p:td.map(([,x],i)=>[i,x.income-x.spend])},
+    {n:'Income',c:'var(--asset,#38bdf8)',d:1,p:td.map(([,x],i)=>[i,x.income])},
+    {n:'Spending',c:'var(--cout)',d:1,p:td.map(([,x],i)=>[i,x.spend])}],
+    {id:'tr',label:'Income and spending by month',zero:1,ticks:[...new Set(tk)],xf:mL,tf:i=>monthLabel(td[i][0]),
+     head:(i,v)=>'<b class="'+(v[0]<0?'neg':'pos')+'">'+sg(v[0])+' net</b>',
+     foot:'<p class="hcc '+(net<0?'neg':'pos')+'">'+sg(net)+' net over '+n+' months</p>'});
+  return '<div class="agnw chp"><span class="agnwl">Income vs spending</span>'+ch+'</div>';
 }
 // Where the month's money went: one ribbon per category, as thick as what you spent there.
 // ---- picture of "Where the money went": large, labelled, with a detail table (saved as PNG) ----
@@ -2977,20 +3021,17 @@ function amort(owed,rate,pay){
 function projOf(path){const step=Math.max(1,Math.ceil((path.length-1)/60)),o=[];path.forEach((v,m)=>{if(m%step===0||m===path.length-1) o.push([m,v]);});return o;}
 const monthsTxt=n=>{const y=Math.floor(n/12),m=n%12;return (y?y+' yr'+(y===1?'':'s'):'')+(y&&m?' ':'')+(m||!y?m+' mo':'');};
 const inMonths=n=>{const d=new Date();d.setDate(1);d.setMonth(d.getMonth()+n);return d.toLocaleDateString('en-US',{month:'short',year:'numeric'});};
-function loanChart(L,X){
-  const W=320,H=150,Lm=40,Rm=8,T=10,B=22,pw=W-Lm-Rm,ph=H-T-B,dN=s=>dayNum(s),t0=todayN();
-  const hist=L.hist.map(([d,v])=>[dN(d)-t0,v]),proj=L.proj.map(([m,v])=>[m*30.4,v]),xp=(X||[]).map(([m,v])=>[m*30.4,v]);
-  const xs=hist.map(p=>p[0]).concat(proj.map(p=>p[0]),[0]),x0=Math.min(...xs),x1=Math.max(...xs,x0+30),top=Math.max(1,...hist.map(p=>p[1]),...proj.map(p=>p[1]),L.owed)*1.05;
-  const Xc=d=>Lm+(d-x0)/(x1-x0)*pw,Y=v=>T+ph-v/top*ph,k=v=>v>=1e6?'$'+(v/1e6).toFixed(1)+'M':v>=1e4?'$'+Math.round(v/1e3)+'k':v>=1000?'$'+(v/1e3).toFixed(1)+'k':'$'+Math.round(v);
-  const line=a=>a.map((p,i)=>(i?'L':'M')+Xc(p[0]).toFixed(1)+' '+Y(p[1]).toFixed(1)).join(' ');
-  let g='';for(let i=0;i<=3;i++){const v=top/3*i,y=Y(v);g+='<line x1="'+Lm+'" x2="'+(W-Rm)+'" y1="'+y+'" y2="'+y+'" stroke="var(--line)" stroke-dasharray="'+(i?'2 4':'0')+'"/><text x="'+(Lm-5)+'" y="'+(y+3.5)+'" text-anchor="end" font-size="11" style="fill:var(--mute)">'+k(v)+'</text>';}
-  const fmtD=d=>{const dt=new Date();dt.setDate(dt.getDate()+Math.round(d));return dt.toLocaleDateString('en-US',{month:'short',year:'2-digit'});};
-  const ticks=[(0-x0)/(x1-x0)<0.2?null:x0,0,x1].filter((v,i,a)=>v!==null&&a.indexOf(v)===i).map(d=>'<text x="'+Xc(d)+'" y="'+(H-6)+'" text-anchor="'+(d===x0?'start':d===x1&&d!==0?'end':'middle')+'" font-size="11" style="fill:var(--mute)">'+(d===0?'Today':fmtD(d))+'</text>').join('');
-  return '<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Loan balance over time" style="width:100%;max-width:440px;height:auto;display:block;margin:0 auto">'+g
-   +(hist.length>1?'<path d="'+line(hist)+' L'+Xc(hist[hist.length-1][0])+' '+Y(0)+' L'+Xc(hist[0][0])+' '+Y(0)+' Z" fill="#f97316" fill-opacity=".14"/><path d="'+line(hist)+'" fill="none" stroke="#f97316" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>':'')
-   +(proj.length>1?'<path d="'+line(proj)+'" fill="none" stroke="#6366f1" stroke-width="2.4" stroke-dasharray="5 4" stroke-linecap="round"/>':'')
-   +(xp.length>1?'<path d="'+line(xp)+'" fill="none" stroke="#10b981" stroke-width="2.6" stroke-dasharray="5 4" stroke-linecap="round"/>':'')
-   +'<line x1="'+Xc(0)+'" x2="'+Xc(0)+'" y1="'+T+'" y2="'+(T+ph)+'" stroke="var(--brand)" stroke-opacity=".45" stroke-dasharray="3 3"/><circle cx="'+Xc(0)+'" cy="'+Y(L.owed)+'" r="4.5" fill="var(--card)" stroke="#f97316" stroke-width="2.4"/>'+ticks+'</svg>';
+function loanChart(L,X,xl){
+  // same chart as net worth: balance so far (solid), your plan and the extra-payment plan (dashed), today marked
+  const t0=todayN(),hist=L.hist.map(([d,v])=>[dayNum(d)-t0,v]),proj=L.proj.map(([m,v])=>[Math.round(m*30.4),v]),xp=(X||[]).map(([m,v])=>[Math.round(m*30.4),v]);
+  const all=hist.concat(proj,xp);if(all.length<2) return '';
+  const x0=Math.min(...all.map(q=>q[0]),0),x1=Math.max(...all.map(q=>q[0]),0),dt=d=>{const z=new Date();z.setDate(z.getDate()+Math.round(d));return z;};
+  const r=x1-x0,tk=[x0,0,x0+r*2/3,x1].filter((v,i,a)=>a.indexOf(v)===i&&(v===0||Math.abs(v)>r*.18)&&(v===x1||Math.abs(x1-v)>r*.18));
+  return lineChart([{n:'Balance',c:'#f97316',f:1,p:hist},{n:'Your plan',c:'#6366f1',d:1,p:proj},{n:xl||'With extra',c:'#10b981',d:1,p:xp}],
+    {id:'ln'+String(L.a&&L.a.id||'').replace(/\W/g,''),label:'Loan balance over time',zero:1,ticks:tk,
+     xf:d=>d===0?'Today':dt(d).toLocaleDateString('en-US',{month:'short',year:'2-digit'}).replace(' ',' \u2019'),
+     tf:d=>d===0?'Today':dt(d).toLocaleDateString('en-US',{month:'short',year:'numeric'}),
+     head:(d,v)=>{const k=v.findIndex(x=>x!=null);return '<b>'+fmt0(v[k])+'</b>';}});
 }
 function loanRing(pct){const R=38,C=2*Math.PI*R,f=Math.max(0,Math.min(1,pct/100));return '<svg viewBox="0 0 100 100" width="112" height="112" role="img" aria-label="'+Math.round(pct)+' percent paid off"><circle cx="50" cy="50" r="'+R+'" fill="none" stroke="var(--track)" stroke-width="11"/><circle cx="50" cy="50" r="'+R+'" fill="none" stroke="url(#lng)" stroke-width="11" stroke-linecap="round" stroke-dasharray="'+(C*f).toFixed(1)+' '+C.toFixed(1)+'" transform="rotate(-90 50 50)"/><defs><linearGradient id="lng" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#10b981"/><stop offset="1" stop-color="#0ea5e9"/></linearGradient></defs><text x="50" y="52" text-anchor="middle" font-size="22" font-weight="800" style="fill:var(--ink)">'+Math.round(pct)+'%</text><text x="50" y="67" text-anchor="middle" font-size="9" style="fill:var(--mute)">paid off</text></svg>';}
 const LNX=[0,100,250,500,1000];
@@ -3006,12 +3047,12 @@ function lnSimHTML(a){
       +'<p class="sub" style="margin:8px 0 0">'+(x?'Paying <b>'+fmt0(x)+'</b> extra a month':'')+(x&&lump?' plus ':'')+(lump?'a one-time <b>'+fmt0(lump)+'</b> now':'')+' turns '+monthsTxt(L.months)+' into <b>'+monthsTxt(XA.months)+'</b>. Total interest drops from '+fmt0(L.interest)+' to '+fmt0(XA.interest)+'.</p>';
   }else res='<details class="itip"><summary><i>i</i><span>About</span></summary><p class="sub" style="margin:0">Pick an amount, drag the slider, or type your own number to see the new payoff date.</p></details>';
   const proj=XA?projOf(XA.path):null;
-  const chart=(L.hist.length>1||L.proj.length>1)?loanChart(L,proj)+'<div class="legend">'+(L.hist.length>1?'<span><i class="dot" style="background:#f97316"></i>Balance</span>':'')+(L.proj.length>1?'<span><i class="dot" style="background:#6366f1"></i>Your plan</span>':'')+(XA?'<span><i class="dot" style="background:#10b981"></i>With extra</span>':'')+'</div>':'';
-  return res+(chart?'<div class="lnsc">'+chart+'</div>':'');
+  const chart=(L.hist.length>1||L.proj.length>1)?loanChart(L,proj):'';
+  return res+(chart?'<div class="lnsc">'+chp('Balance over time',chart)+'</div>':'');
 }
 function lnSimCard(a,facts){
   const L=loanInfo(a);if(!L) return '';
-  if(!L.A||L.owed<0.5){const ch=(L.hist.length>1||L.proj.length>1)?loanChart(L,null):'';return ch||facts.length?'<section class="card"><h2>Balance over time</h2>'+ch+(facts.length?'<div class="sub lnx">'+facts.join(' · ')+'</div>':'')+'</section>':'';}
+  if(!L.A||L.owed<0.5){const ch=(L.hist.length>1||L.proj.length>1)?loanChart(L,null):'';return ch||facts.length?'<section class="card"><h2>Balance over time</h2>'+chp('',ch)+(facts.length?'<div class="sub lnx">'+facts.join(' · ')+'</div>':'')+'</section>':'';}
   const {x,l}=lnSim(a),id=esc(a.id),mx=Math.max(2000,Math.ceil(L.pay/500)*500);
   return '<section class="card lnsim" data-ln="'+id+'"><h2>Pay it off faster</h2><details class="itip"><summary><i>i</i><span>About</span></summary><p class="sub" style="margin:-4px 0 12px">Try any extra amount. The numbers and the chart update as you go. Nothing is saved or sent to your lender.</p></details>'
    +'<div class="lnsg"><label class="lnsf"><span>Extra each month</span><span class="lnsi"><i>$</i><input type="number" inputmode="decimal" min="0" max="100000" step="25" value="'+(x||'')+'" placeholder="0" data-inp="lnx" data-id="'+id+'" aria-label="Extra each month in dollars"></span></label>'
@@ -3052,7 +3093,7 @@ function loanBlock(a,split){
     const lt=(k,v,at,hot)=>'<'+(at.startsWith('href')?'a':'button type="button"')+' class="lnt'+(hot?' hot':'')+'" '+at+'><span>'+k+'</span><b>'+v+'</b></'+(at.startsWith('href')?'a':'button')+'>';
     const links='<div class="lnts" style="--n:'+(L.url?4:3)+'">'+lt('Rate',a.rate!=null?esc(+a.rate)+'%':'Set','data-act="rateacct" data-id="'+esc(a.id)+'"',a.rate==null)+lt('Payment',L.pay>0?fmt0(L.pay):'Set','data-act="loanpay" data-id="'+esc(a.id)+'"',!(L.pay>0))+lt('Original',L.orig?(L.orig>=1e5?'$'+Math.round(L.orig/1000)+'K':fmt0(L.orig)):'Set','data-act="loanorig" data-id="'+esc(a.id)+'"',!L.orig)+(L.url?lt('Servicer','Open '+EXTI,'href="'+esc(L.url)+'" target="_blank" rel="noopener"'):'')+'</div>';
     const head='<div class="lnh"><div style="min-width:0"><b>'+nm+'</b>'+(L.org?'<div class="sub">'+esc(L.org)+'</div>':'')+'</div></div>'+links;
-    const chart=(L.hist.length>1||L.proj.length>1)?loanChart(L,XA?projOf(XA.path):null)+'<div class="legend">'+(L.hist.length>1?'<span><i class="dot" style="background:#f97316"></i>Balance</span>':'')+(L.proj.length>1?'<span><i class="dot" style="background:#6366f1"></i>Your plan</span>':'')+(XA?'<span><i class="dot" style="background:#10b981"></i>With +$'+ex+'</span>':'')+'</div>':'';
+    const chart=(L.hist.length>1||L.proj.length>1)?loanChart(L,XA?projOf(XA.path):null,XA?'With +$'+ex:null):'';
     if(split){
       const st=(l,v,c)=>'<div><small>'+l+'</small><b'+(c?' class="'+c+'"':'')+'>'+v+'</b></div>';
       const hero2='<div class="sub" style="margin:12px 0 0">Still owed</div><div class="invtot">'+fmt0(L.owed)+'</div>'+(pct!=null?'<div class="track lnpt" role="img" aria-label="'+Math.round(pct)+'% paid off"><div class="fill" style="width:'+pct.toFixed(1)+'%;background:var(--cin)"></div></div>':'')
@@ -3061,7 +3102,7 @@ function loanBlock(a,split){
        +(brk?'<section class="card"><h2>'+payLbl+'</h2>'+brk.replace('<div class="lnbkh"><span>'+payLbl+'</span>','<div class="lnbkh"><span>Total each month</span>')+'</section>':'')
        +loanHistCard(a)+lnSimCard(a,facts);
     }
-    return '<div class="lnb">'+head+hero+brk+tiles+''+wi+(chart?'<div style="margin-top:10px">'+chart+'</div>':'')+(facts.length?'<div class="sub lnx">'+facts.join(' · ')+'</div>':'')+'</div>';
+    return '<div class="lnb">'+head+hero+brk+tiles+''+wi+(chart?'<div style="margin-top:10px">'+chp('Balance over time',chart)+'</div>':'')+(facts.length?'<div class="sub lnx">'+facts.join(' · ')+'</div>':'')+'</div>';
 }
 // small overview widget: one line per loan, tap to open the Loans page
 function loansHTML(ym){
@@ -3105,12 +3146,13 @@ function mktRateHTML(A){
       :d>-0.75?'Today\'s rate is close to yours. Refinancing would not save much yet.'
       :'Today\'s rate is well below yours. A refinance could lower your payment: get a quote.';}
   // chart with a % axis on the left and year (or half-year) marks along the bottom; your rate as a dashed line
-  let sp='';if(H.length>2){const V=H.map(x=>x.r30).concat(own?[own.rate]:[]),lo=Math.floor(Math.min(...V)),hi=Math.ceil(Math.max(...V)),stp=hi-lo>4?2:1;
-    const W=340,Hh=150,L=30,R=6,T=8,B=20,t0=dayNum(H[0].d),t1=dayNum(H[H.length-1].d),xs=d=>L+(dayNum(d)-t0)/((t1-t0)||1)*(W-L-R),y=v=>T+(hi-v)/((hi-lo)||1)*(Hh-T-B);
-    let g='';for(let v=lo;v<=hi;v+=stp) g+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y(v).toFixed(1)+'" y2="'+y(v).toFixed(1)+'" stroke="var(--line)" stroke-width="1"/><text x="'+(L-5)+'" y="'+(y(v)+3.5).toFixed(1)+'" text-anchor="end">'+v+'%</text>';
-    const y0=+H[0].d.slice(0,4),y1=+H[H.length-1].d.slice(0,4),half=y1-y0<3;
-    for(let yr=y0;yr<=y1+1;yr++) for(const mo of half?['01','07']:['01']){const d=yr+'-'+mo+'-01';if(dayNum(d)<t0||dayNum(d)>t1) continue;const x=xs(d);g+='<line x1="'+x.toFixed(1)+'" x2="'+x.toFixed(1)+'" y1="'+(Hh-B)+'" y2="'+(Hh-B+3)+'" stroke="var(--mute)"/><text x="'+x.toFixed(1)+'" y="'+(Hh-5)+'" text-anchor="middle">'+(half?(mo==='01'?'Jan ':'Jul ')+String(yr).slice(2):yr)+'</text>';}
-    sp='<svg class="mksp" viewBox="0 0 '+W+' '+Hh+'" role="img" aria-label="30-year rate history">'+g+(own?'<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y(own.rate).toFixed(1)+'" y2="'+y(own.rate).toFixed(1)+'" stroke="var(--cin)" stroke-width="1.6" stroke-dasharray="5 4"/>':'')+'<polyline fill="none" stroke="var(--brand)" stroke-width="2" stroke-linejoin="round" points="'+H.map(x=>xs(x.d).toFixed(1)+','+y(x.r30).toFixed(1)).join(' ')+'"/></svg><div class="mklg"><span><i style="background:var(--brand)"></i>US 30-year average</span>'+(own?'<span><i class="d"></i>Your rate '+own.rate+'%</span>':'')+'</div>';}
+  // same chart as net worth: the US average (solid) and your rate (dashed)
+  let sp='';if(H.length>2){const t0=dayNum(H[0].d),t1=dayNum(H[H.length-1].d),yr0=+H[0].d.slice(0,4),yr1=+H[H.length-1].d.slice(0,4),st=Math.max(1,Math.ceil((yr1-yr0+1)/4)),tk=[];
+    for(let y=yr0+1;y<=yr1;y+=st){const n=dayNum(y+'-01-01');if(n>t0&&n<t1) tk.push(n-t0);}
+    const df=n=>new Date((t0+n+dayNum('1970-01-01'))*864e5+432e5);
+    sp=chp('Rate history',lineChart([{n:'US 30-year average',c:'var(--brand)',f:1,p:H.map(x=>[dayNum(x.d)-t0,x.r30])}].concat(own?[{n:'Your rate',c:'var(--cin)',d:1,p:[[0,own.rate],[t1-t0,own.rate]]}]:[]),
+      {id:'mk',label:'30-year mortgage rate history',ticks:tk,kf:v=>v.toFixed(2)+'%',vf:v=>(+v.toFixed(3))+'%',xf:n=>String(df(n).getUTCFullYear()),tf:n=>df(n).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',timeZone:'UTC'}),
+       head:(n,v)=>'<b>'+(v[0]!=null?v[0].toFixed(2)+'%':'')+'</b>'}));}
   return '<section class="card mkr"><h2 style="margin:0 0 4px">30-year mortgage rates</h2><p class="sub" style="margin:0 0 10px">US average · week of '+wk+'</p>'+cmp+sp+'<p class="sub" style="margin:6px 0 0;font-size:11px">Source: Freddie Mac</p></section>';
 }
 function loansRefresh(){if(UI.tab==='invest'&&ivMode()==='loans'){render();return;}if(document.querySelector('[data-w="money"]')&&(UI.wt||{}).money==='loans'){render();return;}const old=document.querySelector('[data-w="loans"] .wbody > .card');if(!old) return;const t=document.createElement('div');t.innerHTML=loansHTML();if(t.firstElementChild) old.replaceWith(t.firstElementChild);}
@@ -3423,6 +3465,8 @@ function bigHTML(ym){
   const mx=-L[0].amount,tc=s=>s.replace(/\b[a-z]/g,c=>c.toUpperCase());
   return '<div class="mer">'+L.slice(0,UI.tsAll?10:5).map((t,i)=>topRow(i,t.cat,t.nick||tc(merchantKey(t.desc)||t.desc),t.desc,-t.amount,t.cat+' · '+shortDate(t.date),-t.amount/mx*100,'data-act="mergo" data-k="'+esc(merchantKey(t.desc)||'other')+'" data-m="'+ym+'"')).join('')+'</div>'+(L.length>5?moreBtn('tsall',L.length-5,UI.tsAll):'');
 }
+// after 'Show less', bring the top of that list's card back into view
+function moreBack(sk){const b=document.querySelector(sk);if(!b) return;const c=b.closest('section,.card,.w,.agnw')||b;const top=c.getBoundingClientRect().top;if(top<70) scrollTo({top:scrollY+top-80,behavior:'smooth'});}
 // one 'Show N more / Show less' button for every list
 function moreBtn(act,hidden,open,attrs){return '<button type="button" class="btn ghost small rcmore" data-act="'+act+'"'+(attrs||'')+' aria-expanded="'+!!open+'">'+(open?'Show less':'Show '+hidden+' more')+'</button>';}
 // merchants / purchases in one widget
@@ -4063,7 +4107,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<details class="itip"><summary><i>i</i><span>About</span></summary><p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p></details><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.81.0';
+const APP_VERSION='1.82.0';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -4136,7 +4180,7 @@ function viewInvest0(){
   const RDY=CB.tot>=1?'<section class="card rdy"><h2 style="margin:0"><span class="rdyv">'+fmt0(CB.tot)+'</span> ready to invest</h2><details class="itip"><summary><i>i</i><span>About</span></summary><p class="sub" style="margin:4px 0 8px">Uninvested cash (like SPAXX). CDs not included.</p></details>'+CB.L.map(x=>'<div class="ivr go" role="button" tabindex="0" data-act="invgo" data-id="'+esc(x.id)+'"><div class="ivn"><b>'+esc(x.name.replace(/\s*\([^)]*\)/g,'').trim()||x.name)+'</b><span>'+fmt(x.v)+'<i class="ivgo" aria-hidden="true">›</i></span></div><div class="ivm"><span class="ivbar"><i style="width:'+Math.max(3,x.v/CB.L[0].v*100).toFixed(1)+'%"></i></span><em>'+(x.all>0&&x.v/x.all>=.01?Math.round(x.v/x.all*100)+'% of account':'&nbsp;')+'</em></div></div>').join('')+'</section>':'';
   const st=(l,v,c)=>'<div><small>'+l+'</small><b'+(c?' class="'+c+'"':'')+'>'+v+'</b></div>';
   let h='<section class="card"><div class="ivtop"><span class="sub">Total value</span>'+(S.holdingsAt?(()=>{const H=S.holdings||{},ats=Object.keys(H).filter(i=>H[i]&&H[i].length).map(i=>S.balSf&&S.balSf[i]&&S.balSf[i].at).filter(Boolean),asOf=ats.length?Math.min(...ats):null,f=(t,w)=>new Date(t).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});return '<span class="ivas" title="Prices from '+(asOf?f(asOf):'')+' · synced '+f(S.holdingsAt)+'">'+(asOf?'Prices '+f(asOf):'Synced '+f(S.holdingsAt))+'</span>';})():'')+'</div><div class="invtot">'+fmt0(tot)+'</div><div class="ivst">'+st('In positions',fmt0(Math.max(0,Math.round(tot)-Math.round(CB.tot))))+(CB.tot>=1?st('Ready to invest',fmt0(CB.tot),'rdyc'):'')+(gc>0?st('Gain / loss',(gl<0?'-':'+')+fmt0(Math.abs(gl)).replace('-','')+' ('+pf(gl/gc*100)+')',gl<0?'neg':'pos'):'')+(fiN?st('CD &amp; bond interest','≈'+fmt0(fiInt)+'/yr'):'')+'</div>'+'</section>';
-  h=h.replace(/<\/section>$/,invMixBar()+'<div class="aghist"><span class="agnwl">Value over time</span>'+histChart(invSeries(),{id:'iv',label:'Investments',flows:invFlows(),empty:'Your investments chart starts building now. It appears after syncs on two different days.'})+'</div></section>');
+  h=h.replace(/<\/section>$/,invMixBar()+'<div class="agnw chp"><span class="agnwl">Value over time</span>'+histChart(invSeries(),{id:'iv',label:'Investments',flows:invFlows(),empty:'Your investments chart starts building now. It appears after syncs on two different days.'})+'</div></section>');
   // biggest positions across accounts
   const l4=id=>{const a=S.accounts.find(x=>x.sf===id),r=(S.sfRaw||[]).find(x=>x.id===id),m=((a&&a.name)||'').match(/••(\d{4})/)||String((r&&r.name)||'').match(/\((\d{4})\)\s*$/)||String((r&&r.name)||'').match(/(\d{4})\s*$/);return m?'••'+m[1]:'';};
   const mode=posMode(),pa=!!UI._posAnim,agg={};UI._posAnim=false;
@@ -5327,7 +5371,7 @@ const INP={lnx(el){UI.lnX=UI.lnX||{};UI.lnX[el.dataset.id]=lnNum(el,100000);lnSi
 const focKey=el=>el&&el.dataset&&el.dataset.act?{act:el.dataset.act,id:el.dataset.id||'',k:el.dataset.k||'',v:el.dataset.v||''}:null;
 const focSel=f=>'[data-act="'+CSS.escape(f.act)+'"]'+(f.id?'[data-id="'+CSS.escape(f.id)+'"]':'')+(f.k?'[data-k="'+CSS.escape(f.k)+'"]':'')+(f.v?'[data-v="'+CSS.escape(f.v)+'"]':'');
 function refocus(f,alt){setTimeout(()=>{const a=document.activeElement;if(a&&a!==document.body&&a.isConnected) return;let e=null;try{e=f&&document.querySelector(focSel(f));}catch(x){}if(!e&&alt) e=document.querySelector(alt);if(e){try{e.focus({preventScroll:true});}catch(x){}}},30);}
-document.addEventListener('click',e=>{const el=e.target.closest('[data-act]');if(el&&ACT[el.dataset.act]){dcrumb('tap',el.dataset.act);if(dbgVerbose()) dlog('ui','tap '+el.dataset.act,{tab:UI.tab},'debug');const kb=document.activeElement===el,f=kb?focKey(el):null;ACT[el.dataset.act](el,e);if(kb&&!el.isConnected){if(UI.tab==='txns'&&UI.jump&&UI._jfoc){UI._jfoc=false;refocus(null,'.jmp .jb');}else refocus(f,{wedit:'[data-act=wdone]',wdone:'[data-act=wedit]',wreset:'[data-act=wdone]',wadd:'[data-act=wdone]',wrem:'[data-act=wdone]'}[f&&f.act]||null);}}});
+document.addEventListener('click',e=>{const el=e.target.closest('[data-act]');if(el&&ACT[el.dataset.act]){const shut=el.classList.contains('rcmore')&&el.getAttribute('aria-expanded')==='true',sk=shut?'[data-act="'+el.dataset.act+'"]'+(el.dataset.id?'[data-id="'+CSS.escape(el.dataset.id)+'"]':''):null;if(shut) requestAnimationFrame(()=>requestAnimationFrame(()=>moreBack(sk)));dcrumb('tap',el.dataset.act);if(dbgVerbose()) dlog('ui','tap '+el.dataset.act,{tab:UI.tab},'debug');const kb=document.activeElement===el,f=kb?focKey(el):null;ACT[el.dataset.act](el,e);if(kb&&!el.isConnected){if(UI.tab==='txns'&&UI.jump&&UI._jfoc){UI._jfoc=false;refocus(null,'.jmp .jb');}else refocus(f,{wedit:'[data-act=wdone]',wdone:'[data-act=wedit]',wreset:'[data-act=wdone]',wadd:'[data-act=wdone]',wrem:'[data-act=wdone]'}[f&&f.act]||null);}}});
 document.addEventListener('toggle',e=>{const d=e.target;if(d&&d.dataset&&d.dataset.tg) UI[d.dataset.tg]=d.open;},true);
 document.addEventListener('change',e=>{const el=e.target.closest('[data-chg]');if(el&&CHG[el.dataset.chg]){dcrumb('change',el.dataset.chg);CHG[el.dataset.chg](el);}});
 document.addEventListener('input',e=>{const el=e.target.closest('[data-inp]');if(el&&INP[el.dataset.inp])INP[el.dataset.inp](el);});
