@@ -28,7 +28,7 @@ Items picked for the next release. Numbered so they are easy to refer to.
 
 Not scheduled. Ideas, nice-to-haves, things that need more thought.
 
-- _(empty)_
+- v1.85.17: Budgets top card, removed the Income figure (same as the Income row). Income row says "$6,972" instead of "$6,972 received".
 
 ## Needs detail
 
