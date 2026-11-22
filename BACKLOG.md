@@ -22,7 +22,8 @@ whether to fix it immediately. Do not decide that on your own.
 
 Items picked for the next release. Numbered so they are easy to refer to.
 
-1. _(empty)_
+1. Bug: Overview → Investments & loans → Investments tab shows the 401(k) names as "DTCC 401 · Carlos" / "· Hannah". The "(k)" is dropped; should read "DTCC 401(k) · Carlos".
+2. Same card (Overview → Investments & loans → Investments): the per-account bars only compare each account with the largest one and read as unclear progress bars. Remove that meaning; do not add percentages. Redesign the card so it looks clean with the extra accounts now there (5 accounts incl. the two 401(k)s, gain/loss, cash ready, updated time, Mix below). Rearrange for a tidy, consistent layout.
 
 ## Later
 
