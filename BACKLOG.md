@@ -41,4 +41,5 @@ Logged but too vague to act on yet.
 Shipped items, newest first. Keep the version number so it is possible to trace when
 something changed.
 
+- v1.86.0: Fidelity NetBenefits 401(k) statements ("Retirement Savings Statement" PDF) import as investment accounts (DTCC 401(k) · Carlos / · Hannah) with their funds; they count in Investments, positions, mix and net worth. SimpleFIN does not send these plans.
 - _(empty)_

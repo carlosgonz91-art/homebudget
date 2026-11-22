@@ -1295,6 +1295,43 @@ function parseFidelity(lines,text,acct0){
   {const own=lines.join('\n'),vb=money(own,'Beginning Account Value'),ve=money(own,'Ending Account Value(?: \\*\\*)?');if(vb!=null)res.valBegin=vb;if(ve!=null)res.valEnd=ve;}
   return finish(res);
 }
+// Fidelity NetBenefits workplace plan (401(k)) "Retirement Savings Statement", saved from the NetBenefits site as a PDF.
+// It has no bank account number: the plan name and the person's name identify the account. No cash transactions:
+// it gives the account value on the statement date and the funds held (shares, price, value).
+function parseNetBenefits(lines,text){
+  const pm=text.match(/Statement Period:\s*(\d{1,2})\/(\d{1,2})\/(\d{4})\s+to\s+(\d{1,2})\/(\d{1,2})\/(\d{4})/);if(!pm) return null;
+  const end=iso(+pm[6],+pm[4],+pm[5]);if(!end) return null;
+  const pi=lines.findIndex(l=>/Customer Service:/.test(l));
+  const who=pi>=0?lines[pi].replace(/\s*Customer Service:.*$/,'').trim():'';
+  const first=(who.split(' ')[0]||'').toLowerCase().replace(/\b[a-z]/g,c=>c.toUpperCase());
+  // plan name: the lines between the page title and the person's name, minus the statement title
+  const st=lines.findIndex(l=>/^Statement Details$/.test(l));
+  const plan=(st>=0&&pi>st?lines.slice(st+1,pi):[]).filter(l=>!/Retirement Savings Statement/.test(l)).join(' ').replace(/\s+/g,' ').trim();
+  const kind=(plan.match(/\b(401\(k\)|403\(b\)|457\(b\)|401\(a\))/i)||[])[1]||'Retirement';
+  let org=plan.replace(/\b(401\(k\)|403\(b\)|457\(b\)|401\(a\)).*$/i,'').replace(/^The\s+/i,'').trim();
+  const ws=org.split(/\s+/).filter(w=>/^[A-Za-z]/.test(w)&&!/^(of|and|the)$/i.test(w));
+  if(org.length>16&&ws.length>1) org=ws.map(w=>w[0].toUpperCase()).join('');
+  const key=(org+'-'+first).toLowerCase().replace(/[^a-z0-9-]/g,'');
+  const res=mkRes({issuer:'Fidelity NetBenefits',name:(org?org+' ':'')+kind.replace(/K\)/,'k)')+(first?' · '+first:''),type:'brokerage',start:iso(+pm[3],+pm[1],+pm[2]),end,noLedger:true});
+  res.ref='netbenefits:'+key;res.owner=first;
+  res.valEnd=money(text,'Ending Balance');if(res.valEnd==null) res.valEnd=money(text,'Account Totals \\$[\\d,.]+');
+  // funds: "<name start> 0.000 1,242.455 $14.91 $15.21 $0.00 $18,897.74", the rest of the name on the line after
+  // (or, for some, the line before); tier headings ("Large Cap", "Income") and subtotal rows are skipped
+  const a=lines.findIndex(l=>/^Market Value of Your Account/.test(l)),b=lines.findIndex((l,i)=>i>a&&/^Account Totals/.test(l));
+  const H=[];let last=null,pend='';
+  const junk=l=>/NetBenefits|^\d+ of \d+ |as of|^Investment|^Tier$|^Market Value|^\d\d\/\d\d\/\d{4}|\$[\d,]+\.\d\d$|^(International|Small Cap|Mid-Cap|Mid Cap|Large Cap|Income|Bond|Stock|Short-Term|Blended Fund Investments\*?|Specialty|Real Estate|Other)$/i.test(l);
+  if(a>=0&&b>a) for(let i=a+1;i<b;i++){
+    const l=lines[i],m=l.match(/^(.*?)\s*([\d,]+\.\d{3})\s+([\d,]+\.\d{3})\s+\$([\d,]+\.\d\d)\s+\$([\d,]+\.\d\d)\s+\$([\d,]+\.\d\d)\s+\$([\d,]+\.\d\d)$/);
+    if(m){const nm=((pend?pend+' ':'')+m[1]).trim(),sh=parseAmount(m[3]),pr=parseAmount(m[5]),v=parseAmount(m[7]);last={sym:'',desc:nm,shares:sh,price:pr||(sh?v/sh:null),value:v,cost:null,fund:true};H.push(last);pend='';continue;}
+    if(junk(l)){last=null;pend='';continue;}
+    if(last&&lines[i-1]&&lines[i-1].match(/\$[\d,]+\.\d\d$/)&&!pend){last.desc+=' '+l;last=null;continue;}
+    pend=l;last=null;
+  }
+  res.holdings=H.filter(h=>h.value>0);
+  if(!res.holdings.length) res.warnings.push('No funds were found in this statement; only the balance was read.');
+  else{const t=res.holdings.reduce((x,h)=>x+h.value,0);if(res.valEnd!=null&&Math.abs(t-res.valEnd)>1) res.warnings.push('The funds add up to '+fmt0(t)+' but the statement total is '+fmt0(res.valEnd)+'.');}
+  return res;
+}
 // Target Circle Card (TD Bank). Rows look like "3/4 TARGET 00013680 EULESS TX $121.45"; credits carry a minus sign.
 function parseTarget(lines,text){
   const cm=text.match(/Statement Closing Date:?\s*(\d{1,2})\/(\d{1,2})\/(\d{4})/);if(!cm) return null;
@@ -1429,6 +1466,9 @@ function parseStatementAll(pages){
   const lines=pages.reduce((a,p)=>a.concat(p),[]).map(l=>l.replace(/\s+/g,' ').trim()).filter(Boolean);
   if(/SoFi Bank, N\.A\./.test(lines.join('\n'))&&/Monthly Statement Period/.test(lines.join('\n'))){
     const r=parseSofi(lines,lines.join('\n'));if(r) return r;
+  }
+  if(/Retirement Savings Statement/.test(lines.join('\n'))&&/NetBenefits|Fidelity/i.test(lines.join('\n'))){
+    const r=parseNetBenefits(lines,lines.join('\n'));if(r) return [statementExtras(lines,r)];
   }
   if(/INVESTMENT REPORT/.test(lines.join('\n'))&&/Fidelity/i.test(lines.join('\n'))){
     const r=parseFidelityAll(lines,lines.join('\n'));if(r) return r.map(statementExtras.bind(null,lines));
@@ -2019,11 +2059,12 @@ function stmtTwins(a,sfId){
   const out=a?[a.id]:[];if(l4) S.accounts.forEach(x=>{if(x!==a&&!x.sf&&acctL4(x)===l4) out.push(x.id);});return out;
 }
 function balSeries(ids,split){
+  ids=[...new Set([...ids].map(i=>String(i).startsWith('stmt:')?'acct:'+String(i).slice(5):i))];
   const H=S.balHist||{},done=new Set(),units=[],ds=new Set(),ok=x=>isFinite(dayNum(x[0]))&&isFinite(x[1]);
   const isMain=id=>S.accounts.some(x=>x.sf===id);
   [...ids].sort((x,y)=>isMain(y)-isMain(x)).forEach(id=>{if(done.has(id)) return;
     if(String(id).startsWith('acct:')){done.add(id);const st=stmtPoints(id.slice(5)).filter(ok);if(st.length){st.forEach(x=>ds.add(x[0]));units.push({sync:[],st,first:null});}return;}
-    const a=S.accounts.find(x=>x.sf===id);let mem=[id],whole=true;
+    const a=acctByInv(id);let mem=[id],whole=true;
     // a savings account with vaults: the statement balance covers the vaults too, so it only stands in for the whole group
     if(a){const G=sfGroup(a);if(G&&G.g.length>1){const all=G.g.map(r=>r.id);mem=[...new Set([id,...all.filter(m=>ids.includes(m))])];whole=all.every(m=>mem.includes(m));}}
     mem.forEach(m=>done.add(m));
@@ -2616,7 +2657,9 @@ function wSave(st){const o=S.widgets||{};S.widgets={order:st.order,hidden:st.hid
 const wSz=id=>{const z=S.widgets&&S.widgets.size&&S.widgets.size[id];return z==='half'||z==='full'?z:((WID.find(x=>x.id===id)||{}).w||'full');};
 const CASHSYM=/^(SPAXX|FDRXX|FZFXX|FCASH|SPRXX|FZDXX|FDLXX|FTEXX|VMFXX|SWVXX|SNVXX|FDIC|CORE)$/;
 function isCashPos(h){const t=((h.sym||'')+' '+(h.desc||'')).toUpperCase();if(/\bCD\b|CERTIFICATE OF DEPOSIT|TREASURY|\bBOND\b|\bNOTE\b/.test(t)&&!/MONEY MARKET/.test(t)) return false;return CASHSYM.test((h.sym||'').toUpperCase())||/MONEY MARKET|FDIC INSURED DEPOSIT|CASH SWEEP|CORE (ACCOUNT|POSITION)|BANK DEPOSIT SWEEP/.test(t);}
-const ivNm=id=>{const a=S.accounts.find(x=>x.sf===id),r=(S.sfRaw||[]).find(x=>x.id===id);return a?a.name:(r?String(r.name||'').replace(/\s*\(\d{4}\)\s*$/,''):id);};
+// investment keys: a SimpleFIN account id, or 'stmt:<account id>' for a plan read from its statements
+const acctByInv=id=>S.accounts.find(x=>x.sf===id)||(String(id).startsWith('stmt:')?S.accounts.find(x=>x.id===String(id).slice(5)):null);
+const ivNm=id=>{const a=acctByInv(id),r=(S.sfRaw||[]).find(x=>x.id===id);return a?a.name:(r?String(r.name||'').replace(/\s*\(\d{4}\)\s*$/,''):id);};
 // "1244.68, 300, 941.93" / "1244.68,300,941.93" / "$1,244.68; 300; 941.93" -> ['1244.68','300','941.93']
 function payParse(v){const t=String(v||'').replace(/[$\s]+/g,m=>m.includes(' ')||m.includes('\t')?' ':'').trim();if(!t) return [];
   const parts=t.split(/\s*;\s*|,\s+|\s+/).filter(Boolean),out=[];
@@ -2625,14 +2668,14 @@ function payParse(v){const t=String(v||'').replace(/[$\s]+/g,m=>m.includes(' ')|
 function seedLoan(){
   try{if(!S.lt1){const L=S.accounts.find(x=>x.type==='loan'&&/sunrise trail|300,?000/i.test(x.name));if(L){if(L.rate==null){L.rate=2.875;L.rateSrc='statement';L.rateAt=todayISO();}if(!(L.pay>0)) L.pay=1244.68;if(L.extra==null) L.extra=300;if(!(L.escrow>0)) L.escrow=941.93;S.lt1=1;save();}}}catch(e){}
 }
-function invIds(){const H=S.holdings||{},o=Object.keys(H).filter(i=>H[i]&&H[i].length);S.accounts.forEach(a=>{if(a.type==='brokerage'&&a.sf&&!o.includes(a.sf)&&S.balSf&&S.balSf[a.sf]&&Math.abs(+S.balSf[a.sf].v||0)>=1) o.push(a.sf);});return o;}
+function invIds(){const H=S.holdings||{},o=Object.keys(H).filter(i=>H[i]&&H[i].length&&(!i.startsWith('stmt:')||(a=>a&&!a.closed)(S.accounts.find(x=>x.id===i.slice(5)))));S.accounts.forEach(a=>{if(a.type==='brokerage'&&a.sf&&!o.includes(a.sf)&&S.balSf&&S.balSf[a.sf]&&Math.abs(+S.balSf[a.sf].v||0)>=1) o.push(a.sf);});return o;}
 function cashByAcct(){const H=S.holdings||{},L=[];let tot=0;invIds().forEach(id=>{const hs=H[id]||[];const b=S.balSf&&S.balSf[id];let pos=0,c=0;hs.forEach(h=>{pos+=h.value||0;if(isCashPos(h)) c+=h.value||0;});const extra=b&&b.v!=null?Math.max(0,b.v-pos):0,v=c+(extra>=1?extra:0),all=b&&b.v!=null?b.v:pos;if(v>=0.5){L.push({id,name:ivNm(id),v,all});tot+=v;}});L.sort((a,b)=>b.v-a.v);const by={};L.forEach(x=>by[x.id]=x.v);return {tot,L,by};}
 function invWidgetHTML(ym){
   if(pastYM(ym)) return invPastHTML(ym);
   if(!hasInv()&&stmtOnly(['brokerage']).length) return invPastHTML(todayISO().slice(0,7),true);
   if(!hasInv()) return '<section class="card"><h2>Investments</h2><p class="mute" style="margin:0">Positions load after your next bank sync.</p></section>';
   const H=S.holdings||{},ids=invIds();
-  const nm=id=>{const a=S.accounts.find(x=>x.sf===id),r=(S.sfRaw||[]).find(x=>x.id===id);return a?a.name:(r?String(r.name||'').replace(/\s*\(\d{4}\)\s*$/,''):id);};
+  const nm=id=>{const a=acctByInv(id),r=(S.sfRaw||[]).find(x=>x.id===id);return a?a.name:(r?String(r.name||'').replace(/\s*\(\d{4}\)\s*$/,''):id);};
   let tot=0,inPos=0,gv=0,gc=0;const R=[],mv=[];
   ids.forEach(id=>{const b=S.balSf&&S.balSf[id];let p=0,av=0,ac=0;(H[id]||[]).forEach(h=>{p+=h.value||0;if(h.value!=null&&h.cost>0&&!fixedInc(h)){av+=h.value;ac+=h.cost;mv.push({k:h.sym||h.desc||'Position',d:h.value-h.cost,p:(h.value-h.cost)/h.cost*100});}});gv+=av;gc+=ac;inPos+=p;const v=b?b.v:p;tot+=v;R.push({id,at:b&&b.at,name:nm(id),v,gl:ac>0?{d:av-ac,p:(av-ac)/ac*100}:null});});
   R.sort((a,b)=>b.v-a.v);const gl=gv-gc,CB=cashByAcct(),cash=CB.tot,mx=Math.max(1,...R.map(r=>r.v));
@@ -2657,8 +2700,8 @@ function invAllHTML(ym){
 // Investments as they stood at the end of a past month: account values from statements and bank history
 function invPastHTML(ym,cur){
   const end=cur?todayISO():ymEnd(ym),wh=cur?'latest statements':'end of '+ymShort(ym),prev=ymEnd(addMonths(ym,-1));
-  const L=invIds().map(id=>({id,a:S.accounts.find(x=>x.sf===id),r:(S.sfRaw||[]).find(x=>x.id===id)})).map(o=>({id:o.id,name:o.a?o.a.name:String((o.r||{}).name||o.id).replace(/\s*\(\d{4}\)\s*$/,''),P:balSeries([o.id])}))
-    .concat(stmtOnly(['brokerage']).map(k=>{const a=S.accounts.find(x=>x.id===k.slice(5));return {id:k,name:a.name,P:balSeries([k])};}));
+  const L=invIds().map(id=>({id,a:acctByInv(id),r:(S.sfRaw||[]).find(x=>x.id===id)})).map(o=>({id:o.id,name:o.a?o.a.name:String((o.r||{}).name||o.id).replace(/\s*\(\d{4}\)\s*$/,''),P:balSeries([o.id])}))
+    .concat(stmtOnly(['brokerage']).filter(k=>!(S.holdings||{})['stmt:'+k.slice(5)]).map(k=>{const a=S.accounts.find(x=>x.id===k.slice(5));return {id:k,name:a.name,P:balSeries([k])};}));
   const lastD=L.reduce((m,o)=>o.P.length&&o.P[o.P.length-1][0]>m?o.P[o.P.length-1][0]:m,''),p0=cur&&lastD?ymEnd(addMonths(lastD.slice(0,7),-1)):prev;
   const R=L.map(o=>({id:o.id,name:o.name,v:valAt(o.P,end),v0:valAt(o.P,p0)})).filter(r=>r.v!=null).sort((a,b)=>b.v-a.v);
   if(!R.length) return '<section class="card"><h2>Investments</h2><p class="mute" style="margin:0">No values for '+ymShort(ym)+'. Import that month\'s statements to see it.</p></section>';
@@ -3245,7 +3288,7 @@ const wCard=(t,sub,body)=>'<section class="card"><h2>'+t+'</h2>'+(sub?'<p class=
 function holdClass(h){
   const t=((h.sym||'')+' '+(h.desc||'')).toUpperCase();
   if(/\bCD\b|CERTIFICATE OF DEPOSIT|FDIC|MONEY MARKET|GOVERNMENT CASH|TREASURY (BILL|NOTE)/.test(t)||/^(FZFXX|SPAXX|FDRXX|FCASH|SPRXX)$/.test((h.sym||'').toUpperCase())) return 'Cash & CDs';
-  if(/\b(ETF|FUND|INDEX|TRUST|ISHARES|SPDR|VANGUARD|MINISHARES)\b/.test(t)||/^[A-Z]{4}X$/.test((h.sym||'').toUpperCase())) return 'Funds & ETFs';
+  if(h.fund||/\b(ETF|FUND|INDEX|TRUST|ISHARES|SPDR|VANGUARD|MINISHARES)\b/.test(t)||/^[A-Z]{4}X$/.test((h.sym||'').toUpperCase())) return 'Funds & ETFs';
   return 'Stocks';
 }
 // same colors as the holdings pies on the Invest tab, so a group looks the same everywhere
@@ -3893,7 +3936,7 @@ function pdfPreviewHTML(){
     const nm=r.generic?(it.kind==='pdf'?'Unrecognized statement':(it.choice&&it.choice!=='new'?'Goes into '+acctName(it.choice):'Which account is this file for?')):r.name+(r.last4?' ••'+r.last4:'');
     const org=P.sync?(it.fileName.split(' · ')[0]!==it.fileName?it.fileName.split(' · ')[0]:''):it.fileName.replace(/^[0-9a-f]{8}-/,'');
     h+='<div class="pvc '+st[1]+'"><div class="pvh"><div style="min-width:0"><b>'+esc(nm)+'</b>'+(org?'<div class="sub pvo">'+esc(org)+'</div>':'')+'</div><span class="pvs '+st[1]+'">'+st[0]+'</span></div>'
-     +'<div class="pvn"><span><b>'+it.fresh.length+'</b> new</span>'+(it.dup?'<span><b>'+it.dup+'</b> already in</span>':'')+(bal(it)!==''?'<span class="pvb">Balance <b class="'+(bal(it)<0?'neg':'')+'">'+fmt(bal(it))+'</b></span>':'')+(r.start?'<span class="pvd">'+r.start+' → '+r.end+'</span>':'')+(it.kind&&it.kind!=='pdf'&&it.kind!=='sync'?'<span class="pill">'+it.kind.toUpperCase()+'</span>':'')+'</div>';
+     +'<div class="pvn">'+(r.holdings&&!it.fresh.length?'<span><b>'+r.holdings.length+'</b> funds</span>'+(r.valEnd!=null?'<span class="pvb">Value <b>'+fmt(r.valEnd)+'</b></span>':''):'<span><b>'+it.fresh.length+'</b> new</span>')+(it.dup?'<span><b>'+it.dup+'</b> already in</span>':'')+(bal(it)!==''?'<span class="pvb">Balance <b class="'+(bal(it)<0?'neg':'')+'">'+fmt(bal(it))+'</b></span>':'')+(r.start?'<span class="pvd">'+r.start+' → '+r.end+'</span>':'')+(it.kind&&it.kind!=='pdf'&&it.kind!=='sync'?'<span class="pill">'+it.kind.toUpperCase()+'</span>':'')+'</div>';
     if(r.reconcile) h+=r.reconcile.ok?'<div class="pos pvm">✓ Matches the totals printed on the statement</div>':pdfCheckHTML(r,it,i);
     r.warnings.slice(0,3).forEach(w=>{h+='<div class="neg pvm"><i class="wi"></i>'+esc(w)+'</div>';});
     if(r.loanNote&&r.txns.length) h+='<div class="sub pvm">Only the principal part of each payment is added to the loan. Interest and escrow are already counted when the payment leaves your bank account.</div>';
@@ -4158,7 +4201,7 @@ function sfCardHTML(){
   if(!SF.access) return hd+'<details class="itip"><summary><i>i</i><span>About</span></summary><p class="mute" style="margin-top:0">Pulls new transactions straight from your banks with SimpleFIN. <a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noopener">Create a setup token</a>, then paste it here.</p></details><div class="row"><input type="text" id="sfToken" placeholder="Paste setup token" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px"><button class="btn" data-act="sfconnect">Connect</button></div><p class="sub" style="margin:10px 0 0">The access link stays in this browser and is never exported.</p></section>';
   return hd+'<p class="mute" style="margin-top:0"><span class="pos">●</span> Connected'+(SF.last?' · synced '+new Date(SF.last*1000).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+'</p><div class="sfbtns"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button><a class="btn ghost small" href="https://bridge.simplefin.org" target="_blank" rel="noopener" aria-label="Manage on SimpleFIN (opens a new tab)">SimpleFIN '+EXTI+'</a><button class="btn ghost small sfdc" data-act="sfdisconnect" data-ico="lead" aria-label="Disconnect bank sync">Disconnect</button></div></section>';
 }
-const APP_VERSION='1.85.17';
+const APP_VERSION='1.86.0';
 {const v=document.getElementById('ver');if(v)v.textContent='v'+APP_VERSION;}
 function rawCardHTML(){
   const R=S.sfRaw;if(!R||!R.length)return '';
@@ -4222,7 +4265,7 @@ const ivSwitchWrap=(html,sw)=>sw+html;
 function viewInvest0(){
   const H=S.holdings||{},ids=invIds();
   if(!ids.length)return '<section class="card"><p class="mute" style="margin:0">No positions loaded yet. Your investment accounts are linked, so press Sync and the positions will appear here.</p>'+(SF.access?'<p style="margin:12px 0 0"><button type="button" class="btn small" data-act="sfsync" data-ico="lead">Sync</button></p>':'')+'</section>';
-  const info=id=>{const a=S.accounts.find(x=>x.sf===id),r=(S.sfRaw||[]).find(x=>x.id===id),b=S.balSf&&S.balSf[id];return {name:a?a.name:(r?String(r.name||'').replace(/\s*\(\d{4}\)\s*$/,''):id),org:(r&&r.org&&(r.org.name||r.org.domain))||'',bal:b?b.v:(r&&hnum(r.balance))};};
+  const info=id=>{const a=acctByInv(id),r=(S.sfRaw||[]).find(x=>x.id===id),b=S.balSf&&S.balSf[id];return {name:a?a.name:(r?String(r.name||'').replace(/\s*\(\d{4}\)\s*$/,''):id),org:(r&&r.org&&(r.org.name||r.org.domain))||(a&&a.inst)||'',bal:b?b.v:(r&&hnum(r.balance))};};
   const rows=ids.map(id=>{const L=(H[id]||[]).slice().sort((x,y)=>(y.value||0)-(x.value||0)),inf=info(id),pos=L.reduce((t,h)=>t+(h.value||0),0);let gv=0,gc=0,gn=0;L.forEach(h=>{if(h.value!=null&&h.cost!=null&&!fixedInc(h)){gv+=h.value;gc+=h.cost;gn++;}});return {id,L,inf,pos,gl:gc>0?{d:gv-gc,p:(gv-gc)/gc*100,n:gn}:null};}).sort((x,y)=>(y.inf.bal||y.pos)-(x.inf.bal||x.pos));
   const tot=rows.reduce((t,r)=>t+(r.inf.bal!=null?r.inf.bal:r.pos),0),inPos=rows.reduce((t,r)=>t+r.pos,0);
   let gv=0,gc=0,fiInt=0,fiN=0;rows.forEach(r=>r.L.forEach(h=>{const f=fixedInc(h);if(h.value!=null&&h.cost!=null&&!f){gv+=h.value;gc+=h.cost;}if(f&&h.value>0){fiInt+=h.value*f.rate/100;fiN++;}}));
@@ -4230,10 +4273,10 @@ function viewInvest0(){
   const CB=cashByAcct();
   const RDY=CB.tot>=1?'<section class="card rdy"><h2 style="margin:0"><span class="rdyv">'+fmt0(CB.tot)+'</span> ready to invest</h2><details class="itip"><summary><i>i</i><span>About</span></summary><p class="sub" style="margin:4px 0 8px">Uninvested cash (like SPAXX). CDs not included.</p></details>'+CB.L.map(x=>'<div class="ivr go" role="button" tabindex="0" data-act="invgo" data-id="'+esc(x.id)+'"><div class="ivn"><b>'+esc(x.name.replace(/\s*\([^)]*\)/g,'').trim()||x.name)+'</b><span>'+fmt(x.v)+'<i class="ivgo" aria-hidden="true">›</i></span></div><div class="ivm"><span class="ivbar"><i style="width:'+Math.max(3,x.v/CB.L[0].v*100).toFixed(1)+'%"></i></span><em>'+(x.all>0&&x.v/x.all>=.01?Math.round(x.v/x.all*100)+'% of account':'&nbsp;')+'</em></div></div>').join('')+'</section>':'';
   const st=(l,v,c)=>'<div><small>'+l+'</small><b'+(c?' class="'+c+'"':'')+'>'+v+'</b></div>';
-  let h='<section class="card"><div class="ivtop"><span class="sub">Total value</span>'+(S.holdingsAt?(()=>{const H=S.holdings||{},ats=Object.keys(H).filter(i=>H[i]&&H[i].length).map(i=>S.balSf&&S.balSf[i]&&S.balSf[i].at).filter(Boolean),asOf=ats.length?Math.min(...ats):null,f=(t,w)=>new Date(t).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});return '<span class="ivas" title="Prices from '+(asOf?f(asOf):'')+' · synced '+f(S.holdingsAt)+'">'+(asOf?'Prices '+f(asOf):'Synced '+f(S.holdingsAt))+'</span>';})():'')+'</div><div class="invtot">'+fmt0(tot)+'</div><div class="ivst">'+st('In positions',fmt0(Math.max(0,Math.round(tot)-Math.round(CB.tot))))+(CB.tot>=1?st('Ready to invest',fmt0(CB.tot),'rdyc'):'')+(gc>0?st('Gain / loss',(gl<0?'-':'+')+fmt0(Math.abs(gl)).replace('-','')+' ('+pf(gl/gc*100)+')',gl<0?'neg':'pos'):'')+(fiN?st('CD &amp; bond interest','≈'+fmt0(fiInt)+'/yr'):'')+'</div>'+'</section>';
+  let h='<section class="card"><div class="ivtop"><span class="sub">Total value</span>'+(S.holdingsAt?(()=>{const H=S.holdings||{},ats=Object.keys(H).filter(i=>H[i]&&H[i].length&&!i.startsWith('stmt:')).map(i=>S.balSf&&S.balSf[i]&&S.balSf[i].at).filter(Boolean),asOf=ats.length?Math.min(...ats):null,f=(t,w)=>new Date(t).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});return '<span class="ivas" title="Prices from '+(asOf?f(asOf):'')+' · synced '+f(S.holdingsAt)+'">'+(asOf?'Prices '+f(asOf):'Synced '+f(S.holdingsAt))+'</span>';})():'')+'</div><div class="invtot">'+fmt0(tot)+'</div><div class="ivst">'+st('In positions',fmt0(Math.max(0,Math.round(tot)-Math.round(CB.tot))))+(CB.tot>=1?st('Ready to invest',fmt0(CB.tot),'rdyc'):'')+(gc>0?st('Gain / loss',(gl<0?'-':'+')+fmt0(Math.abs(gl)).replace('-','')+' ('+pf(gl/gc*100)+')',gl<0?'neg':'pos'):'')+(fiN?st('CD &amp; bond interest','≈'+fmt0(fiInt)+'/yr'):'')+'</div>'+'</section>';
   h=h.replace(/<\/section>$/,invMixBar()+'<div class="agnw chp"><span class="agnwl">Value over time</span>'+histChart(invSeries(),{id:'iv',label:'Investments',flows:invFlows(),empty:'Your investments chart starts building now. It appears after syncs on two different days.'})+'</div></section>');
   // biggest positions across accounts
-  const l4=id=>{const a=S.accounts.find(x=>x.sf===id),r=(S.sfRaw||[]).find(x=>x.id===id),m=((a&&a.name)||'').match(/••(\d{4})/)||String((r&&r.name)||'').match(/\((\d{4})\)\s*$/)||String((r&&r.name)||'').match(/(\d{4})\s*$/);return m?'••'+m[1]:'';};
+  const l4=id=>{const a=acctByInv(id),r=(S.sfRaw||[]).find(x=>x.id===id),m=((a&&a.name)||'').match(/••(\d{4})/)||String((r&&r.name)||'').match(/\((\d{4})\)\s*$/)||String((r&&r.name)||'').match(/(\d{4})\s*$/);return m?'••'+m[1]:(String(id).startsWith('stmt:')&&a?(a.name.match(/·\s*(\S+)\s*$/)||[])[1]||'401(k)':'');};
   const mode=posMode(),pa=!!UI._posAnim,agg={};UI._posAnim=false;
   rows.forEach(r=>r.L.forEach(x=>{const k=x.sym||x.desc||'Other',key=mode==='acct'?r.id+'|'+k:k,o=agg[key]=agg[key]||{k,v:0,d:x.desc,by:{},fi:fixedInc(x)};o.v+=x.value||0;o.by[r.id]=(o.by[r.id]||0)+(x.value||0);}));
   const top=Object.values(agg).filter(x=>x.v>0).sort((a,b)=>b.v-a.v),mx=top.length?top[0].v:1,pN=Math.max(8,UI.posN||8),all=pN>=top.length,shown=top.slice(0,pN);
@@ -5280,6 +5323,8 @@ const ACT={
         if(a&&it.res.type==='loan'&&a.type==='other') a.type='loan';}
       if(it.sfId){const a=S.accounts.find(x=>x.id===id);if(a&&(!a.sf||sfIsMain(it.sfId))) a.sf=it.sfId;}
       {const rt=it.res.apy!=null?it.res.apy:it.res.apr,a=S.accounts.find(x=>x.id===id),at=it.res.end||'';
+       // a workplace plan statement (no bank link): its funds and value show with the other investments until the next statement
+       if(it.res.holdings&&a&&it.res.valEnd!=null&&(!a.holdAt||at>=a.holdAt)){S.holdings=S.holdings||{};S.balSf=S.balSf||{};S.holdings['stmt:'+a.id]=it.res.holdings;S.balSf['stmt:'+a.id]={v:it.res.valEnd,at:new Date((at||todayISO())+'T12:00:00').getTime()};a.holdAt=at||todayISO();a.inst=it.res.issuer+(it.res.owner?' '+it.res.owner:'');S.holdingsAt=S.holdingsAt||Date.now();}
        if(rt!=null&&a&&a.rateSrc!=='manual'&&(!a.rateAt||at>=a.rateAt)){a.rate=rt;a.rateSrc='statement';a.rateAt=at||todayISO();}
        // the newest mortgage statement sets the monthly payment (principal + interest, extra principal, escrow)
        const lp=it.res.loanPay;if(lp&&a&&a.paySrc!=='manual'&&(!a.payAt||at>=a.payAt)){a.pay=lp.pi;if(lp.escrow>0)a.escrow=lp.escrow;else delete a.escrow;if(lp.extra>0)a.extra=lp.extra;else delete a.extra;a.paySrc='statement';a.payAt=at||todayISO();}}
