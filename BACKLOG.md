@@ -22,13 +22,14 @@ whether to fix it immediately. Do not decide that on your own.
 
 Items picked for the next release. Numbered so they are easy to refer to.
 
-1. _(empty)_
+1. CLAUDE.md + BACKLOG.md rules: no code at all until Carlos says "build the patch". Everything else (bugs, ideas, changes) is only logged here. Questions and read-only checks are still answered right away. Replace the old "fix this now" exception.
+2. CLAUDE.md: add working notes learned so far: brief patch notes per release; test on Android/desktop only (no iPhone work); after a build, also save HomeBudget.html to his Downloads when the PC is linked; keep screenshots and test scripts out of the repo; same look and behavior app-wide.
 
 ## Later
 
 Not scheduled. Ideas, nice-to-haves, things that need more thought.
 
-- v1.85.17: Budgets top card, removed the Income figure (same as the Income row). Income row says "$6,972" instead of "$6,972 received".
+- _(empty)_
 
 ## Needs detail
 
@@ -42,4 +43,4 @@ Shipped items, newest first. Keep the version number so it is possible to trace 
 something changed.
 
 - v1.86.0: Fidelity NetBenefits 401(k) statements ("Retirement Savings Statement" PDF) import as investment accounts (DTCC 401(k) · Carlos / · Hannah) with their funds; they count in Investments, positions, mix and net worth. SimpleFIN does not send these plans.
-- _(empty)_
+- v1.85.17: Budgets top card, removed the Income figure (same as the Income row). Income row says "$6,972" instead of "$6,972 received".
