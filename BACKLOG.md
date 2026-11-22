@@ -24,7 +24,7 @@ Items picked for the next release. Numbered so they are easy to refer to.
 
 1. Bug: Overview → Investments & loans → Investments tab shows the 401(k) names as "DTCC 401 · Carlos" / "· Hannah". The "(k)" is dropped; should read "DTCC 401(k) · Carlos".
 2. Same card (Overview → Investments & loans → Investments): the per-account bars only compare each account with the largest one and read as unclear progress bars. Remove that meaning; do not add percentages. Redesign the card so it looks clean with the extra accounts now there (5 accounts incl. the two 401(k)s, gain/loss, cash ready, updated time, Mix below). Rearrange for a tidy, consistent layout.
-3. Investments: put the two 401(k) accounts at the very bottom of the account lists (Invest tab "Your accounts" and the Overview Investments card). No "Retirement" heading. Also let him rearrange the accounts himself (e.g. a "My order" sort with move up/down or drag), remembered on the device.
+3. Investments: put the two 401(k) accounts at the very bottom of the account lists (Invest tab "Your accounts" and the Overview Investments card). No "Retirement" heading. Also let him rearrange the accounts himself the same way as the Overview widgets: an edit button turns on drag (grip handle), Done saves the order; a manual order becomes the "My order" sort. Dragging only works in edit mode so scrolling never moves accounts.
 
 ## Later
 
