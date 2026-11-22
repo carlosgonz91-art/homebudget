@@ -9,8 +9,7 @@ He has ADHD. Ideas and bugs arrive constantly, often while he is in the middle o
 something else. Acting on every one of them immediately is what wrecks his focus.
 
 - Keep answers short. Bullets, not paragraphs. No preamble, no closing summary.
-- Default to logging, not coding. See the backlog rule below.
-- Only write code when he explicitly asks for it in that message.
+- No code until he says "build the patch". See the backlog rule below.
 - Batch questions. If three things are unclear, ask all three at once, not one at a time.
 - Do not re-explain what he already knows. Answer the question asked.
 
@@ -18,22 +17,35 @@ something else. Acting on every one of them immediately is what wrecks his focus
 
 This is the important one.
 
-When he reports a bug or an idea and does not clearly ask for a fix:
+Do not change the app until he says **"build the patch"**. Until then, every bug, idea or
+change he mentions is only logged:
 
 1. Add it to `BACKLOG.md` under "Next patch", "Later", or "Needs detail".
 2. Reply in one or two lines confirming it is logged.
 3. Stop. Write no code.
 
-Phrases that mean log it: "found a bug", "idea", "backlog only", "don't code",
-or just describing a problem with no instruction attached.
+When he says "build the patch": do everything under "Next patch" in one go, ship one version,
+and move the shipped items to Done.
 
-Phrases that mean work on it: "fix this now", "fix 3 and 7", "work the backlog",
-"let's do it".
+Override: if he explicitly says to do something now, for example "fix this now, don't wait for
+the patch" or "fix only this issue now", do just that item right away and ship it. Nothing else.
 
-If he does not say which, assume log it and ask.
+Questions and read-only checks (looking at his data, the code, logs, screenshots) are answered
+right away. They change nothing, so they do not wait for the patch.
 
-Exception: if something is actively broken for real users, say so plainly and ask
-whether to fix it now. Do not make that call alone.
+If something is actively broken for real users, say so plainly and ask whether to fix it now.
+Do not make that call alone.
+
+## Working notes
+
+- Patch notes: a short bulleted list of what changed, with the version number.
+- After a build, send `HomeBudget.html` (the built `index.html`) to him, and save a copy to his
+  Downloads folder when his PC is linked.
+- Test on Android phone sizes and desktop only. No iPhone work.
+- Check visual changes with screenshots. Keep screenshots and test scripts out of the repo.
+- The whole app should look and behave the same: buttons, tab bars, cards, charts, colors and
+  text sizes follow one pattern.
+- His data is private. Never send it to an outside service without his OK.
 
 ## What the project is
 
