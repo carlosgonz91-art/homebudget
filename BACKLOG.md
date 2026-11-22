@@ -22,7 +22,7 @@ whether to fix it immediately. Do not decide that on your own.
 
 Items picked for the next release. Numbered so they are easy to refer to.
 
-1. CLAUDE.md + BACKLOG.md rules: no code at all until Carlos says "build the patch". Everything else (bugs, ideas, changes) is only logged here. Questions and read-only checks are still answered right away. Replace the old "fix this now" exception.
+1. CLAUDE.md + BACKLOG.md rules: no code at all until Carlos says "build the patch". Everything else (bugs, ideas, changes) is only logged here. Questions and read-only checks are still answered right away. Override: if he explicitly says to do it now (e.g. "fix this now, don't wait for the patch", "fix only this issue now"), do just that item right away and ship it.
 2. CLAUDE.md: add working notes learned so far: brief patch notes per release; test on Android/desktop only (no iPhone work); after a build, also save HomeBudget.html to his Downloads when the PC is linked; keep screenshots and test scripts out of the repo; same look and behavior app-wide.
 
 ## Later
